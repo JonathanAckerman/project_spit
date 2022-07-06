@@ -1,0 +1,4 @@
+- make map "defined" (size, resources, grid all defined within a set boundary)
+- implement mechanics for harvesting resources
+- add inventory
+- add UI for inventory
