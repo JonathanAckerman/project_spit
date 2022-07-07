@@ -1,7 +1,8 @@
 Resource :: struct 
 {
     position: Vector2;
-    id: Resource_ID; 
+    id: Resource_ID;
+    quantity: int; 
 }
 
 

@@ -10,10 +10,11 @@ Game: struct
         radius: int = 20;
         color: Color = BLACK;
         speed: float = 6.0;
-
         try_harvest := false;
 
         velocity: Vector2;
+
+        inventory : [] int;
     }
 
     camera: struct
@@ -42,7 +43,7 @@ game_loop :: inline ()
     player.velocity = .{};
     camera_vector : Vector2 = .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
 
-    mine_nearest_resource :: ()
+    harvest_nearest_resource :: ()
     {
         using Game;
 
@@ -58,24 +59,32 @@ game_loop :: inline ()
             }
         }
         if min_dist < 100
+        {
+            resource := resource_list[closest_index];
+            player.inventory[resource.id] += resource.quantity;
             array_unordered_remove_by_index(*resource_list, closest_index);
+        }
     }
-    if player.try_harvest then mine_nearest_resource();
+    if player.try_harvest then harvest_nearest_resource();
 
-    // draw
+    // Draw
     {
         BeginDrawing();
-        ClearBackground(LIGHTGRAY);
+        ClearBackground(WHITE);
         
         // map
         {
-            for i: 0..15
+            top := -1000.0;
+            left := -1000.0;
+            for row: 0..20
             {
-                for j: 0..9
-                {
-                    ss_rect := xy(i * 100.0, j * 100.0) + camera_vector;
-                    DrawRectangleLines(xx ss_rect.x, xx ss_rect.y, 100, 100, BLACK);
-                }
+                ss_rect := xy(left, -1000.0 + row * 100.0) + camera_vector;
+                DrawLineV(xx ss_rect, xx ss_rect + xy(2000, 0), LIGHTGRAY);
+            }
+            for col: 0..20
+            {
+                ss_rect := xy(-1000.0 + col * 100.0, top) + camera_vector;
+                DrawLineV(xx ss_rect, xx ss_rect + xy(0, 2000), LIGHTGRAY);
             }
         }
 
@@ -87,11 +96,11 @@ game_loop :: inline ()
                 if #complete it.id ==
                 {
                     case .WATER;
-                        DrawCircle(xx ss_resource.x, xx ss_resource.y, 10, BLUE);
+                        DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, BLUE);
                     case .IRON;
-                        DrawCircle(xx ss_resource.x, xx ss_resource.y, 20, RED);
+                        DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, RED);
                     case .COPPER;
-                        DrawCircle(xx ss_resource.x, xx ss_resource.y, 20, GREEN);
+                        DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, GREEN);
                 }
             }
         }
@@ -101,6 +110,13 @@ game_loop :: inline ()
         DrawCircle(xx ss_player.x, xx ss_player.y, xx player.radius, player.color);
         front := ss_player + player.forward * cast(float) player.radius;
         DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
+
+        // ui
+        {
+            DrawText(to_c_string(tprint("Iron: %", player.inventory[cast(int) Resource_ID.IRON])), 20, 20, 20, BLACK);
+            DrawText(to_c_string(tprint("Copper: %", player.inventory[cast(int) Resource_ID.COPPER])), 20, 40, 20, BLACK);
+            DrawText(to_c_string(tprint("Water: %", player.inventory[cast(int) Resource_ID.WATER])), 20, 60, 20, BLACK);
+        }
 
         EndDrawing();
     }
@@ -116,8 +132,12 @@ game_reset :: ()
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
     random_seed(seed);
+
+    //init player inventory
+    array_resize(*Game.player.inventory, enum_highest_value(Resource_ID) + 1);
 }
 
+// @TODO: handle negatives
 map_get_coords :: () -> Vector2 
 {
     coord := Game.player.position;
@@ -139,10 +159,12 @@ populate_resources :: ()
         x := random_get_within_range(-1000, 1000);
         y := random_get_within_range(-1000, 1000);
         id := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        quantity := max(random_get() % 20, 10);
 
         r : Resource;
         r.position = xy(x, y);
         r.id = cast(Resource_ID) id;
+        r.quantity = xx quantity;
 
         array_add(*Game.resource_list, r);
     }
