@@ -30,4 +30,14 @@ handle_input :: inline () {
     {
        Game.player.try_harvest = false; 
     }
+
+    // trading
+    if IsKeyPressed(xx KeyboardKey.T)
+    {
+        Game.player.try_trade = true;
+    }
+    else
+    {
+       Game.player.try_trade = false; 
+    }
 }

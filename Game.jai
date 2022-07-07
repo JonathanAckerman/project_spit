@@ -11,6 +11,7 @@ Game: struct
         color: Color = BLACK;
         speed: float = 6.0;
         try_harvest := false;
+        try_trade := false;
 
         velocity: Vector2;
 
@@ -23,6 +24,7 @@ Game: struct
     }
 
     resource_list: [..] Resource;
+    traders: [..] Trader;
 }
 
 game_loop :: inline () 
@@ -30,42 +32,87 @@ game_loop :: inline ()
     dt := GetFrameTime();
     using Game;
 
-    // input
+    // Input
     handle_input();
 
-    // simulate
-    camera.position = player.position;
-
-    player.position = player.position + player.velocity;
-    if length(player.velocity) != 0 then player.forward = unit_vector(player.velocity);
-    player_coords := map_get_coords();
-
-    player.velocity = .{};
-    camera_vector : Vector2 = .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
-
-    harvest_nearest_resource :: ()
+    camera_vector: Vector2;
+    // Simulate
     {
-        using Game;
+        camera.position = player.position;
 
-        closest_index := 0;
-        min_dist := length(resource_list[0].position - player.position);
-        for resource_list
+        // collision
         {
-            dist := length(it.position - player.position);
-            if dist < min_dist
+            for traders
             {
-                min_dist = dist;
-                closest_index = it_index;
+                if player.position.x + player.radius > it.position.x &&
+                player.position.x - player.radius < it.position.x + it.size &&
+                player.position.y + player.radius > it.position.y &&
+                player.position.y - player.radius < it.position.y + it.size
+                {
+                    player.position += unit_vector(player.position - it.center) * length(player.velocity);
+                }
             }
         }
-        if min_dist < 100
+
+        player.position += player.velocity;  
+        if length(player.velocity) != 0 then player.forward = unit_vector(player.velocity);
+        player_coords := map_get_coords();
+
+        player.velocity = .{};
+        camera_vector = .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
+
+        harvest_nearest_resource :: ()
         {
-            resource := resource_list[closest_index];
-            player.inventory[resource.id] += resource.quantity;
-            array_unordered_remove_by_index(*resource_list, closest_index);
+            using Game;
+            closest_index := 0;
+            min_dist := length(resource_list[0].position - player.position);
+            for resource_list
+            {
+                dist := length(it.position - player.position);
+                if dist < min_dist
+                {
+                    min_dist = dist;
+                    closest_index = it_index;
+                }
+            }
+            if min_dist < 100
+            {
+                resource := resource_list[closest_index];
+                player.inventory[resource.id] += resource.quantity;
+                array_unordered_remove_by_index(*resource_list, closest_index);
+            }
         }
+        if player.try_harvest then harvest_nearest_resource();
+
+        trade_with_nearest_trader :: ()
+        {
+            using Game;
+            closest_index := 0;
+            min_dist := length(traders[0].center - player.position);
+            for traders
+            {
+                dist := length(it.center - player.position);
+                if dist < min_dist
+                {
+                    min_dist = dist;
+                    closest_index = it_index;
+                } 
+            }
+
+            trader_range := compute_trader_range(traders[closest_index]);
+            if min_dist < trader_range
+            {
+                trader_wants := traders[closest_index].want; 
+                trader_has := traders[closest_index].have; 
+                if player.inventory[trader_wants] > 0
+                {
+                    player.inventory[trader_wants] -= 1;
+                    player.inventory[trader_has] += 1;
+                }
+            }
+        }
+        if player.try_trade then trade_with_nearest_trader();
     }
-    if player.try_harvest then harvest_nearest_resource();
 
     // Draw
     {
@@ -105,6 +152,18 @@ game_loop :: inline ()
             }
         }
 
+        // traders
+        {
+            for traders
+            {
+                DrawRectangleV(it.position + camera_vector, xy(xx it.size, xx it.size), BLACK);
+                ss_trader := it.center + camera_vector;
+                trader_range := compute_trader_range(it);
+                if length(player.position - it.center) < trader_range
+                    DrawCircleLines(xx ss_trader.x, xx ss_trader.y, trader_range, BLACK);
+            }
+        }
+
         // player
         ss_player := player.position + camera_vector;
         DrawCircle(xx ss_player.x, xx ss_player.y, xx player.radius, player.color);
@@ -128,13 +187,23 @@ game_reset :: ()
 {
     log("RESETTING GAME");
     Game = .{};
-    populate_resources();
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
     random_seed(seed);
 
+    //init resources
+    populate_resources();
+
     //init player inventory
     array_resize(*Game.player.inventory, enum_highest_value(Resource_ID) + 1);
+
+    //init traders
+    // @Note: I'm intentially making this inconsistent with populate_resources so I can compare style later
+    num_traders := clamp(random_get(), 3, 5);
+    for 1..num_traders
+    {
+        populate_traders();
+    }
 }
 
 // @TODO: handle negatives
@@ -150,6 +219,30 @@ map_get_coords :: () -> Vector2
     coord.y = floor(coord.y);
     // normalize grid coords
     return coord / 100;
+}
+
+populate_traders :: ()
+{
+    // @TODO: check for overlapping
+    x := random_get_within_range(-1000, 1000);
+    y := random_get_within_range(-1000, 1000);
+    want := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+    have := want;
+    while have == want
+    {
+        have = random_get() % xx (enum_highest_value(Resource_ID) + 1);
+    }
+    size := clamp(random_get(), 100, 300);
+    
+    
+    r : Trader;
+    r.position = xy(x, y);
+    r.want = cast(Resource_ID) want;
+    r.have = cast(Resource_ID) have;
+    r.size = xx size;
+    r.center = r.position + xy(r.size/2.0, r.size/2.0); 
+
+    array_add(*Game.traders, r);
 }
 
 populate_resources :: ()
@@ -168,4 +261,11 @@ populate_resources :: ()
 
         array_add(*Game.resource_list, r);
     }
+}
+
+compute_trader_range :: (t: Trader) -> float
+{
+    trader_half_width := t.size/2.0;
+    trader_center_to_corner_length := sqrt(2 * (trader_half_width * trader_half_width));
+    return trader_center_to_corner_length + Game.player.radius + 10.0;
 }

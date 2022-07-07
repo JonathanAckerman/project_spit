@@ -20,6 +20,7 @@ main :: () {
 #load "Game.jai";
 #load "Input.jai";
 #load "Resource.jai";
+#load "Trader.jai";
 
 #import "Raylib-Jai";
 #import "Basic";
