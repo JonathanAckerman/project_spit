@@ -140,15 +140,8 @@ game_loop :: inline ()
             for resource_list
             {
                 ss_resource := it.position + camera_vector;
-                if #complete it.id ==
-                {
-                    case .WATER;
-                        DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, BLUE);
-                    case .IRON;
-                        DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, RED);
-                    case .COPPER;
-                        DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, GREEN);
-                }
+                resource_color := get_resource_color(it.id);
+                DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, resource_color);
             }
         }
 
@@ -156,11 +149,7 @@ game_loop :: inline ()
         {
             for traders
             {
-                DrawRectangleV(it.position + camera_vector, xy(xx it.size, xx it.size), BLACK);
-                ss_trader := it.center + camera_vector;
-                trader_range := compute_trader_range(it);
-                if length(player.position - it.center) < trader_range
-                    DrawCircleLines(xx ss_trader.x, xx ss_trader.y, trader_range, BLACK);
+                Draw_Trader(it, camera_vector);
             }
         }
 
@@ -268,4 +257,18 @@ compute_trader_range :: (t: Trader) -> float
     trader_half_width := t.size/2.0;
     trader_center_to_corner_length := sqrt(2 * (trader_half_width * trader_half_width));
     return trader_center_to_corner_length + Game.player.radius + 10.0;
+}
+
+Draw_Trader :: (t: Trader, camera_vector: Vector2)
+{
+    DrawRectangleV(t.position + camera_vector, xy(xx t.size, xx t.size), BLACK);
+    ss_trader := t.center + camera_vector;
+    trader_range := compute_trader_range(t);
+    if length(Game.player.position - t.center) < trader_range
+        DrawCircleLines(xx ss_trader.x, xx ss_trader.y, trader_range, BLACK);
+
+    want_color := get_resource_color(t.want);
+    have_color := get_resource_color(t.have);
+    DrawRectangleV((t.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
+    DrawRectangleV((t.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
 }

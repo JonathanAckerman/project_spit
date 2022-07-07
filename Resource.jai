@@ -12,3 +12,16 @@ Resource_ID :: enum
     IRON;
     WATER;
 }
+
+get_resource_color :: (r: Resource_ID) -> Color
+{
+    if #complete r ==
+    {
+        case .IRON;
+            return RED;
+        case .COPPER;
+            return GREEN;
+        case .WATER;
+            return BLUE;
+    }
+}
