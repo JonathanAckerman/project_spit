@@ -2,6 +2,7 @@ Game: struct
 {
     resetting: bool;
     paused: bool;
+    debug: bool;
 
     player: struct 
     {
@@ -24,7 +25,7 @@ Game: struct
     }
 
     resource_list: [..] Resource;
-    traders: [..] Trader;
+    buildings: [..] Building;
 }
 
 game_loop :: inline () 
@@ -42,7 +43,7 @@ game_loop :: inline ()
 
         // collision
         {
-            for traders
+            for buildings
             {
                 if player.position.x + player.radius > it.position.x &&
                 player.position.x - player.radius < it.position.x + it.size &&
@@ -87,9 +88,10 @@ game_loop :: inline ()
         trade_with_nearest_trader :: ()
         {
             using Game;
+            // get nearest trader
             closest_index := 0;
-            min_dist := length(traders[0].center - player.position);
-            for traders
+            min_dist := length(buildings[0].center - player.position);
+            for buildings if it.bldg_type == .TRADER
             {
                 dist := length(it.center - player.position);
                 if dist < min_dist
@@ -98,20 +100,50 @@ game_loop :: inline ()
                     closest_index = it_index;
                 } 
             }
+            nearest := buildings[closest_index];
 
-            trader_range := compute_trader_range(traders[closest_index]);
+            // check trade range
+            trader_range := compute_interact_range(nearest);
             if min_dist < trader_range
             {
-                trader_wants := traders[closest_index].want; 
-                trader_has := traders[closest_index].have; 
-                if player.inventory[trader_wants] > 0
+                if player.inventory[nearest.want] > 0
                 {
-                    player.inventory[trader_wants] -= 1;
-                    player.inventory[trader_has] += 1;
+                    player.inventory[nearest.want] -= 1;
+                    player.inventory[nearest.have] += 1;
                 }
             }
         }
         if player.try_trade then trade_with_nearest_trader();
+
+        buy_from_nearest_shop :: ()
+        {
+            using Game;
+            // get nearest shop
+            closest_index := 0;
+            min_dist := length(buildings[0].center - player.position);
+            for buildings if it.bldg_type == .SHOP
+            {
+                dist := length(it.center - player.position);
+                if dist < min_dist
+                {
+                    min_dist = dist;
+                    closest_index = it_index;
+                } 
+            }
+            nearest := buildings[closest_index];
+
+            // check trade range
+            shop_range := compute_interact_range(nearest);
+            if min_dist < shop_range
+            {
+                if player.inventory[nearest.resource] >= nearest.amount
+                {
+                    player.inventory[nearest.resource] -= nearest.amount;
+                    // @TODO: give player an item
+                }
+            }
+        }
+        if player.try_trade then buy_from_nearest_shop();
     }
 
     // Draw
@@ -145,12 +177,15 @@ game_loop :: inline ()
             }
         }
 
-        // traders
+        // buildings
         {
-            for traders
+            for buildings
             {
-                Draw_Trader(it, camera_vector);
+                Draw_Building(it, camera_vector);
             }
+
+            nearest := get_closest_bldg();
+            Draw_Range_Circle(nearest, camera_vector);
         }
 
         // player
@@ -166,6 +201,14 @@ game_loop :: inline ()
             {
                 y_pos := 20 + 20 * (it_index + 1);
                 DrawText(to_c_string(tprint("%: %", resource_names[it_index], player.inventory[cast(int) it])), 20, xx y_pos, 20, BLACK);
+            }
+        }
+
+        // debug
+        {
+            if debug
+            {
+                debug_player_position();
             }
         }
 
@@ -196,6 +239,27 @@ game_reset :: ()
     {
         populate_traders();
     }
+
+    basket_shop : Building;
+    basket_shop.position = xy(-1100, -1100);
+    basket_shop.center = xy(-1075, -1075);
+    basket_shop.size = 50;
+    basket_shop.bldg_type = .SHOP;
+    basket_shop.resource = .FIBER;
+    basket_shop.amount = 10;
+    basket_shop.item.id = .BASKET;
+    basket_shop.item.capacity = 30;
+    array_add(*Game.buildings, basket_shop);
+    chest_shop : Building;
+    chest_shop.position = xy(-900, -1100);
+    chest_shop.center = xy(-875, -1075);
+    chest_shop.size = 50;
+    chest_shop.bldg_type = .SHOP;
+    chest_shop.resource = .WOOD;
+    chest_shop.amount = 10;
+    chest_shop.item.id = .CHEST;
+    chest_shop.item.capacity = 30;
+    array_add(*Game.buildings, chest_shop);
 }
 
 // @TODO: handle negatives
@@ -227,14 +291,15 @@ populate_traders :: ()
     size := clamp(random_get(), 100, 300);
     
     
-    r : Trader;
+    r : Building;
     r.position = xy(x, y);
-    r.want = cast(Resource_ID) want;
-    r.have = cast(Resource_ID) have;
     r.size = xx size;
     r.center = r.position + xy(r.size/2.0, r.size/2.0); 
+    r.bldg_type = .TRADER;
+    r.want = cast(Resource_ID) want;
+    r.have = cast(Resource_ID) have;
 
-    array_add(*Game.traders, r);
+    array_add(*Game.buildings, r);
 }
 
 populate_resources :: ()
@@ -255,23 +320,48 @@ populate_resources :: ()
     }
 }
 
-compute_trader_range :: (t: Trader) -> float
+compute_interact_range :: (b: Building) -> float
 {
-    trader_half_width := t.size/2.0;
-    trader_center_to_corner_length := sqrt(2 * (trader_half_width * trader_half_width));
-    return trader_center_to_corner_length + Game.player.radius + 10.0;
+    bldg_half_width := b.size/2.0;
+    bldg_center_to_corner_length := sqrt(2 * (bldg_half_width * bldg_half_width));
+    return bldg_center_to_corner_length + Game.player.radius + 10.0;
 }
 
-Draw_Trader :: (t: Trader, camera_vector: Vector2)
+Draw_Building :: (b: Building, camera_vector: Vector2)
 {
-    DrawRectangleV(t.position + camera_vector, xy(xx t.size, xx t.size), BLACK);
-    ss_trader := t.center + camera_vector;
-    trader_range := compute_trader_range(t);
-    if length(Game.player.position - t.center) < trader_range
-        DrawCircleLines(xx ss_trader.x, xx ss_trader.y, trader_range, BLACK);
+    DrawRectangleV(b.position + camera_vector, xy(xx b.size, xx b.size), BLACK);
+    ss_bldg := b.center + camera_vector;
 
-    want_color := get_resource_color(t.want);
-    have_color := get_resource_color(t.have);
-    DrawRectangleV((t.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
-    DrawRectangleV((t.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
+    if b.bldg_type == .TRADER
+    {
+        want_color := get_resource_color(b.want);
+        have_color := get_resource_color(b.have);
+        DrawRectangleV((b.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
+        DrawRectangleV((b.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
+    }
+}
+
+get_closest_bldg :: () -> *Building
+{
+    using Game;
+    closest_index := 0;
+    min_dist := length(buildings[0].center - player.position);
+    for buildings
+    {
+        dist := length(it.center - player.position);
+        if dist < min_dist
+        {
+            min_dist = dist;
+            closest_index = it_index;
+        }
+    }
+    return *buildings[closest_index];
+}
+
+Draw_Range_Circle :: (b: *Building, camera_vector: Vector2)
+{
+    ss_bldg := b.center + camera_vector;
+    interact_range := compute_interact_range(b);
+    if length(Game.player.position - b.center) < interact_range
+        DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
 }

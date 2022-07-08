@@ -40,4 +40,10 @@ handle_input :: inline () {
     {
        Game.player.try_trade = false; 
     }
+
+    // debug
+    if IsKeyPressed(xx KeyboardKey.BACKSLASH)
+    {
+        Game.debug = !Game.debug;
+    }
 }

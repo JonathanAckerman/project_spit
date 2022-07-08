@@ -31,3 +31,17 @@ get_resource_color :: (r: Resource_ID) -> Color
             return BEIGE;
     }
 }
+
+Item :: struct
+{
+    id: Item_ID;
+    capacity: int;
+    count: int;
+    contents: [..] Any;
+}
+
+Item_ID :: enum
+{
+    BASKET;
+    CHEST;
+}
