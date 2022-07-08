@@ -161,9 +161,12 @@ game_loop :: inline ()
 
         // ui
         {
-            DrawText(to_c_string(tprint("Iron: %", player.inventory[cast(int) Resource_ID.IRON])), 20, 20, 20, BLACK);
-            DrawText(to_c_string(tprint("Copper: %", player.inventory[cast(int) Resource_ID.COPPER])), 20, 40, 20, BLACK);
-            DrawText(to_c_string(tprint("Water: %", player.inventory[cast(int) Resource_ID.WATER])), 20, 60, 20, BLACK);
+            resource_names := enum_names(Resource_ID);
+            for enum_values_as_s64(Resource_ID)
+            {
+                y_pos := 20 + 20 * (it_index + 1);
+                DrawText(to_c_string(tprint("%: %", resource_names[it_index], player.inventory[cast(int) it])), 20, xx y_pos, 20, BLACK);
+            }
         }
 
         EndDrawing();

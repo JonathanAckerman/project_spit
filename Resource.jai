@@ -11,6 +11,8 @@ Resource_ID :: enum
     COPPER;
     IRON;
     WATER;
+    WOOD;
+    FIBER;
 }
 
 get_resource_color :: (r: Resource_ID) -> Color
@@ -23,5 +25,9 @@ get_resource_color :: (r: Resource_ID) -> Color
             return GREEN;
         case .WATER;
             return BLUE;
+        case .WOOD;
+            return DARKGREEN;
+        case .FIBER;
+            return BEIGE;
     }
 }
