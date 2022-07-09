@@ -17,6 +17,7 @@ Game: struct
         velocity: Vector2;
 
         inventory : [] int;
+        items : [..] Maybe(Item);
     }
 
     camera: struct
@@ -132,14 +133,29 @@ game_loop :: inline ()
             }
             nearest := buildings[closest_index];
 
-            // check trade range
+            // check shop range
             shop_range := compute_interact_range(nearest);
             if min_dist < shop_range
             {
-                if player.inventory[nearest.resource] >= nearest.amount
+                if player.inventory[nearest.resource] >= nearest.amount &&
+                   player.items.count < 2
                 {
                     player.inventory[nearest.resource] -= nearest.amount;
-                    // @TODO: give player an item
+                    if nearest.item.id == 
+                    {
+                        case .BASKET;
+                            item: Maybe(Item);
+                            item.exists = true;
+                            item.value.id = .BASKET;
+                            item.value.capacity = 30;
+                            array_add(*player.items, item);
+                        case .CHEST;
+                            item: Maybe(Item);
+                            item.exists = true;
+                            item.value.id = .CHEST;
+                            item.value.capacity = 60;
+                            array_add(*player.items, item);
+                    }
                 }
             }
         }
@@ -189,10 +205,23 @@ game_loop :: inline ()
         }
 
         // player
-        ss_player := player.position + camera_vector;
-        DrawCircle(xx ss_player.x, xx ss_player.y, xx player.radius, player.color);
-        front := ss_player + player.forward * cast(float) player.radius;
-        DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
+        {
+            ss_player := player.position + camera_vector;
+            DrawCircle(xx ss_player.x, xx ss_player.y, xx player.radius, player.color);
+            front := ss_player + player.forward * cast(float) player.radius;
+            DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
+
+            xpos := 20.0;
+            for player.items if it.exists if it.value.id ==
+            {
+                case .BASKET;
+                    Draw_Item_Basket(xy(xpos, WINDOW_HEIGHT - 40), 20.0);
+                    xpos += 40.0;
+                case .CHEST;
+                    Draw_Item_Chest(xy(xpos, WINDOW_HEIGHT - 40), 20.0);
+                    xpos += 40.0;
+            }
+        }
 
         // ui
         {
@@ -231,6 +260,7 @@ game_reset :: ()
 
     //init player inventory
     array_resize(*Game.player.inventory, enum_highest_value(Resource_ID) + 1);
+    // array_resize(*Game.player.items, 2);
 
     //init traders
     // @Note: I'm intentially making this inconsistent with populate_resources so I can compare style later
@@ -338,6 +368,13 @@ Draw_Building :: (b: Building, camera_vector: Vector2)
         have_color := get_resource_color(b.have);
         DrawRectangleV((b.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
         DrawRectangleV((b.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
+    }
+    if b.bldg_type == .SHOP
+    {
+        if b.item.id == .BASKET
+            Draw_Item_Basket((b.center - xy(b.size/8.0, b.size/8.0)) + camera_vector, b.size/4.0);
+        if b.item.id == .CHEST
+            Draw_Item_Chest((b.center - xy(b.size/8.0, b.size/8.0)) + camera_vector, b.size/4.0);
     }
 }
 

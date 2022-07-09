@@ -37,11 +37,23 @@ Item :: struct
     id: Item_ID;
     capacity: int;
     count: int;
-    contents: [..] Any;
+    contents: [..] Resource;
 }
 
 Item_ID :: enum
 {
     BASKET;
     CHEST;
+}
+
+Draw_Item_Basket :: (pos: Vector2, size: float)
+{
+    DrawRectangleV(pos, xy(size, size), BEIGE);
+    DrawCircleV(pos + xy(size/2.0, size), size/2.0, BEIGE);
+}
+
+Draw_Item_Chest :: (pos: Vector2, size: float)
+{
+    DrawRectangleV(pos, xy(size, size), DARKGREEN);
+    DrawCircleV(pos + xy(size/2.0, 0), size/2.0, DARKGREEN);
 }

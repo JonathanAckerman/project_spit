@@ -22,6 +22,7 @@ main :: () {
 #load "Resource.jai";
 #load "Trader.jai";
 #load "debug_tools.jai";
+#load "Maybe.jai";
 
 #import "Raylib-Jai";
 #import "Basic";
