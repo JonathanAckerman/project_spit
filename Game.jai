@@ -83,6 +83,7 @@ game_loop :: inline ()
                 has_harvested := false;
 
                 // try to fill items first
+                // @TODO: ugh, this doesn't work for multiple baskets...
                 for *player.items if it.exists && it.value.id == .BASKET
                 {
                     if it.value.count < it.value.capacity
@@ -92,25 +93,7 @@ game_loop :: inline ()
                             then it.value.capacity - it.value.count
                             else resource.quantity;
                         it.value.count += amount;
-
-                        // try to find the resource in the basket
-                        dummy_exists := false;
-                        for *b, b_index: it.value.contents if b.id == resource.id
-                        {
-                            dummy_exists = true;
-                            b.quantity += amount;
-                        }
-
-                        // otherwise add a new dummy resource to the basket
-                        if !dummy_exists
-                        {
-                            dummy_resource: Resource;
-                            dummy_resource.position;
-                            dummy_resource.id = resource.id;
-                            dummy_resource.quantity = amount;
-                            array_add(*it.value.contents, dummy_resource);
-                        }
-
+                        it.value.contents[cast(int) resource.id] += amount;
                         array_unordered_remove_by_index(*resource_list, closest_index);
                         has_harvested = true;
                     }
@@ -122,6 +105,7 @@ game_loop :: inline ()
                     player.pockets[resource.id] += resource.quantity;
                     player.pockets[resource.id] = min(player.pockets[resource.id], 10);
                     array_unordered_remove_by_index(*resource_list, closest_index);
+                    print("%\n\n", player.pockets);
                 }
             }
         }
@@ -189,12 +173,14 @@ game_loop :: inline ()
                             item.exists = true;
                             item.value.id = .BASKET;
                             item.value.capacity = 100;
+                            array_resize(*item.value.contents, enum_highest_value(Resource_ID) + 1);
                             array_add(*player.items, item);
                         case .CHEST;
                             item: Maybe(Item);
                             item.exists = true;
                             item.value.id = .CHEST;
                             item.value.capacity = 300;
+                            array_resize(*item.value.contents, enum_highest_value(Resource_ID) + 1);
                             array_add(*player.items, item);
                     }
                 }
@@ -277,7 +263,7 @@ game_loop :: inline ()
                     for r, r_index: it.value.contents
                     {
                         y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
-                        line := tprint("%: %", resource_names[cast(int) r.id], r.quantity);
+                        line := tprint("%: %", resource_names[r_index], r);
                         DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
                     }
                     xpos += 80.0;

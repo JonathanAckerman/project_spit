@@ -37,7 +37,7 @@ Item :: struct
     id: Item_ID;
     capacity: int;
     count: int;
-    contents: [..] Resource;
+    contents: [] int;
 }
 
 Item_ID :: enum
@@ -57,3 +57,8 @@ Draw_Item_Chest :: (pos: Vector2, size: float)
     DrawRectangleV(pos, xy(size, size), DARKGREEN);
     DrawCircleV(pos + xy(size/2.0, 0), size/2.0, DARKGREEN);
 }
+
+// Get_Total_Resources_On_Person :: () -> *[] Resource
+// {
+
+// }
