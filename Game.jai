@@ -105,7 +105,6 @@ game_loop :: inline ()
                     player.pockets[resource.id] += resource.quantity;
                     player.pockets[resource.id] = min(player.pockets[resource.id], 10);
                     array_unordered_remove_by_index(*resource_list, closest_index);
-                    print("%\n\n", player.pockets);
                 }
             }
         }
