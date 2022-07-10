@@ -16,7 +16,7 @@ Game: struct
 
         velocity: Vector2;
 
-        inventory : [] int;
+        pockets : [] int;
         items : [..] Maybe(Item);
     }
 
@@ -80,8 +80,49 @@ game_loop :: inline ()
             if min_dist < 100
             {
                 resource := resource_list[closest_index];
-                player.inventory[resource.id] += resource.quantity;
-                array_unordered_remove_by_index(*resource_list, closest_index);
+                has_harvested := false;
+
+                // try to fill items first
+                for *player.items if it.exists && it.value.id == .BASKET
+                {
+                    if it.value.count < it.value.capacity
+                    {
+                        // calculate the max that we can add to the basket
+                        amount := ifx it.value.count + resource.quantity > it.value.capacity
+                            then it.value.capacity - it.value.count
+                            else resource.quantity;
+                        it.value.count += amount;
+
+                        // try to find the resource in the basket
+                        dummy_exists := false;
+                        for *b, b_index: it.value.contents if b.id == resource.id
+                        {
+                            dummy_exists = true;
+                            b.quantity += amount;
+                        }
+
+                        // otherwise add a new dummy resource to the basket
+                        if !dummy_exists
+                        {
+                            dummy_resource: Resource;
+                            dummy_resource.position;
+                            dummy_resource.id = resource.id;
+                            dummy_resource.quantity = amount;
+                            array_add(*it.value.contents, dummy_resource);
+                        }
+
+                        array_unordered_remove_by_index(*resource_list, closest_index);
+                        has_harvested = true;
+                    }
+                }
+
+                // pockets can only hold 10 of each resource
+                if !has_harvested && player.pockets[resource.id] < 10
+                {
+                    player.pockets[resource.id] += resource.quantity;
+                    player.pockets[resource.id] = min(player.pockets[resource.id], 10);
+                    array_unordered_remove_by_index(*resource_list, closest_index);
+                }
             }
         }
         if player.try_harvest then harvest_nearest_resource();
@@ -107,10 +148,10 @@ game_loop :: inline ()
             trader_range := compute_interact_range(nearest);
             if min_dist < trader_range
             {
-                if player.inventory[nearest.want] > 0
+                if player.pockets[nearest.want] > 0
                 {
-                    player.inventory[nearest.want] -= 1;
-                    player.inventory[nearest.have] += 1;
+                    player.pockets[nearest.want] -= 1;
+                    player.pockets[nearest.have] += 1;
                 }
             }
         }
@@ -137,23 +178,23 @@ game_loop :: inline ()
             shop_range := compute_interact_range(nearest);
             if min_dist < shop_range
             {
-                if player.inventory[nearest.resource] >= nearest.amount &&
+                if player.pockets[nearest.resource] >= nearest.amount &&
                    player.items.count < 2
                 {
-                    player.inventory[nearest.resource] -= nearest.amount;
+                    player.pockets[nearest.resource] -= nearest.amount;
                     if nearest.item.id == 
                     {
                         case .BASKET;
                             item: Maybe(Item);
                             item.exists = true;
                             item.value.id = .BASKET;
-                            item.value.capacity = 30;
+                            item.value.capacity = 100;
                             array_add(*player.items, item);
                         case .CHEST;
                             item: Maybe(Item);
                             item.exists = true;
                             item.value.id = .CHEST;
-                            item.value.capacity = 60;
+                            item.value.capacity = 300;
                             array_add(*player.items, item);
                     }
                 }
@@ -214,26 +255,35 @@ game_loop :: inline ()
 
         // ui
         {
-            // resources
+            // pockets
             resource_names := enum_names(Resource_ID);
-            for enum_values_as_s64(Resource_ID)
+            DrawText(xx "Resources:", 20, 20, 20, BLACK);
+            for r, r_index: enum_values_as_s64(Resource_ID)
             {
-                y_pos := 20 + 20 * (it_index + 1);
-                DrawText(to_c_string(tprint("%: %", resource_names[it_index], player.inventory[cast(int) it])), 20, xx y_pos, 20, BLACK);
+                y_pos := 20 + 20 * (r_index + 1);
+                line := tprint("%: %", resource_names[r_index], player.pockets[cast(int) r]);
+                DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
             }
 
             // items
             xpos := 20.0;
-            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 40, xx 20, xx 20, BLACK);
-            DrawRectangleLines(xx (xpos + 40.0), WINDOW_HEIGHT - 40, xx 20, xx 20, BLACK);
+            DrawText(xx "Items:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
+            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
+            DrawRectangleLines(xx (xpos + 80.0), WINDOW_HEIGHT - 80, 60, 60, BLACK);
             for player.items if it.exists if it.value.id ==
             {
                 case .BASKET;
-                    Draw_Item_Basket(xy(xpos, WINDOW_HEIGHT - 40), 20.0);
-                    xpos += 40.0;
+                    Draw_Item_Basket(xy(xpos + 20.0, WINDOW_HEIGHT - 65), 20.0);
+                    for r, r_index: it.value.contents
+                    {
+                        y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
+                        line := tprint("%: %", resource_names[cast(int) r.id], r.quantity);
+                        DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
+                    }
+                    xpos += 80.0;
                 case .CHEST;
-                    Draw_Item_Chest(xy(xpos, WINDOW_HEIGHT - 40), 20.0);
-                    xpos += 40.0;
+                    Draw_Item_Chest(xy(xpos + 20.0, WINDOW_HEIGHT - 55), 20.0);
+                    xpos += 80.0;
             }
         }
 
@@ -262,9 +312,8 @@ game_reset :: ()
     //init resources
     populate_resources();
 
-    //init player inventory
-    array_resize(*Game.player.inventory, enum_highest_value(Resource_ID) + 1);
-    // array_resize(*Game.player.items, 2);
+    //init player pockets
+    array_resize(*Game.player.pockets, enum_highest_value(Resource_ID) + 1);
 
     //init traders
     // @Note: I'm intentially making this inconsistent with populate_resources so I can compare style later

@@ -1,6 +1,6 @@
 Resource :: struct 
 {
-    position: Vector2;
+    position: Vector2 = ---;
     id: Resource_ID;
     quantity: int; 
 }
