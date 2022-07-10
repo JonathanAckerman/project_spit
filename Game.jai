@@ -210,8 +210,22 @@ game_loop :: inline ()
             DrawCircle(xx ss_player.x, xx ss_player.y, xx player.radius, player.color);
             front := ss_player + player.forward * cast(float) player.radius;
             DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
+        }
 
+        // ui
+        {
+            // resources
+            resource_names := enum_names(Resource_ID);
+            for enum_values_as_s64(Resource_ID)
+            {
+                y_pos := 20 + 20 * (it_index + 1);
+                DrawText(to_c_string(tprint("%: %", resource_names[it_index], player.inventory[cast(int) it])), 20, xx y_pos, 20, BLACK);
+            }
+
+            // items
             xpos := 20.0;
+            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 40, xx 20, xx 20, BLACK);
+            DrawRectangleLines(xx (xpos + 40.0), WINDOW_HEIGHT - 40, xx 20, xx 20, BLACK);
             for player.items if it.exists if it.value.id ==
             {
                 case .BASKET;
@@ -220,16 +234,6 @@ game_loop :: inline ()
                 case .CHEST;
                     Draw_Item_Chest(xy(xpos, WINDOW_HEIGHT - 40), 20.0);
                     xpos += 40.0;
-            }
-        }
-
-        // ui
-        {
-            resource_names := enum_names(Resource_ID);
-            for enum_values_as_s64(Resource_ID)
-            {
-                y_pos := 20 + 20 * (it_index + 1);
-                DrawText(to_c_string(tprint("%: %", resource_names[it_index], player.inventory[cast(int) it])), 20, xx y_pos, 20, BLACK);
             }
         }
 
