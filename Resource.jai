@@ -34,6 +34,7 @@ get_resource_color :: (r: Resource_ID) -> Color
 
 Item :: struct
 {
+    position: Vector2;
     id: Item_ID;
     capacity: int;
     count: int;

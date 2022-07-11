@@ -41,6 +41,15 @@ handle_input :: inline () {
        Game.player.try_trade = false; 
     }
 
+    // drop item
+    if IsKeyPressed(xx KeyboardKey.Y)
+    {
+        if Game.player.held.exists
+            Drop_Held_Item();
+        else    
+            Try_Pickup_Nearest_Item();
+    }
+
     // debug
     if IsKeyPressed(xx KeyboardKey.BACKSLASH)
     {

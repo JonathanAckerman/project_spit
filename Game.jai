@@ -27,6 +27,7 @@ Game: struct
 
     resource_list: [..] Resource;
     buildings: [..] Building;
+    items_on_ground: [..] Item;
 }
 
 game_loop :: inline () 
@@ -238,6 +239,20 @@ game_loop :: inline ()
             Draw_Range_Circle(nearest, camera_vector);
         }
 
+        // items in world
+        {
+            for items_on_ground 
+            {
+                if it.id ==
+                {
+                    case .BASKET;
+                        Draw_Item_Basket(it.position + camera_vector, 20.0);
+                    case .CHEST;
+                        Draw_Item_Chest(it.position + camera_vector, 20.0);
+                }
+            }
+        }
+
         // player
         {
             ss_player := player.position + camera_vector;
@@ -446,4 +461,30 @@ Draw_Range_Circle :: (b: *Building, camera_vector: Vector2)
     interact_range := compute_interact_range(b);
     if length(Game.player.position - b.center) < interact_range
         DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
+}
+
+Drop_Held_Item :: ()
+{
+    using Game;
+    item: Item = player.held.value;
+    item.position = player.position + player.forward;
+    array_add(*items_on_ground, item);
+    player.held.exists = false;
+}
+
+Try_Pickup_Nearest_Item :: ()
+{
+    using Game;
+    for items_on_ground
+    {
+        dist := length(player.position - it.position);
+        if dist < 50
+        {
+            held: Maybe(Item);
+            held.exists = true;
+            held.value = it;
+            player.held = held;
+            remove it;
+        }
+    }
 }
