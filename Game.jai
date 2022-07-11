@@ -17,7 +17,7 @@ Game: struct
         velocity: Vector2;
 
         pockets : [] int;
-        items : [..] Maybe(Item);
+        held : Maybe(Item);
     }
 
     camera: struct
@@ -82,18 +82,17 @@ game_loop :: inline ()
                 resource := resource_list[closest_index];
                 has_harvested := false;
 
-                // try to fill items first
-                // @TODO: ugh, this doesn't work for multiple baskets...
-                for *player.items if it.exists && it.value.id == .BASKET
+                // try to fill held first
+                if player.held.exists && player.held.value.id == .BASKET
                 {
-                    if it.value.count < it.value.capacity
+                    if player.held.value.count < player.held.value.capacity
                     {
                         // calculate the max that we can add to the basket
-                        amount := ifx it.value.count + resource.quantity > it.value.capacity
-                            then it.value.capacity - it.value.count
+                        amount := ifx player.held.value.count + resource.quantity > player.held.value.capacity
+                            then player.held.value.capacity - player.held.value.count
                             else resource.quantity;
-                        it.value.count += amount;
-                        it.value.contents[cast(int) resource.id] += amount;
+                        player.held.value.count += amount;
+                        player.held.value.contents[cast(int) resource.id] += amount;
                         array_unordered_remove_by_index(*resource_list, closest_index);
                         has_harvested = true;
                     }
@@ -155,17 +154,26 @@ game_loop :: inline ()
                     closest_index = it_index;
                 } 
             }
-            nearest := buildings[closest_index];
+            nearest_shop := buildings[closest_index];
 
             // check shop range
-            shop_range := compute_interact_range(nearest);
+            shop_range := compute_interact_range(nearest_shop);
             if min_dist < shop_range
             {
-                if player.pockets[nearest.resource] >= nearest.amount &&
-                   player.items.count < 2
+                total_resources := Get_Total_Resources_On_Person();
+                if total_resources[nearest_shop.resource] >= nearest_shop.amount && !player.held.exists
                 {
-                    player.pockets[nearest.resource] -= nearest.amount;
-                    if nearest.item.id == 
+                    // pay the cost
+                    player.pockets[nearest_shop.resource] -= nearest_shop.amount;
+                    possible_deficit := player.pockets[nearest_shop.resource];
+                    if possible_deficit < 0
+                    {
+                        player.pockets[nearest_shop.resource] = 0;
+                        player.held.value.contents[nearest_shop.resource] -= possible_deficit;
+                    }
+
+                    // receive the item
+                    if nearest_shop.item.id == 
                     {
                         case .BASKET;
                             item: Maybe(Item);
@@ -173,14 +181,14 @@ game_loop :: inline ()
                             item.value.id = .BASKET;
                             item.value.capacity = 100;
                             array_resize(*item.value.contents, enum_highest_value(Resource_ID) + 1);
-                            array_add(*player.items, item);
+                            player.held = item;
                         case .CHEST;
                             item: Maybe(Item);
                             item.exists = true;
                             item.value.id = .CHEST;
                             item.value.capacity = 300;
                             array_resize(*item.value.contents, enum_highest_value(Resource_ID) + 1);
-                            array_add(*player.items, item);
+                            player.held = item;
                     }
                 }
             }
@@ -250,16 +258,15 @@ game_loop :: inline ()
                 DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
             }
 
-            // items
+            // held
             xpos := 20.0;
-            DrawText(xx "Items:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
+            DrawText(xx "Held Item:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
-            DrawRectangleLines(xx (xpos + 80.0), WINDOW_HEIGHT - 80, 60, 60, BLACK);
-            for player.items if it.exists if it.value.id ==
+            if player.held.exists if player.held.value.id ==
             {
                 case .BASKET;
                     Draw_Item_Basket(xy(xpos + 20.0, WINDOW_HEIGHT - 65), 20.0);
-                    for r, r_index: it.value.contents
+                    for r, r_index: player.held.value.contents
                     {
                         y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
                         line := tprint("%: %", resource_names[r_index], r);
