@@ -52,28 +52,38 @@ handle_input :: inline () {
     }
 
     // shifting resources around
-    if IsKeyPressed(xx KeyboardKey.ONE)
+    key_to_resource_index :: (key: KeyboardKey) -> int
     {
-        if Game.player.held.exists 
+        if key >= 49 && key <= 53
+            return xx key - 49;
+        else return -1;
+    }
+    resource_index := key_to_resource_index(xx GetKeyPressed());
+    if Game.player.held.exists && resource_index != -1
+    {
+        if Game.player.held.value.id == .BASKET
         {
-            if Game.player.held.value.id == .BASKET
+            if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
             {
-                if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
+                if Game.player.pockets[resource_index] > 0
                 {
-                    Game.player.held.value.contents[0] += 1;    
-                    Game.player.pockets[0] -= 1;
+                    Game.player.held.value.contents[resource_index] += 1;    
+                    Game.player.pockets[resource_index] -= 1;
                 }
-                else
+            }
+            else
+            {
+                if Game.player.held.value.contents[resource_index] > 0
                 {
-                    Game.player.held.value.contents[0] -= 1;
-                    Game.player.pockets[0] += 1;
+                    Game.player.held.value.contents[resource_index] -= 1;
+                    Game.player.pockets[resource_index] += 1;
                 }
             }
         }
-        else
-        {
-            
-        }
+    }
+    else
+    {
+        
     }
 
 
