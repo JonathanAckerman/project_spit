@@ -114,22 +114,11 @@ game_loop :: inline ()
         {
             using Game;
             // get nearest trader
-            closest_index := 0;
-            min_dist := length(buildings[0].center - player.position);
-            for buildings if it.bldg_type == .TRADER
-            {
-                dist := length(it.center - player.position);
-                if dist < min_dist
-                {
-                    min_dist = dist;
-                    closest_index = it_index;
-                } 
-            }
-            nearest := buildings[closest_index];
+            nearest, dist := get_closest_bldg_to_player(.TRADER);
 
             // check trade range
             trader_range := compute_interact_range(nearest);
-            if min_dist < trader_range
+            if dist < trader_range
             {
                 if player.pockets[nearest.want] > 0
                 {
@@ -251,10 +240,10 @@ game_loop :: inline ()
                 }
             }
 
-            nearest := get_closest_bldg();
+            nearest, dist := get_closest_bldg_to_player();
             ss_bldg := nearest.center + camera_vector;
             interact_range := compute_interact_range(nearest);
-            if length(Game.player.position - nearest.center) < interact_range
+            if dist < interact_range
                 DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
         }
 
@@ -424,7 +413,7 @@ compute_interact_range :: (b: Building) -> float
     return bldg_center_to_corner_length + Game.player.radius + 10.0;
 }
 
-get_closest_bldg :: () -> *Building
+get_closest_bldg_to_player :: () -> *Building, float
 {
     using Game;
     closest_index := 0;
@@ -438,7 +427,24 @@ get_closest_bldg :: () -> *Building
             closest_index = it_index;
         }
     }
-    return *buildings[closest_index];
+    return *buildings[closest_index], min_dist;
+}
+
+get_closest_bldg_to_player :: (type: Building.Bldg_Type) -> *Building, float
+{
+    using Game;
+    closest_index := 0;
+    min_dist := length(buildings[0].center - player.position);
+    for buildings if it.bldg_type == type
+    {
+        dist := length(it.center - player.position);
+        if dist < min_dist
+        {
+            min_dist = dist;
+            closest_index = it_index;
+        }
+    }
+    return *buildings[closest_index], min_dist;
 }
 
 get_closest_item_in_range :: (range: float) -> Maybe(Item), int
