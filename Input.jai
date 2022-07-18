@@ -52,22 +52,34 @@ handle_input :: inline () {
     }
 
     // shifting resources around
-    key_to_resource_index :: (key: KeyboardKey) -> int
     {
-        if key >= 49 && key <= 53
-            return xx key - 49;
-        else return -1;
-    }
-    resource_index := key_to_resource_index(xx GetKeyPressed());
-    if Game.player.held.exists && resource_index != -1
-    {
-        if Game.player.held.value.id == .BASKET
+        key_to_resource_index :: (key: KeyboardKey) -> int
+        {
+            if key >= 49 && key <= 53
+                return xx key - 49;
+            else return -1;
+        }
+        resource_index := key_to_resource_index(xx GetKeyPressed());
+
+        external_inventory: Maybe(Item);
+        if !Game.player.held.exists
+        {
+            // look for nearest
+            closest := get_closest_item_in_range(50);
+            if closest.exists then external_inventory = closest;
+        }
+        else
+        {
+            if Game.player.held.value.id == .BASKET then external_inventory = Game.player.held;
+        }
+
+        if external_inventory.exists && resource_index != -1
         {
             if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
             {
                 if Game.player.pockets[resource_index] > 0
                 {
-                    Game.player.held.value.contents[resource_index] += 1;    
+                    external_inventory.value.contents[resource_index] += 1;    
                     Game.player.pockets[resource_index] -= 1;
                 }
             }
@@ -75,15 +87,11 @@ handle_input :: inline () {
             {
                 if Game.player.held.value.contents[resource_index] > 0
                 {
-                    Game.player.held.value.contents[resource_index] -= 1;
+                    external_inventory.value.contents[resource_index] -= 1;
                     Game.player.pockets[resource_index] += 1;
                 }
             }
         }
-    }
-    else
-    {
-        
     }
 
 
