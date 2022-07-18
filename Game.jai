@@ -172,8 +172,8 @@ game_loop :: inline ()
             {
                 if !it.ai.has_goal && it.ai.goal_reset_timer <= 0.0
                 {
-                    x := random_get_within_range(-1000, 1000);
-                    y := random_get_within_range(-1000, 1000);
+                    x := random_get_within_range(it.position.x - 200, it.position.x + 200);
+                    y := random_get_within_range(-it.position.y - 200, it.position.y + 200);
                     check_collision := true;
                     while check_collision
                     {
@@ -186,8 +186,8 @@ game_loop :: inline ()
                             y < it.position.y + it.size
                             {
                                 // try again with new position
-                                x = random_get_within_range(-1000, 1000);
-                                y = random_get_within_range(-1000, 1000);
+                                x = random_get_within_range(it.position.x - 200, it.position.x + 200);
+                                y = random_get_within_range(-it.position.y - 200, it.position.y + 200);
                                 collided = true;
                                 break;
                             }
@@ -205,9 +205,10 @@ game_loop :: inline ()
                     it.velocity = unit_vector(direction) * it.speed;
                     if length(it.velocity) != 0 then it.forward = unit_vector(it.velocity);
 
-                    if length(direction) < 100
+                    if length(direction) < 1.0
                     {
                         it.ai.has_goal = false;
+                        // goal reached, reset timer
                         if it.ai.goal_reset_duration <= 0.0
                         {
                             it.ai.goal_reset_duration = random_get_within_range(3.0, 7.5); 
@@ -218,6 +219,8 @@ game_loop :: inline ()
                 else // goal_reset_timer > 0.0
                 {
                     it.ai.goal_reset_timer -= dt;
+                    it.velocity = .{};
+                    it.ai.has_goal = false;
                 }
 
                 // interrupt goal and turn towards the player when they get close
@@ -226,9 +229,6 @@ game_loop :: inline ()
                 {
                     it.forward = unit_vector(npc_to_player);
                     it.velocity = .{};
-                    it.ai.goal_reset_duration = 0.0;
-                    it.ai.goal_reset_timer = 0.0;
-                    it.ai.has_goal = false;
                 }
 
                 it.position += it.velocity;
@@ -430,7 +430,7 @@ game_reset :: ()
         {
             have = random_get() % xx (enum_highest_value(Resource_ID) + 1);
         }
-        size := clamp(random_get(), 100, 300);
+        size := clamp(random_get(), 50, 100);
         
         r : Building;
         r.position = xy(x, y);
@@ -465,7 +465,7 @@ game_reset :: ()
     array_add(*Game.buildings, chest_shop);
 
     // init npcs
-    for 1..20
+    for 1..1
     {
         npc: Npc;
         x := random_get_within_range(-1000, 1000);
@@ -492,7 +492,7 @@ game_reset :: ()
         }
         npc.position = xy(x, y);
         npc.color = BROWN;
-        npc.speed = 2.0;
+        npc.speed = 0.5;
         array_add(*Game.npcs, npc);
     }
 }
