@@ -6,18 +6,11 @@ Game: struct
 
     player: struct 
     {
-        position: Vector2 = .{200, 200};
-        forward: Vector2 = .{1, 0};
-        radius: int = 20;
-        color: Color = BLACK;
-        speed: float = 6.0;
+        using person: Person;
+
+        // @TODO: not a fan of this at all
         try_harvest := false;
         try_trade := false;
-
-        velocity: Vector2;
-
-        pockets : [] int;
-        held : Maybe(Item);
     }
 
     camera: struct
@@ -28,6 +21,7 @@ Game: struct
     resource_list: [..] Resource;
     buildings: [..] Building;
     items_on_ground: [..] Item;
+    npcs: [..] Person;
 }
 
 game_loop :: inline () 
@@ -248,6 +242,16 @@ game_loop :: inline ()
             }
         }
 
+        // npcs
+        for npcs
+        {
+            ss_npc := it.position + camera_vector;
+            DrawCircle(xx ss_npc.x, xx ss_npc.y, xx it.radius, it.color);
+            front := ss_npc + it.forward * cast(float) it.radius;
+            DrawLineEx(xx ss_npc, xx front, 2.0, WHITE);
+        }
+
+
         // player
         {
             ss_player := player.position + camera_vector;
@@ -390,6 +394,38 @@ game_reset :: ()
     chest_shop.item.id = .CHEST;
     chest_shop.item.capacity = 30;
     array_add(*Game.buildings, chest_shop);
+
+    // init npcs
+    for 1..20
+    {
+        p: Person;
+        x := random_get_within_range(-1000, 1000);
+        y := random_get_within_range(-1000, 1000);
+        check_collision := true;
+        while check_collision
+        {
+            collided := false;
+            for Game.buildings
+            {
+                if x > it.position.x &&
+                x < it.position.x + it.size &&
+                y > it.position.y && 
+                y < it.position.y + it.size
+                {
+                    // try again with new position
+                    x = random_get_within_range(-1000, 1000);
+                    y = random_get_within_range(-1000, 1000);
+                    collided = true;
+                    break;
+                }
+            }
+            if !collided then check_collision = false;
+        }
+        p.position.x = x;
+        p.position.y = y;
+        p.color = BROWN;
+        array_add(*Game.npcs, p);
+    }
 }
 
 // @TODO: handle negatives

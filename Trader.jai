@@ -27,3 +27,17 @@ Building :: struct
         }
     }
 }
+
+Person :: struct
+{
+    position: Vector2 = .{200, 200};
+    forward: Vector2 = .{1, 0};
+    radius: int = 20;
+    color: Color = BLACK;
+    speed: float = 6.0;
+
+    velocity: Vector2;
+
+    pockets : [] int;
+    held : Maybe(Item);
+}
