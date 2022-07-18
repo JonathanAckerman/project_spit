@@ -44,11 +44,38 @@ handle_input :: inline () {
     // drop item
     if IsKeyPressed(xx KeyboardKey.Y)
     {
+        // @TODO: not a fan of how game logic is also in this file
         if Game.player.held.exists
             Drop_Held_Item();
         else    
             Try_Pickup_Nearest_Item();
     }
+
+    // shifting resources around
+    if IsKeyPressed(xx KeyboardKey.ONE)
+    {
+        if Game.player.held.exists 
+        {
+            if Game.player.held.value.id == .BASKET
+            {
+                if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
+                {
+                    Game.player.held.value.contents[0] += 1;    
+                    Game.player.pockets[0] -= 1;
+                }
+                else
+                {
+                    Game.player.held.value.contents[0] -= 1;
+                    Game.player.pockets[0] += 1;
+                }
+            }
+        }
+        else
+        {
+            
+        }
+    }
+
 
     // debug
     if IsKeyPressed(xx KeyboardKey.BACKSLASH)

@@ -232,11 +232,30 @@ game_loop :: inline ()
         {
             for buildings
             {
-                Draw_Building(it, camera_vector);
+                DrawRectangleV(it.position + camera_vector, xy(xx it.size, xx it.size), BLACK);
+                ss_bldg := it.center + camera_vector;
+
+                if it.bldg_type == .TRADER
+                {
+                    want_color := get_resource_color(it.want);
+                    have_color := get_resource_color(it.have);
+                    DrawRectangleV((it.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
+                    DrawRectangleV((it.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
+                }
+                if it.bldg_type == .SHOP
+                {
+                    if it.item.id == .BASKET
+                        Draw_Item_Basket((it.center - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
+                    if it.item.id == .CHEST
+                        Draw_Item_Chest((it.center - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
+                }
             }
 
             nearest := get_closest_bldg();
-            Draw_Range_Circle(nearest, camera_vector);
+            ss_bldg := nearest.center + camera_vector;
+            interact_range := compute_interact_range(nearest);
+            if length(Game.player.position - nearest.center) < interact_range
+                DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
         }
 
         // items in world
@@ -317,17 +336,48 @@ game_reset :: ()
     random_seed(seed);
 
     //init resources
-    populate_resources();
+    for i: 1..20
+    {
+        x := random_get_within_range(-1000, 1000);
+        y := random_get_within_range(-1000, 1000);
+        id := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        quantity := max(random_get() % 20, 10);
+
+        r : Resource;
+        r.position = xy(x, y);
+        r.id = cast(Resource_ID) id;
+        r.quantity = xx quantity;
+
+        array_add(*Game.resource_list, r);
+    }
 
     //init player pockets
     array_resize(*Game.player.pockets, enum_highest_value(Resource_ID) + 1);
 
     //init traders
-    // @Note: I'm intentially making this inconsistent with populate_resources so I can compare style later
     num_traders := clamp(random_get(), 3, 5);
     for 1..num_traders
     {
-        populate_traders();
+        // @TODO: check for overlapping
+        x := random_get_within_range(-1000, 1000);
+        y := random_get_within_range(-1000, 1000);
+        want := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        have := want;
+        while have == want
+        {
+            have = random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        }
+        size := clamp(random_get(), 100, 300);
+        
+        r : Building;
+        r.position = xy(x, y);
+        r.size = xx size;
+        r.center = r.position + xy(r.size/2.0, r.size/2.0); 
+        r.bldg_type = .TRADER;
+        r.want = cast(Resource_ID) want;
+        r.have = cast(Resource_ID) have;
+
+        array_add(*Game.buildings, r);
     }
 
     basket_shop : Building;
@@ -367,75 +417,11 @@ map_get_coords :: () -> Vector2
     return coord / 100;
 }
 
-populate_traders :: ()
-{
-    // @TODO: check for overlapping
-    x := random_get_within_range(-1000, 1000);
-    y := random_get_within_range(-1000, 1000);
-    want := random_get() % xx (enum_highest_value(Resource_ID) + 1);
-    have := want;
-    while have == want
-    {
-        have = random_get() % xx (enum_highest_value(Resource_ID) + 1);
-    }
-    size := clamp(random_get(), 100, 300);
-    
-    
-    r : Building;
-    r.position = xy(x, y);
-    r.size = xx size;
-    r.center = r.position + xy(r.size/2.0, r.size/2.0); 
-    r.bldg_type = .TRADER;
-    r.want = cast(Resource_ID) want;
-    r.have = cast(Resource_ID) have;
-
-    array_add(*Game.buildings, r);
-}
-
-populate_resources :: ()
-{
-    for i: 1..20
-    {
-        x := random_get_within_range(-1000, 1000);
-        y := random_get_within_range(-1000, 1000);
-        id := random_get() % xx (enum_highest_value(Resource_ID) + 1);
-        quantity := max(random_get() % 20, 10);
-
-        r : Resource;
-        r.position = xy(x, y);
-        r.id = cast(Resource_ID) id;
-        r.quantity = xx quantity;
-
-        array_add(*Game.resource_list, r);
-    }
-}
-
 compute_interact_range :: (b: Building) -> float
 {
     bldg_half_width := b.size/2.0;
     bldg_center_to_corner_length := sqrt(2 * (bldg_half_width * bldg_half_width));
     return bldg_center_to_corner_length + Game.player.radius + 10.0;
-}
-
-Draw_Building :: (b: Building, camera_vector: Vector2)
-{
-    DrawRectangleV(b.position + camera_vector, xy(xx b.size, xx b.size), BLACK);
-    ss_bldg := b.center + camera_vector;
-
-    if b.bldg_type == .TRADER
-    {
-        want_color := get_resource_color(b.want);
-        have_color := get_resource_color(b.have);
-        DrawRectangleV((b.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
-        DrawRectangleV((b.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
-    }
-    if b.bldg_type == .SHOP
-    {
-        if b.item.id == .BASKET
-            Draw_Item_Basket((b.center - xy(b.size/8.0, b.size/8.0)) + camera_vector, b.size/4.0);
-        if b.item.id == .CHEST
-            Draw_Item_Chest((b.center - xy(b.size/8.0, b.size/8.0)) + camera_vector, b.size/4.0);
-    }
 }
 
 get_closest_bldg :: () -> *Building
@@ -455,12 +441,31 @@ get_closest_bldg :: () -> *Building
     return *buildings[closest_index];
 }
 
-Draw_Range_Circle :: (b: *Building, camera_vector: Vector2)
+get_closest_item_in_range :: (range: float) -> Maybe(Item), int
 {
-    ss_bldg := b.center + camera_vector;
-    interact_range := compute_interact_range(b);
-    if length(Game.player.position - b.center) < interact_range
-        DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
+    using Game;
+    result: Maybe(Item);
+    
+    if items_on_ground.count <= 0 return result, -1;
+
+    min_dist :=  length(player.position - items_on_ground[0].position);
+    closest_index := 0;
+    for items_on_ground
+    {
+        dist := length(player.position - it.position);
+        if dist < min_dist
+        {
+            min_dist = dist;
+            closest_index = it_index;
+        }
+    }
+
+    if min_dist < range
+    {
+        result.exists = true;
+        result.value = items_on_ground[closest_index];
+    }
+    return result, closest_index;
 }
 
 Drop_Held_Item :: ()
@@ -475,16 +480,12 @@ Drop_Held_Item :: ()
 Try_Pickup_Nearest_Item :: ()
 {
     using Game;
-    for items_on_ground
+    closest_item, index := get_closest_item_in_range(50);
+    if closest_item.exists
     {
-        dist := length(player.position - it.position);
-        if dist < 50
-        {
-            held: Maybe(Item);
-            held.exists = true;
-            held.value = it;
-            player.held = held;
-            remove it;
-        }
+        player.held = closest_item;
+        last := items_on_ground[items_on_ground.count - 1];
+        items_on_ground[index] = last;
+        pop(*items_on_ground);
     }
 }
