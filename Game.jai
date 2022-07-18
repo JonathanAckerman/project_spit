@@ -132,23 +132,10 @@ game_loop :: inline ()
         buy_from_nearest_shop :: ()
         {
             using Game;
-            // get nearest shop
-            closest_index := 0;
-            min_dist := length(buildings[0].center - player.position);
-            for buildings if it.bldg_type == .SHOP
-            {
-                dist := length(it.center - player.position);
-                if dist < min_dist
-                {
-                    min_dist = dist;
-                    closest_index = it_index;
-                } 
-            }
-            nearest_shop := buildings[closest_index];
-
+            nearest_shop, dist := get_closest_bldg_to_player(.SHOP);;
             // check shop range
             shop_range := compute_interact_range(nearest_shop);
-            if min_dist < shop_range
+            if dist < shop_range
             {
                 total_resources := Get_Total_Resources_On_Person();
                 if total_resources[nearest_shop.resource] >= nearest_shop.amount && !player.held.exists
