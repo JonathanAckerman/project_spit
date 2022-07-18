@@ -21,7 +21,7 @@ Game: struct
     resource_list: [..] Resource;
     buildings: [..] Building;
     items_on_ground: [..] Item;
-    npcs: [..] Person;
+    npcs: [..] Npc;
 }
 
 game_loop :: inline () 
@@ -165,6 +165,75 @@ game_loop :: inline ()
             }
         }
         if player.try_trade then buy_from_nearest_shop();
+
+        // npc ai
+        {
+            for *npcs
+            {
+                if !it.ai.has_goal && it.ai.goal_reset_timer <= 0.0
+                {
+                    x := random_get_within_range(-1000, 1000);
+                    y := random_get_within_range(-1000, 1000);
+                    check_collision := true;
+                    while check_collision
+                    {
+                        collided := false;
+                        for Game.buildings
+                        {
+                            if x > it.position.x &&
+                            x < it.position.x + it.size &&
+                            y > it.position.y && 
+                            y < it.position.y + it.size
+                            {
+                                // try again with new position
+                                x = random_get_within_range(-1000, 1000);
+                                y = random_get_within_range(-1000, 1000);
+                                collided = true;
+                                break;
+                            }
+                        }
+                        if !collided then check_collision = false;
+                    }
+                    it.ai.goal_position = xy(x, y);
+                    it.ai.goal_reset_timer = 0.0;
+                    it.ai.goal_reset_duration = 0.0;
+                    it.ai.has_goal = true;
+                }
+                else if it.ai.has_goal
+                {
+                    direction := it.ai.goal_position - it.position;
+                    it.velocity = unit_vector(direction) * it.speed;
+                    if length(it.velocity) != 0 then it.forward = unit_vector(it.velocity);
+
+                    if length(direction) < 100
+                    {
+                        it.ai.has_goal = false;
+                        if it.ai.goal_reset_duration <= 0.0
+                        {
+                            it.ai.goal_reset_duration = random_get_within_range(3.0, 7.5); 
+                            it.ai.goal_reset_timer = it.ai.goal_reset_duration;
+                        }
+                    }
+                }
+                else // goal_reset_timer > 0.0
+                {
+                    it.ai.goal_reset_timer -= dt;
+                }
+
+                // interrupt goal and turn towards the player when they get close
+                npc_to_player := player.position - it.position; 
+                if length(npc_to_player) < 150
+                {
+                    it.forward = unit_vector(npc_to_player);
+                    it.velocity = .{};
+                    it.ai.goal_reset_duration = 0.0;
+                    it.ai.goal_reset_timer = 0.0;
+                    it.ai.has_goal = false;
+                }
+
+                it.position += it.velocity;
+            }
+        }
     }
 
     // Draw
@@ -398,7 +467,7 @@ game_reset :: ()
     // init npcs
     for 1..20
     {
-        p: Person;
+        npc: Npc;
         x := random_get_within_range(-1000, 1000);
         y := random_get_within_range(-1000, 1000);
         check_collision := true;
@@ -421,10 +490,10 @@ game_reset :: ()
             }
             if !collided then check_collision = false;
         }
-        p.position.x = x;
-        p.position.y = y;
-        p.color = BROWN;
-        array_add(*Game.npcs, p);
+        npc.position = xy(x, y);
+        npc.color = BROWN;
+        npc.speed = 2.0;
+        array_add(*Game.npcs, npc);
     }
 }
 

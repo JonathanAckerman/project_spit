@@ -41,3 +41,16 @@ Person :: struct
     pockets : [] int;
     held : Maybe(Item);
 }
+
+Npc :: struct
+{
+    using person: Person;
+    
+    ai: struct
+    {
+        goal_position: Vector2;
+        has_goal := false;
+        goal_reset_timer: float;
+        goal_reset_duration: float;
+    }
+}
