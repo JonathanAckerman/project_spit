@@ -287,6 +287,20 @@ game_loop :: inline ()
                     Draw_Item_Chest(xy(xpos + 20.0, WINDOW_HEIGHT - 55), 20.0);
                     xpos += 80.0;
             }
+
+            // nearby inventory
+            closest_inventory := get_closest_item_in_range(50);
+            if closest_inventory.exists
+            {
+                drawpos := closest_inventory.value.position + camera_vector + .{30, -10};
+                DrawText(to_c_string(tprint("%", closest_inventory.value.id)), xx drawpos.x, xx (drawpos.y - 100), 20, BLACK);
+                for r, r_index: closest_inventory.value.contents
+                {
+                    line := tprint("%: %", resource_names[r_index], r);
+                    DrawText(to_c_string(line), xx drawpos.x, xx drawpos.y, 20, BLACK);
+                    drawpos.y -= 20;
+                }
+            }
         }
 
         // debug
