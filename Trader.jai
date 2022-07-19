@@ -50,6 +50,10 @@ Npc :: struct
     
     ai: struct
     {
+        is_speaking := false; // make this a state enum?
+        speak_duration := 4.0;
+        speak_timer := 0.0;
+        
         goal_position: Vector2;
         has_goal := false;
         goal_reset_timer: float;

@@ -166,6 +166,16 @@ game_loop :: inline ()
         }
         if player.try_trade then buy_from_nearest_shop();
 
+        if player.try_trade
+        {
+            nearest, dist := get_nearest_npc_to_player();
+            if dist <= 150
+            {
+                nearest.ai.is_speaking = true;
+                nearest.ai.speak_timer = nearest.ai.speak_duration;
+            }
+        }
+
         // npc ai
         {
             for *npcs
@@ -229,9 +239,21 @@ game_loop :: inline ()
                 {
                     it.forward = unit_vector(npc_to_player);
                     it.velocity = .{};
+
+                    // only draw text when player is close enough
+                    if it.ai.is_speaking
+                    {
+                        pos := it.position + camera_vector;
+                        if it.ai.speak_timer > 0.0
+                        {
+                            it.ai.speak_timer -= dt;
+                            DrawText("HI", xx (pos.x + 30), xx (pos.y - 10), 20, BLACK);
+                        }
+                    }
                 }
 
                 it.position += it.velocity;
+
             }
         }
     }
@@ -603,6 +625,23 @@ get_closest_bldg_to_player :: (type: Building.Bldg_Type) -> *Building, float
         }
     }
     return *buildings[closest_index], min_dist;
+}
+
+get_nearest_npc_to_player :: () -> *Npc, float
+{
+    using Game;
+    closest_index := 0;
+    min_dist := length(npcs[0].position - player.position);
+    for npcs
+    {
+        dist := length(it.position - player.position);
+        if dist < min_dist
+        {
+            min_dist = dist;
+            closest_index = it_index;
+        }
+    }
+    return *npcs[closest_index], min_dist;
 }
 
 get_closest_item_in_range :: (range: float) -> Maybe(Item), int
