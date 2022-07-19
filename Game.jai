@@ -41,12 +41,13 @@ game_loop :: inline ()
         {
             for buildings
             {
-                if player.position.x + player.radius > it.position.x &&
-                player.position.x - player.radius < it.position.x + it.size &&
-                player.position.y + player.radius > it.position.y &&
-                player.position.y - player.radius < it.position.y + it.size
+                //@@@
+                if player.position.x + player.radius > it.position.x - it.size/2 &&
+                player.position.x - player.radius < it.position.x + it.size/2 &&
+                player.position.y + player.radius > it.position.y - it.size/2 &&
+                player.position.y - player.radius < it.position.y + it.size/2
                 {
-                    player.position += unit_vector(player.position - it.center) * length(player.velocity);
+                    player.position += unit_vector(player.position - it.position) * length(player.velocity);
                 }
             }
         }
@@ -178,82 +179,80 @@ game_loop :: inline ()
 
         // npc ai
         {
-            for *npcs
+            for* npc: npcs
             {
-                if !it.ai.has_goal && it.ai.goal_reset_timer <= 0.0
+                if !npc.ai.has_goal && npc.ai.goal_reset_timer <= 0.0
                 {
-                    x := random_get_within_range(it.position.x - 200, it.position.x + 200);
-                    y := random_get_within_range(-it.position.y - 200, it.position.y + 200);
+                    x := random_get_within_range(npc.position.x - 200, npc.position.x + 200);
+                    y := random_get_within_range(-npc.position.y - 200, npc.position.y + 200);
                     check_collision := true;
                     while check_collision
                     {
                         collided := false;
-                        for Game.buildings
+                        for bldg: Game.buildings
                         {
-                            if x > it.position.x &&
-                            x < it.position.x + it.size &&
-                            y > it.position.y && 
-                            y < it.position.y + it.size
+                            if x > bldg.position.x - bldg.size/2 &&
+                            x < bldg.position.x + bldg.size/2 &&
+                            y > bldg.position.y - bldg.size/2 && 
+                            y < bldg.position.y + bldg.size/2
                             {
                                 // try again with new position
-                                x = random_get_within_range(it.position.x - 200, it.position.x + 200);
-                                y = random_get_within_range(-it.position.y - 200, it.position.y + 200);
+                                x = random_get_within_range(npc.position.x - 200, npc.position.x + 200);
+                                y = random_get_within_range(-npc.position.y - 200, npc.position.y + 200);
                                 collided = true;
                                 break;
                             }
                         }
                         if !collided then check_collision = false;
                     }
-                    it.ai.goal_position = xy(x, y);
-                    it.ai.goal_reset_timer = 0.0;
-                    it.ai.goal_reset_duration = 0.0;
-                    it.ai.has_goal = true;
+                    npc.ai.goal_position = xy(x, y);
+                    npc.ai.goal_reset_timer = 0.0;
+                    npc.ai.goal_reset_duration = 0.0;
+                    npc.ai.has_goal = true;
                 }
-                else if it.ai.has_goal
+                else if npc.ai.has_goal
                 {
-                    direction := it.ai.goal_position - it.position;
-                    it.velocity = unit_vector(direction) * it.speed;
-                    if length(it.velocity) != 0 then it.forward = unit_vector(it.velocity);
+                    direction := npc.ai.goal_position - npc.position;
+                    npc.velocity = unit_vector(direction) * npc.speed;
+                    if length(npc.velocity) != 0 then npc.forward = unit_vector(npc.velocity);
 
                     if length(direction) < 1.0
                     {
-                        it.ai.has_goal = false;
+                        npc.ai.has_goal = false;
                         // goal reached, reset timer
-                        if it.ai.goal_reset_duration <= 0.0
+                        if npc.ai.goal_reset_duration <= 0.0
                         {
-                            it.ai.goal_reset_duration = random_get_within_range(3.0, 7.5); 
-                            it.ai.goal_reset_timer = it.ai.goal_reset_duration;
+                            npc.ai.goal_reset_duration = random_get_within_range(3.0, 7.5); 
+                            npc.ai.goal_reset_timer = npc.ai.goal_reset_duration;
                         }
                     }
                 }
                 else // goal_reset_timer > 0.0
                 {
-                    it.ai.goal_reset_timer -= dt;
-                    it.velocity = .{};
-                    it.ai.has_goal = false;
+                    npc.ai.goal_reset_timer -= dt;
+                    npc.velocity = .{};
+                    npc.ai.has_goal = false;
                 }
 
                 // interrupt goal and turn towards the player when they get close
-                npc_to_player := player.position - it.position; 
+                npc_to_player := player.position - npc.position; 
                 if length(npc_to_player) < 150
                 {
-                    it.forward = unit_vector(npc_to_player);
-                    it.velocity = .{};
+                    npc.forward = unit_vector(npc_to_player);
+                    npc.velocity = .{};
 
                     // only draw text when player is close enough
-                    if it.ai.is_speaking
+                    if npc.ai.is_speaking
                     {
-                        pos := it.position + camera_vector;
-                        if it.ai.speak_timer > 0.0
+                        pos := npc.position + camera_vector;
+                        if npc.ai.speak_timer > 0.0
                         {
-                            it.ai.speak_timer -= dt;
+                            npc.ai.speak_timer -= dt;
                             DrawText("HI", xx (pos.x + 30), xx (pos.y - 10), 20, BLACK);
                         }
                     }
                 }
-
-                it.position += it.velocity;
-
+                npc.position += npc.velocity;
             }
         }
     }
@@ -293,27 +292,27 @@ game_loop :: inline ()
         {
             for buildings
             {
-                DrawRectangleV(it.position + camera_vector, xy(xx it.size, xx it.size), BLACK);
-                ss_bldg := it.center + camera_vector;
+                drawpos := it.position - xy(it.size/2.0, it.size/2.0);
+                DrawRectangleV(drawpos + camera_vector, xy(xx it.size, xx it.size), BLACK);
 
                 if it.bldg_type == .TRADER
                 {
                     want_color := get_resource_color(it.want);
                     have_color := get_resource_color(it.have);
-                    DrawRectangleV((it.center - .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, want_color);
-                    DrawRectangleV((it.center + .{15.0, 0.0}) + camera_vector, .{15.0, 15.0}, have_color);
+                    DrawRectangleV((it.position - .{16, 8}) + camera_vector, .{16, 16}, want_color);
+                    DrawRectangleV((it.position + .{16, 8}) + camera_vector, .{16, 16}, have_color);
                 }
                 if it.bldg_type == .SHOP
                 {
                     if it.item.id == .BASKET
-                        Draw_Item_Basket((it.center - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
+                        Draw_Item_Basket((it.position - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
                     if it.item.id == .CHEST
-                        Draw_Item_Chest((it.center - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
+                        Draw_Item_Chest((it.position - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
                 }
             }
 
             nearest, dist := get_closest_bldg_to_player();
-            ss_bldg := nearest.center + camera_vector;
+            ss_bldg := nearest.position + camera_vector;
             interact_range := compute_interact_range(nearest);
             if dist < interact_range
                 DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
@@ -330,9 +329,9 @@ game_loop :: inline ()
                     case .CHEST;
                         Draw_Item_Chest(it.position + camera_vector, 20.0);
                     case .TOOL_BELT;
-                        DrawRectangleV(it.position + camera_vector, it.size, GREEN);
+                        DrawRectangleV(it.position - xy(it.size.x/2.0, it.size.y/2.0) + camera_vector, it.size, GREEN);
                     case .WEAPON_BELT;
-                        DrawRectangleV(it.position + camera_vector, it.size, RED);
+                        DrawRectangleV(it.position - xy(it.size.x/2.0, it.size.y/2.0) + camera_vector, it.size, RED);
                 }
             }
         }
@@ -388,28 +387,29 @@ game_loop :: inline ()
             }
             // tool belt
             xpos = 90;
-            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
+            // DrawLineEx(.{WINDOW_WIDTH/2.0, 0},.{WINDOW_WIDTH/2.0, WINDOW_HEIGHT},1.0,PINK);
+            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
             if player.tool_belt.exists
             {
-                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), GREEN);
+                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), GREEN); //draw ui representation
 
-                xpos = WINDOW_WIDTH/2 - 330;
-                for i: 1..player.tool_belt.value.capacity
+                xpos = WINDOW_WIDTH/2 - 230;
+                for i: 0..player.tool_belt.value.capacity - 1
                 {
-                    DrawRectangleLines(xx (xpos + i * 80), WINDOW_HEIGHT - 80, 60, 60, BLACK);
-                }
-                xpos += 270;
-                for i: 1..player.weapon_belt.value.capacity
-                {
-                    DrawRectangleLines(xx (xpos + i * 80), WINDOW_HEIGHT - 80, 60, 60, BLACK);
+                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK);
                 }
             }
             // weapon belt
             xpos = 160;
-            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
+            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
             if player.weapon_belt.exists
             {
-                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), RED);
+                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), RED); //draw ui representation
+                xpos = WINDOW_WIDTH/2 + 30;
+                for i: 0..player.weapon_belt.value.capacity - 1
+                {
+                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK);
+                }
             }
 
             // nearby inventory
@@ -490,7 +490,6 @@ game_reset :: ()
         r : Building;
         r.position = xy(x, y);
         r.size = xx size;
-        r.center = r.position + xy(r.size/2.0, r.size/2.0); 
         r.bldg_type = .TRADER;
         r.want = cast(Resource_ID) want;
         r.have = cast(Resource_ID) have;
@@ -501,7 +500,6 @@ game_reset :: ()
     // init shops
     basket_shop : Building;
     basket_shop.position = xy(-1100, -1100);
-    basket_shop.center = xy(-1075, -1075);
     basket_shop.size = 50;
     basket_shop.bldg_type = .SHOP;
     basket_shop.resource = .FIBER;
@@ -511,7 +509,6 @@ game_reset :: ()
     array_add(*Game.buildings, basket_shop);
     chest_shop : Building;
     chest_shop.position = xy(-900, -1100);
-    chest_shop.center = xy(-875, -1075);
     chest_shop.size = 50;
     chest_shop.bldg_type = .SHOP;
     chest_shop.resource = .WOOD;
@@ -597,10 +594,10 @@ get_closest_bldg_to_player :: () -> *Building, float
 {
     using Game;
     closest_index := 0;
-    min_dist := length(buildings[0].center - player.position);
+    min_dist := length(buildings[0].position - player.position);
     for buildings
     {
-        dist := length(it.center - player.position);
+        dist := length(it.position - player.position);
         if dist < min_dist
         {
             min_dist = dist;
@@ -614,10 +611,10 @@ get_closest_bldg_to_player :: (type: Building.Bldg_Type) -> *Building, float
 {
     using Game;
     closest_index := 0;
-    min_dist := length(buildings[0].center - player.position);
+    min_dist := length(buildings[0].position - player.position);
     for buildings if it.bldg_type == type
     {
-        dist := length(it.center - player.position);
+        dist := length(it.position - player.position);
         if dist < min_dist
         {
             min_dist = dist;
@@ -651,11 +648,11 @@ get_closest_item_in_range :: (range: float) -> Maybe(Item), int
     
     if items_on_ground.count <= 0 return result, -1;
 
-    min_dist :=  length(player.position - (items_on_ground[0].position + items_on_ground[0].size/2));
+    min_dist :=  length(player.position - items_on_ground[0].position);
     closest_index := 0;
     for items_on_ground
     {
-        dist := length(player.position - (it.position + it.size/2));
+        dist := length(player.position - it.position);
         if dist < min_dist
         {
             min_dist = dist;
