@@ -35,16 +35,32 @@ get_resource_color :: (r: Resource_ID) -> Color
 Item :: struct
 {
     position: Vector2;
+    size: Vector2;
     id: Item_ID;
     capacity: int;
     count: int;
-    contents: [] int;
+    contents: [] int; // if this is to be either an inventory for resources or items then it needs to change
+                      // basically I need to lay out the distinction between an "inventory" and an "item"
 }
 
 Item_ID :: enum
 {
     BASKET;
     CHEST;
+    TOOL_BELT;
+    WEAPON_BELT;
+}
+
+Tool_ID :: enum
+{
+    CARPENTERS_HAMMER;
+    AXE;
+}
+
+Weapon_ID :: enum
+{
+    SWORD;
+    WHIP;
 }
 
 Draw_Item_Basket :: (pos: Vector2, size: float)

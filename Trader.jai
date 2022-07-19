@@ -38,8 +38,10 @@ Person :: struct
 
     velocity: Vector2;
 
-    pockets : [] int;
-    held : Maybe(Item);
+    pockets: [] int;
+    held: Maybe(Item);
+    tool_belt: Maybe(Item);
+    weapon_belt: Maybe(Item);
 }
 
 Npc :: struct

@@ -299,14 +299,18 @@ game_loop :: inline ()
 
         // items in world
         {
-            for items_on_ground 
+            for items_on_ground
             {
-                if it.id ==
+                if #complete it.id ==
                 {
                     case .BASKET;
                         Draw_Item_Basket(it.position + camera_vector, 20.0);
                     case .CHEST;
                         Draw_Item_Chest(it.position + camera_vector, 20.0);
+                    case .TOOL_BELT;
+                        DrawRectangleV(it.position + camera_vector, it.size, GREEN);
+                    case .WEAPON_BELT;
+                        DrawRectangleV(it.position + camera_vector, it.size, RED);
                 }
             }
         }
@@ -343,7 +347,7 @@ game_loop :: inline ()
 
             // held
             xpos := 20.0;
-            DrawText(xx "Held Item:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
+            DrawText(xx "Held:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
             if player.held.exists if player.held.value.id ==
             {
@@ -360,13 +364,42 @@ game_loop :: inline ()
                     Draw_Item_Chest(xy(xpos + 20.0, WINDOW_HEIGHT - 55), 20.0);
                     xpos += 80.0;
             }
+            // tool belt
+            xpos = 90;
+            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
+            if player.tool_belt.exists
+            {
+                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), GREEN);
+
+                xpos = WINDOW_WIDTH/2 - 330;
+                for i: 1..player.tool_belt.value.capacity
+                {
+                    DrawRectangleLines(xx (xpos + i * 80), WINDOW_HEIGHT - 80, 60, 60, BLACK);
+                }
+                xpos += 270;
+                for i: 1..player.weapon_belt.value.capacity
+                {
+                    DrawRectangleLines(xx (xpos + i * 80), WINDOW_HEIGHT - 80, 60, 60, BLACK);
+                }
+            }
+            // weapon belt
+            xpos = 160;
+            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
+            if player.weapon_belt.exists
+            {
+                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), RED);
+            }
 
             // nearby inventory
             closest_inventory := get_closest_item_in_range(50);
             if closest_inventory.exists
             {
-                drawpos := closest_inventory.value.position + camera_vector + .{30, -10};
-                DrawText(to_c_string(tprint("%", closest_inventory.value.id)), xx drawpos.x, xx (drawpos.y - 100), 20, BLACK);
+                drawpos := closest_inventory.value.position + camera_vector;
+                if closest_inventory.value.id != .TOOL_BELT && closest_inventory.value.id != .WEAPON_BELT
+                    drawpos += .{30, -110};
+                DrawText(to_c_string(tprint("%", closest_inventory.value.id)), xx drawpos.x, xx drawpos.y, 20, BLACK);
+                if closest_inventory.value.id != .TOOL_BELT && closest_inventory.value.id != .WEAPON_BELT
+                    drawpos += .{0, 100};
                 for r, r_index: closest_inventory.value.contents
                 {
                     line := tprint("%: %", resource_names[r_index], r);
@@ -443,6 +476,7 @@ game_reset :: ()
         array_add(*Game.buildings, r);
     }
 
+    // init shops
     basket_shop : Building;
     basket_shop.position = xy(-1100, -1100);
     basket_shop.center = xy(-1075, -1075);
@@ -494,6 +528,24 @@ game_reset :: ()
         npc.color = BROWN;
         npc.speed = 0.5;
         array_add(*Game.npcs, npc);
+    }
+
+    // init items on ground
+    {
+        toolbelt: Item;
+        toolbelt.position = Game.player.position + .{0, -100};
+        toolbelt.size = .{60, 15};
+        toolbelt.id = .TOOL_BELT;
+        toolbelt.capacity = 3;
+        array_add(*Game.items_on_ground, toolbelt);
+        
+        weaponbelt: Item;
+        weaponbelt.position = Game.player.position + .{0, -200};
+        weaponbelt.size = .{60, 15};
+        weaponbelt.id = .WEAPON_BELT;
+        weaponbelt.capacity = 3;
+        array_add(*Game.items_on_ground, weaponbelt);
+        print("%\n", Game.items_on_ground);
     }
 }
 
@@ -560,11 +612,11 @@ get_closest_item_in_range :: (range: float) -> Maybe(Item), int
     
     if items_on_ground.count <= 0 return result, -1;
 
-    min_dist :=  length(player.position - items_on_ground[0].position);
+    min_dist :=  length(player.position - (items_on_ground[0].position + items_on_ground[0].size/2));
     closest_index := 0;
     for items_on_ground
     {
-        dist := length(player.position - it.position);
+        dist := length(player.position - (it.position + it.size/2));
         if dist < min_dist
         {
             min_dist = dist;
@@ -595,7 +647,15 @@ Try_Pickup_Nearest_Item :: ()
     closest_item, index := get_closest_item_in_range(50);
     if closest_item.exists
     {
-        player.held = closest_item;
+        if closest_item.value.id ==
+        {
+            case .TOOL_BELT;
+                player.tool_belt = closest_item;
+            case .WEAPON_BELT;
+                player.weapon_belt = closest_item;
+            case;
+                player.held = closest_item;
+        }
         last := items_on_ground[items_on_ground.count - 1];
         items_on_ground[index] = last;
         pop(*items_on_ground);
