@@ -521,7 +521,7 @@ game_reset :: ()
     array_add(*Game.buildings, chest_shop);
 
     // init npcs
-    for 1..1
+    for 1..7
     {
         npc: Npc;
         x := random_get_within_range(-1000, 1000);
