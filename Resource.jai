@@ -32,15 +32,18 @@ get_resource_color :: (r: Resource_ID) -> Color
     }
 }
 
-Item :: struct
+Item :: struct(T: Type = Any)
 {
     position: Vector2;
     size: Vector2;
     id: Item_ID;
-    capacity: int;
-    count: int;
-    contents: [] int; // if this is to be either an inventory for resources or items then it needs to change
-                      // basically I need to lay out the distinction between an "inventory" and an "item"
+
+    using inventory: struct
+    {
+        capacity: int;
+        count: int;
+        contents: [] T;
+    }
 }
 
 Item_ID :: enum
@@ -49,16 +52,8 @@ Item_ID :: enum
     CHEST;
     TOOL_BELT;
     WEAPON_BELT;
-}
-
-Tool_ID :: enum
-{
     CARPENTERS_HAMMER;
-    AXE;
-}
-
-Weapon_ID :: enum
-{
+    LUMBER_AXE;
     SWORD;
     WHIP;
 }
@@ -75,6 +70,16 @@ Draw_Item_Chest :: (pos: Vector2, size: float)
     DrawCircleV(pos + xy(size/2.0, 0), size/2.0, DARKGREEN);
 }
 
+Draw_Item :: (pos: Vector2, item: Item)
+{
+    // print("%\n", pos);
+    if item.id ==
+    {
+        case .LUMBER_AXE;
+            DrawCircleV(pos, item.size.x, GRAY);
+    }
+}
+
 Get_Total_Resources_On_Person :: () -> [] int
 {
     using Game;
@@ -86,7 +91,7 @@ Get_Total_Resources_On_Person :: () -> [] int
     }
     if player.held.exists
     {
-        for player.held.value.contents
+        for cast([] int) player.held.value.contents
         {
             resource_totals[it_index] += it;
         }

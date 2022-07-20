@@ -75,19 +75,20 @@ handle_input :: inline () {
 
         if external_inventory.exists && resource_index != -1
         {
+
             if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
             {
                 if Game.player.pockets[resource_index] > 0
                 {
-                    external_inventory.value.contents[resource_index] += 1;    
+                    (cast([] int) external_inventory.value.contents)[resource_index] += 1;    
                     Game.player.pockets[resource_index] -= 1;
                 }
             }
             else
             {
-                if Game.player.held.value.contents[resource_index] > 0
+                if (cast([] int) Game.player.held.value.contents)[resource_index] > 0
                 {
-                    external_inventory.value.contents[resource_index] -= 1;
+                    (cast([] int) external_inventory.value.contents)[resource_index] -= 1;
                     Game.player.pockets[resource_index] += 1;
                 }
             }

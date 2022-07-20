@@ -88,7 +88,7 @@ game_loop :: inline ()
                             then player.held.value.capacity - player.held.value.count
                             else resource.quantity;
                         player.held.value.count += amount;
-                        player.held.value.contents[cast(int) resource.id] += amount;
+                        (cast([] int)player.held.value.contents)[cast(int) resource.id] += amount;
                         array_unordered_remove_by_index(*resource_list, closest_index);
                         has_harvested = true;
                     }
@@ -127,7 +127,7 @@ game_loop :: inline ()
         buy_from_nearest_shop :: ()
         {
             using Game;
-            nearest_shop, dist := get_closest_bldg_to_player(.SHOP);;
+            nearest_shop, dist := get_closest_bldg_to_player(.SHOP);
             // check shop range
             shop_range := compute_interact_range(nearest_shop);
             if dist < shop_range
@@ -141,7 +141,7 @@ game_loop :: inline ()
                     if possible_deficit < 0
                     {
                         player.pockets[nearest_shop.resource] = 0;
-                        player.held.value.contents[nearest_shop.resource] -= possible_deficit;
+                        (cast([] int) player.held.value.contents)[nearest_shop.resource] -= possible_deficit;
                     }
 
                     // receive the item
@@ -322,7 +322,7 @@ game_loop :: inline ()
         {
             for items_on_ground
             {
-                if #complete it.id ==
+                if it.id ==
                 {
                     case .BASKET;
                         Draw_Item_Basket(it.position + camera_vector, 20.0);
@@ -332,6 +332,8 @@ game_loop :: inline ()
                         DrawRectangleV(it.position - xy(it.size.x/2.0, it.size.y/2.0) + camera_vector, it.size, GREEN);
                     case .WEAPON_BELT;
                         DrawRectangleV(it.position - xy(it.size.x/2.0, it.size.y/2.0) + camera_vector, it.size, RED);
+                    case .LUMBER_AXE;
+                        DrawCircleV(it.position + camera_vector, it.size.x, GRAY);
                 }
             }
         }
@@ -374,7 +376,7 @@ game_loop :: inline ()
             {
                 case .BASKET;
                     Draw_Item_Basket(xy(xpos + 20.0, WINDOW_HEIGHT - 65), 20.0);
-                    for r, r_index: player.held.value.contents
+                    for r, r_index: cast([] int) player.held.value.contents
                     {
                         y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
                         line := tprint("%: %", resource_names[r_index], r);
@@ -387,7 +389,6 @@ game_loop :: inline ()
             }
             // tool belt
             xpos = 90;
-            // DrawLineEx(.{WINDOW_WIDTH/2.0, 0},.{WINDOW_WIDTH/2.0, WINDOW_HEIGHT},1.0,PINK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
             if player.tool_belt.exists
             {
@@ -396,7 +397,12 @@ game_loop :: inline ()
                 xpos = WINDOW_WIDTH/2 - 230;
                 for i: 0..player.tool_belt.value.capacity - 1
                 {
-                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK);
+                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv
+                    if i < player.tool_belt.value.count
+                    {
+                        item: *Item = cast(*Item) *player.tool_belt.value.contents[i];
+                        Draw_Item(xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50), <<item);
+                    }
                 }
             }
             // weapon belt
@@ -408,25 +414,29 @@ game_loop :: inline ()
                 xpos = WINDOW_WIDTH/2 + 30;
                 for i: 0..player.weapon_belt.value.capacity - 1
                 {
-                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK);
+                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv
                 }
             }
 
             // nearby inventory
+            // @Cleanup: handle all items, with and without inventories
             closest_inventory := get_closest_item_in_range(50);
             if closest_inventory.exists
             {
                 drawpos := closest_inventory.value.position + camera_vector;
-                if closest_inventory.value.id != .TOOL_BELT && closest_inventory.value.id != .WEAPON_BELT
+                if closest_inventory.value.id == .BASKET || closest_inventory.value.id == .CHEST
                     drawpos += .{30, -110};
                 DrawText(to_c_string(tprint("%", closest_inventory.value.id)), xx drawpos.x, xx drawpos.y, 20, BLACK);
-                if closest_inventory.value.id != .TOOL_BELT && closest_inventory.value.id != .WEAPON_BELT
+                if closest_inventory.value.id == .BASKET || closest_inventory.value.id == .CHEST
                     drawpos += .{0, 100};
-                for r, r_index: closest_inventory.value.contents
+                if closest_inventory.value.id == .BASKET || closest_inventory.value.id == .CHEST
                 {
-                    line := tprint("%: %", resource_names[r_index], r);
-                    DrawText(to_c_string(line), xx drawpos.x, xx drawpos.y, 20, BLACK);
-                    drawpos.y -= 20;
+                    for r, r_index: cast([] int) closest_inventory.value.contents
+                    {
+                        line := tprint("%: %", resource_names[r_index], r);
+                        DrawText(to_c_string(line), xx drawpos.x, xx drawpos.y, 20, BLACK);
+                        drawpos.y -= 20;
+                    }
                 }
             }
         }
@@ -556,15 +566,22 @@ game_reset :: ()
         toolbelt.size = .{60, 15};
         toolbelt.id = .TOOL_BELT;
         toolbelt.capacity = 3;
+        array_resize(*toolbelt.contents, 3);
         array_add(*Game.items_on_ground, toolbelt);
+
+        lumberaxe: Item;
+        lumberaxe.position = Game.player.position + .{100, -100};
+        lumberaxe.size = .{10, 10};
+        lumberaxe.id = .LUMBER_AXE;
+        array_add(*Game.items_on_ground, lumberaxe);
         
         weaponbelt: Item;
         weaponbelt.position = Game.player.position + .{0, -200};
         weaponbelt.size = .{60, 15};
         weaponbelt.id = .WEAPON_BELT;
         weaponbelt.capacity = 3;
+        array_resize(*weaponbelt.contents, 3);
         array_add(*Game.items_on_ground, weaponbelt);
-        print("%\n", Game.items_on_ground);
     }
 }
 
@@ -681,19 +698,39 @@ Try_Pickup_Nearest_Item :: ()
 {
     using Game;
     closest_item, index := get_closest_item_in_range(50);
+    was_picked_up := false;
     if closest_item.exists
     {
         if closest_item.value.id ==
         {
             case .TOOL_BELT;
                 player.tool_belt = closest_item;
+                was_picked_up = true;
             case .WEAPON_BELT;
                 player.weapon_belt = closest_item;
+                was_picked_up = true;
+            case .LUMBER_AXE;
+                if player.tool_belt.exists
+                {
+                    toolbelt := *player.tool_belt.value;
+                    toolbelt_contents := cast([] Item) player.tool_belt.value.contents;
+                    if toolbelt.count < toolbelt.capacity
+                    {
+                        toolbelt_contents[toolbelt.count] = closest_item.value;
+                        toolbelt.count += 1;
+                        was_picked_up = true;
+                    }
+                }
             case;
                 player.held = closest_item;
+                was_picked_up = true;
         }
-        last := items_on_ground[items_on_ground.count - 1];
-        items_on_ground[index] = last;
-        pop(*items_on_ground);
+
+        if was_picked_up
+        {
+            last := items_on_ground[items_on_ground.count - 1];
+            items_on_ground[index] = last;
+            pop(*items_on_ground);
+        }
     }
 }
