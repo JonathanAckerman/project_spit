@@ -87,9 +87,9 @@ handle_input :: inline () {
                 if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
                 {
                     // shift out of pockets
-                    container_capacity := 0;
-                    for container.value.contents { container_capacity += it; } 
-                    if Game.player.pockets.contents[resource_index] > 0 && container_capacity < container.value.capacity
+                    container_weight := 0;
+                    for container.value.contents { container_weight += it; } 
+                    if Game.player.pockets.contents[resource_index] > 0 && container_weight < container.value.capacity
                     {
                         container.value.contents[resource_index] += 1;    
                         Game.player.pockets.contents[resource_index] -= 1;

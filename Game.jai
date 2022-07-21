@@ -82,8 +82,7 @@ game_loop :: inline ()
                 if player.held.exists && player.held.value.id == .BASKET
                 {
                     basket := *player.held.value.container;
-                    basket_total_count := 0;
-                    for basket.contents { basket_total_count += it; } 
+                    basket_total_count := compute_container_weight(basket);
                     if basket_total_count < basket.capacity
                     {
                         // calculate the max that we can add to the basket
@@ -117,10 +116,35 @@ game_loop :: inline ()
             trader_range := compute_interact_range(nearest);
             if dist < trader_range
             {
-                if player.pockets.contents[nearest.want] > 0
+                containers := get_nearby_containers();
+                from: *Container;
+                // look in all nearby inventories for wanted resource
+                for containers
                 {
-                    player.pockets.contents[nearest.want] -= 1;
-                    player.pockets.contents[nearest.have] += 1;
+                    if it.contents[nearest.want] > 0
+                    {
+                        from = it;
+                        break;
+                    }
+                }
+                // look for a valid inventory to put it into
+                if containers[0].contents[nearest.have] < 10
+                {
+                    from.contents[nearest.want] -= 1;
+                    containers[0].contents[nearest.have] += 1;
+                }
+                else
+                {
+                    for containers
+                    {
+                        if it_index == 0 continue; // skip the player's pockets since it functions differently
+                        if compute_container_weight(it) < it.capacity
+                        {
+                            from.contents[nearest.want] -= 1;
+                            it.contents[nearest.have] += 1;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -134,34 +158,45 @@ game_loop :: inline ()
             shop_range := compute_interact_range(nearest_shop);
             if dist < shop_range
             {
-                total_resources := Get_Total_Resources_On_Person();
-                if total_resources[nearest_shop.resource] >= nearest_shop.amount && !player.held.exists
+                nearby_containers := get_nearby_containers();
+
+                cost := nearest_shop.amount;
+                total_available := 0;
+                for nearby_containers { total_available += it.contents[nearest_shop.resource]; }
+                if total_available >= cost // we can afford it
                 {
                     // pay the cost
-                    player.pockets.contents[nearest_shop.resource] -= nearest_shop.amount;
-                    possible_deficit := player.pockets.contents[nearest_shop.resource];
-                    // if possible_deficit < 0 //@@@: player.held doesnt exist so what is the logic here
-                    // {
-                    //     player.pockets.contents[nearest_shop.resource] = 0;
-                    //     container := player.held.value;
-                    //     container.contents[nearest_shop.resource] -= possible_deficit;
-                    // }
-
-                    // receive the item
-                    if nearest_shop.item.id == 
+                    paid := 0;
+                    for nearby_containers
                     {
-                        case .BASKET;
-                            item: Maybe(Entity);
-                            item.value.id = .BASKET;
-                            item.value.container.capacity = 100;
-                            item.exists = true;
-                            player.held = item;
-                        case .CHEST;
-                            item: Maybe(Entity);
-                            item.value.id = .CHEST;
-                            item.value.container.capacity = 300;
-                            item.exists = true;
-                            player.held = item;
+                        if paid < cost
+                        {
+                            containerAmount := *it.contents[nearest_shop.resource];
+                            if <<containerAmount >= cost - paid
+                            {
+                                <<containerAmount -= cost - paid;
+                                break;
+                            }
+                            else
+                            {
+                                paid += <<containerAmount;
+                                <<containerAmount = 0;
+                            }
+                        }
+                    }
+
+                    item: Maybe(Entity);
+                    item.value.id = nearest_shop.item.id;
+                    if nearest_shop.item.id == .BASKET then item.value.container.capacity = 100; //@@@: this probably doesnt need to be state if all baskets are the same
+                    else if nearest_shop.item.id == .CHEST then item.value.container.capacity = 300;
+                    item.exists = true;
+
+                    if !player.held.exists then player.held = item; // receive the item
+                    else // drop the item nearby
+                    {
+                        // @TODO: make size (world or ui) a lookup rather than state on the object
+                        item.value.position = nearest_shop.position + .{0, -100};
+                        array_add(*items_on_ground, item.value);
                     }
                 }
             }
@@ -399,7 +434,6 @@ game_loop :: inline ()
                 DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), GREEN); //draw ui representation
 
                 xpos = WINDOW_WIDTH/2 - 230;
-                // print("%\n", player.tool_belt.value.capacity);
                 for i: 0..player.tool_belt.value.capacity - 1
                 {
                     DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv boxes
@@ -660,10 +694,10 @@ get_nearest_npc_to_player :: () -> *Npc, float
     return *npcs[closest_index], min_dist;
 }
 
-get_closest_item_in_range :: (range: float) -> Maybe(Entity), int
+get_closest_item_in_range :: (range: float) -> Maybe(*Entity), int
 {
     using Game;
-    result: Maybe(Entity);
+    result: Maybe(*Entity);
     
     if items_on_ground.count <= 0 return result, -1;
 
@@ -682,17 +716,40 @@ get_closest_item_in_range :: (range: float) -> Maybe(Entity), int
     if min_dist < range
     {
         result.exists = true;
-        result.value = items_on_ground[closest_index];
+        result.value = *items_on_ground[closest_index];
     }
     return result, closest_index;
+}
+
+get_nearby_containers :: () -> [..] *Container
+{
+    using Game;
+    c: [..] *Container;
+    array_add(*c, *player.pockets);
+
+    if player.held.exists && player.held.value.id == .BASKET
+        array_add(*c, *player.held.value.container);
+
+    for *items_on_ground if it.id == .BASKET || it.id == .CHEST
+    {
+        if length(player.position - it.position) < 50.0
+            array_add(*c, *it.container);
+    }
+    return c;
+}
+
+compute_container_weight :: (c: Container) -> int
+{
+    total := 0;
+    for c.contents { total += it; }
+    return total;
 }
 
 Drop_Held_Item :: ()
 {
     using Game;
-    item: Entity = player.held.value;
-    item.position = player.position + player.forward;
-    array_add(*items_on_ground, item);
+    player.held.value.position = player.position + player.forward;
+    array_add(*items_on_ground, player.held.value);
     player.held.exists = false;
 }
 
@@ -730,15 +787,16 @@ Try_Pickup_Nearest_Item :: ()
                     }
                 }
             case;
-                player.held = closest_item;
+                t: Maybe(Entity);
+                t.exists = true;
+                t.value = <<(closest_item.value);
+                player.held = t;
                 was_picked_up = true;
         }
 
         if was_picked_up
         {
-            last := items_on_ground[items_on_ground.count - 1];
-            items_on_ground[index] = last;
-            pop(*items_on_ground);
+            array_unordered_remove_by_index(*items_on_ground, index);
         }
     }
 }

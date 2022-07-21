@@ -88,29 +88,9 @@ Draw_Item_Chest :: (pos: Vector2, size: float)
 
 Draw_Item :: (pos: Vector2, item: Entity)
 {
-    // print("%\n", pos);
     if item.id ==
     {
         case .LUMBER_AXE;
             DrawCircleV(pos, item.size.x, GRAY);
     }
-}
-
-Get_Total_Resources_On_Person :: () -> [] int
-{
-    using Game;
-    resource_totals: [] int;
-    array_resize(*resource_totals, enum_highest_value(Resource_ID) + 1);
-    for player.pockets.contents
-    {
-        resource_totals[it_index] += it;
-    }
-    if player.held.exists && (player.held.value.id == .BASKET || player.held.value.id == .CHEST)
-    {
-        for player.held.value.container.contents
-        {
-            resource_totals[it_index] += it;
-        }
-    }
-    return resource_totals;
 }
