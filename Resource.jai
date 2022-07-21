@@ -32,18 +32,34 @@ get_resource_color :: (r: Resource_ID) -> Color
     }
 }
 
-Item :: struct(T: Type = Any)
+Entity :: struct
 {
     position: Vector2;
     size: Vector2;
     id: Item_ID;
-
-    using inventory: struct
+    
+    union
     {
-        capacity: int;
-        count: int;
-        contents: [] T;
+        container: Container;
+        equipment: Equipment;
     }
+}
+
+Container :: struct
+{
+    capacity: int;
+    contents: [#run enum_highest_value(Resource_ID) + 1] int;
+}
+
+Equipment :: struct
+{
+    using inventory: Inventory;
+}
+
+Inventory :: struct
+{
+    capacity: int;
+    contents: [] Entity;
 }
 
 Item_ID :: enum
@@ -70,7 +86,7 @@ Draw_Item_Chest :: (pos: Vector2, size: float)
     DrawCircleV(pos + xy(size/2.0, 0), size/2.0, DARKGREEN);
 }
 
-Draw_Item :: (pos: Vector2, item: Item)
+Draw_Item :: (pos: Vector2, item: Entity)
 {
     // print("%\n", pos);
     if item.id ==
@@ -85,13 +101,13 @@ Get_Total_Resources_On_Person :: () -> [] int
     using Game;
     resource_totals: [] int;
     array_resize(*resource_totals, enum_highest_value(Resource_ID) + 1);
-    for player.pockets
+    for player.pockets.contents
     {
         resource_totals[it_index] += it;
     }
-    if player.held.exists
+    if player.held.exists && (player.held.value.id == .BASKET || player.held.value.id == .CHEST)
     {
-        for cast([] int) player.held.value.contents
+        for player.held.value.container.contents
         {
             resource_totals[it_index] += it;
         }

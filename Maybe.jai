@@ -1,5 +1,5 @@
 Maybe :: struct(T: Type)
 {
-    value: T = ---;
+    value: T = ---; //@TODO: consider using?
     exists: bool;
 }

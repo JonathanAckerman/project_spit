@@ -22,7 +22,7 @@ Building :: struct
         {
             resource: Resource_ID;
             amount: int;
-            item: Item;
+            item: Entity;
         }
     }
 }
@@ -37,10 +37,10 @@ Person :: struct
 
     velocity: Vector2;
 
-    pockets: [] int;
-    held: Maybe(Item);
-    tool_belt: Maybe(Item);
-    weapon_belt: Maybe(Item);
+    pockets: Container;
+    held: Maybe(Entity);
+    tool_belt: Maybe(Equipment);
+    weapon_belt: Maybe(Equipment);
 }
 
 Npc :: struct

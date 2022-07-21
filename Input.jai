@@ -60,36 +60,49 @@ handle_input :: inline () {
             else return -1;
         }
         resource_index := key_to_resource_index(xx GetKeyPressed());
-
-        external_inventory: Maybe(Item);
-        if !Game.player.held.exists
+        if resource_index != -1 // if we got an input for shifting resources
         {
-            // look for nearest
-            closest := get_closest_item_in_range(50);
-            if closest.exists then external_inventory = closest;
-        }
-        else
-        {
-            if Game.player.held.value.id == .BASKET then external_inventory = Game.player.held;
-        }
-
-        if external_inventory.exists && resource_index != -1
-        {
-
-            if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
+            container: Maybe(*Container);
+            if !Game.player.held.exists
             {
-                if Game.player.pockets[resource_index] > 0
+                // look for nearest container
+                closest := get_closest_item_in_range(50);
+                if closest.exists && (closest.value.id == .BASKET || closest.value.id == .CHEST)
                 {
-                    (cast([] int) external_inventory.value.contents)[resource_index] += 1;    
-                    Game.player.pockets[resource_index] -= 1;
+                    container.value = *closest.value.container;
+                    container.exists = true;
                 }
             }
             else
             {
-                if (cast([] int) Game.player.held.value.contents)[resource_index] > 0
+                if Game.player.held.value.id == .BASKET 
                 {
-                    (cast([] int) external_inventory.value.contents)[resource_index] -= 1;
-                    Game.player.pockets[resource_index] += 1;
+                    container.value = *Game.player.held.value.container;
+                    container.exists = true;
+                }
+            }
+
+            if container.exists
+            {
+                if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
+                {
+                    // shift out of pockets
+                    container_capacity := 0;
+                    for container.value.contents { container_capacity += it; } 
+                    if Game.player.pockets.contents[resource_index] > 0 && container_capacity < container.value.capacity
+                    {
+                        container.value.contents[resource_index] += 1;    
+                        Game.player.pockets.contents[resource_index] -= 1;
+                    }
+                }
+                else
+                {
+                    // shift into pockets
+                    if container.value.contents[resource_index] > 0 && Game.player.pockets.contents[resource_index] < 10
+                    {
+                        container.value.contents[resource_index] -= 1;
+                        Game.player.pockets.contents[resource_index] += 1;
+                    }
                 }
             }
         }
