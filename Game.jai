@@ -29,10 +29,11 @@ Debug: struct
     c: DebugCursor;
     line: string;
     history: [..] string;
+    line_number := 0;
 
     font: Font;
     font_size := 28.0;
-    font_spacing := 2.0;
+    font_spacing := 1.0;
 }
 
 game_loop :: inline () 

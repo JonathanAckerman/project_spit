@@ -118,12 +118,37 @@ handle_input :: inline ()
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
             Debug.c.curPos.x += (Debug.font_size/2) + Debug.font_spacing;
         }
+
+        if IsKeyPressed(xx KeyboardKey.ENTER) 
+        {
+            // submit command
+            Debug.line_number += 1;
+            debug_is_command_valid(Debug.line);
+            // add current line to history
+            array_add(*Debug.history, sprint("%0%", Debug.line, "\n"));
+            // reset current line
+            Debug.line = "";
+
+            // CRLF
+            Debug.c.curPos.x = Debug.c.basePos.x;
+            if Debug.line_number < 6
+                Debug.c.curPos.y += Debug.font_size * 1.5;
+        }
+
+        if IsKeyPressed(xx KeyboardKey.BACKSPACE)
+        {
+            if Debug.line
+            {
+                Debug.line.count -= 1;
+                Debug.c.curPos.x -= (Debug.font_size/2) + Debug.font_spacing;
+            }
+        }
     }
 
     // debug
     if IsKeyPressed(xx KeyboardKey.BACKSLASH)
     {
         Game.debug = !Game.debug;
-        Debug.c.size = xy(Debug.font_size/2 + Debug.font_spacing, Debug.font_size);
+        Debug.c.size = xy(Debug.font_size/2, Debug.font_size * 0.66);
     }
 }
