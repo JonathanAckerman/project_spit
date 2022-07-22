@@ -24,6 +24,17 @@ Game: struct
     npcs: [..] Npc;
 }
 
+Debug: struct
+{
+    c: DebugCursor;
+    line: string;
+    history: [..] string;
+
+    font: Font;
+    font_size := 28.0;
+    font_spacing := 2.0;
+}
+
 game_loop :: inline () 
 {
     dt := GetFrameTime();
@@ -485,6 +496,7 @@ game_loop :: inline ()
             if debug
             {
                 debug_player_position();
+                debug_console(dt);
             }
         }
 
