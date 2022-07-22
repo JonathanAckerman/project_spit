@@ -74,19 +74,19 @@ Item_ID :: enum
     WHIP;
 }
 
-Draw_Item_Basket :: (pos: Vector2, size: float)
+draw_item_basket :: (pos: Vector2, size: float)
 {
     DrawRectangleV(pos, xy(size, size), BEIGE);
     DrawCircleV(pos + xy(size/2.0, size), size/2.0, BEIGE);
 }
 
-Draw_Item_Chest :: (pos: Vector2, size: float)
+draw_item_chest :: (pos: Vector2, size: float)
 {
     DrawRectangleV(pos, xy(size, size), DARKGREEN);
     DrawCircleV(pos + xy(size/2.0, 0), size/2.0, DARKGREEN);
 }
 
-Draw_Item :: (pos: Vector2, item: Entity)
+draw_item :: (pos: Vector2, item: Entity)
 {
     if item.id ==
     {

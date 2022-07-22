@@ -2,9 +2,9 @@ Building :: struct
 {
     position: Vector2;
     size: int;
-    bldg_type: Bldg_Type;
+    bldgType: BldgType;
 
-    Bldg_Type :: enum
+    BldgType :: enum
     {
         TRADER;
         SHOP;
@@ -39,8 +39,8 @@ Person :: struct
 
     pockets: Container;
     held: Maybe(Entity);
-    tool_belt: Maybe(Equipment);
-    weapon_belt: Maybe(Equipment);
+    toolBelt: Maybe(Equipment);
+    weaponBelt: Maybe(Equipment);
 }
 
 Npc :: struct
@@ -49,13 +49,13 @@ Npc :: struct
     
     ai: struct
     {
-        is_speaking := false; // make this a state enum?
-        speak_duration := 4.0;
-        speak_timer := 0.0;
+        isSpeaking := false; // make this a state enum?
+        speakDuration := 4.0;
+        speakTimer := 0.0;
         
-        goal_position: Vector2;
-        has_goal := false;
-        goal_reset_timer: float;
-        goal_reset_duration: float;
+        goalPosition: Vector2;
+        hasGoal := false;
+        goalResetTimer: float;
+        goalResetDuration: float;
     }
 }

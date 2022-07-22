@@ -13,42 +13,42 @@ debug_console :: (dt: float)
     DrawRectangleV(.{10.0, WINDOW_HEIGHT - 250.0}, .{WINDOW_WIDTH - 20, 240}, .{0, 0, 0, 230});
 
     // draw cursor
-    if c.blink_state
+    if c.blinkState
     {
         DrawRectangleV(c.curPos + .{0, 5}, c.size, WHITE);
     }
 
-    c.blink_timer -= dt;
-    if c.blink_timer <= 0.0
+    c.blinkTimer -= dt;
+    if c.blinkTimer <= 0.0
     {
-        c.blink_state = !c.blink_state;
-        c.blink_timer = 0.5;
+        c.blinkState = !c.blinkState;
+        c.blinkTimer = 0.5;
     }
 
     // draw history
-    if line_number < 5
+    if lineNumber < 5
     {
         historyPos := c.basePos;
         for history
         {
-            DrawTextEx(font, to_c_string(it), historyPos, font_size, font_spacing, WHITE);
-            historyPos += xy(0, font_size * 1.5);
+            DrawTextEx(font, to_c_string(it), historyPos, fontSize, fontSpacing, WHITE);
+            historyPos += xy(0, fontSize * 1.5);
         }
     }
     else
     {
         historyPos := c.basePos;
-        for i: (line_number - 5)..(line_number - 1)
+        for i: (lineNumber - 5)..(lineNumber - 1)
         {
-            DrawTextEx(font, to_c_string(history[i]), historyPos, font_size, font_spacing, WHITE);
-            historyPos += xy(0, font_size * 1.5);
+            DrawTextEx(font, to_c_string(history[i]), historyPos, fontSize, fontSpacing, WHITE);
+            historyPos += xy(0, fontSize * 1.5);
         }
     }
 
     // draw current line
     if line
     {
-        DrawTextEx(font, to_c_string(line), xy(c.basePos.x, c.curPos.y), font_size, font_spacing, WHITE);
+        DrawTextEx(font, to_c_string(line), xy(c.basePos.x, c.curPos.y), fontSize, fontSpacing, WHITE);
     }
 }
 
@@ -67,7 +67,7 @@ debug_is_command_valid :: (cmd: string)
         basket.id = .BASKET;
         basket.position = Game.player.position + Game.player.forward * 50;
         basket.container.capacity = 100;
-        array_add(*Game.items_on_ground, basket); 
+        array_add(*Game.itemsOnGround, basket); 
     }
     if cmd == "SPAWN CHEST"
     {
@@ -75,7 +75,7 @@ debug_is_command_valid :: (cmd: string)
         chest.id = .CHEST;
         chest.position = Game.player.position + Game.player.forward * 50;
         chest.container.capacity = 300;
-        array_add(*Game.items_on_ground, chest);
+        array_add(*Game.itemsOnGround, chest);
     }
     if cmd == "FILL POCKETS"
     {
@@ -91,6 +91,6 @@ DebugCursor :: struct
     curPos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
     basePos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
     size: Vector2;
-    blink_state := true;
-    blink_timer := 0.5;
+    blinkState := true;
+    blinkTimer := 0.5;
 }

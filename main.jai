@@ -22,7 +22,7 @@ main :: () {
 #load "Input.jai";
 #load "Resource.jai";
 #load "Trader.jai";
-#load "debug_tools.jai";
+#load "DebugTools.jai";
 #load "Maybe.jai";
 
 #import "Raylib-Jai";

@@ -25,21 +25,21 @@ handle_input :: inline ()
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            Game.player.try_harvest = true;
+            Game.player.tryHarvest = true;
         }
         else
         {
-        Game.player.try_harvest = false; 
+        Game.player.tryHarvest = false; 
         }
 
         // trading
         if IsKeyPressed(xx KeyboardKey.T)
         {
-            Game.player.try_trade = true;
+            Game.player.tryTrade = true;
         }
         else
         {
-        Game.player.try_trade = false; 
+        Game.player.tryTrade = false; 
         }
 
         // drop item
@@ -47,9 +47,9 @@ handle_input :: inline ()
         {
             // @TODO: not a fan of how game logic is also in this file
             if Game.player.held.exists
-                Drop_Held_Item();
+                drop_held_item();
             else    
-                Try_Pickup_Nearest_Item();
+                try_pickup_nearest_item();
         }
 
         // shifting resources around
@@ -116,13 +116,13 @@ handle_input :: inline ()
         {
             if !Debug.line then Debug.line = sprint("%", to_string(*(cast(u8) key), 1));
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
-            Debug.c.curPos.x += (Debug.font_size/2) + Debug.font_spacing;
+            Debug.c.curPos.x += (Debug.fontSize/2) + Debug.fontSpacing;
         }
 
-        if IsKeyPressed(xx KeyboardKey.ENTER) 
+        if IsKeyPressed(xx KeyboardKey.ENTER)
         {
             // submit command
-            Debug.line_number += 1;
+            Debug.lineNumber += 1;
             debug_is_command_valid(Debug.line);
             // add current line to history
             array_add(*Debug.history, sprint("%0%", Debug.line, "\n"));
@@ -131,8 +131,8 @@ handle_input :: inline ()
 
             // CRLF
             Debug.c.curPos.x = Debug.c.basePos.x;
-            if Debug.line_number < 6
-                Debug.c.curPos.y += Debug.font_size * 1.5;
+            if Debug.lineNumber < 6
+                Debug.c.curPos.y += Debug.fontSize * 1.5;
         }
 
         if IsKeyPressed(xx KeyboardKey.BACKSPACE)
@@ -140,7 +140,7 @@ handle_input :: inline ()
             if Debug.line
             {
                 Debug.line.count -= 1;
-                Debug.c.curPos.x -= (Debug.font_size/2) + Debug.font_spacing;
+                Debug.c.curPos.x -= (Debug.fontSize/2) + Debug.fontSpacing;
             }
         }
     }
@@ -149,6 +149,6 @@ handle_input :: inline ()
     if IsKeyPressed(xx KeyboardKey.BACKSLASH)
     {
         Game.debug = !Game.debug;
-        Debug.c.size = xy(Debug.font_size/2, Debug.font_size * 0.66);
+        Debug.c.size = xy(Debug.fontSize/2, Debug.fontSize * 0.66);
     }
 }
