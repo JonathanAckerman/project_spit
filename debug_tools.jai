@@ -71,11 +71,11 @@ debug_is_command_valid :: (cmd: string)
     }
     if cmd == "SPAWN CHEST"
     {
-        basket: Entity;
-        basket.id = .CHEST;
-        basket.position = Game.player.position + Game.player.forward * 50;
-        basket.container.capacity = 300;
-        array_add(*Game.items_on_ground, basket); 
+        chest: Entity;
+        chest.id = .CHEST;
+        chest.position = Game.player.position + Game.player.forward * 50;
+        chest.container.capacity = 300;
+        array_add(*Game.items_on_ground, chest);
     }
     if cmd == "FILL POCKETS"
     {
