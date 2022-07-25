@@ -29,7 +29,7 @@ handle_input :: inline ()
         }
         else
         {
-        Game.player.tryHarvest = false; 
+            Game.player.tryHarvest = false; 
         }
 
         // trading
@@ -39,7 +39,7 @@ handle_input :: inline ()
         }
         else
         {
-        Game.player.tryTrade = false; 
+            Game.player.tryTrade = false; 
         }
 
         // drop item
@@ -47,9 +47,9 @@ handle_input :: inline ()
         {
             // @TODO: not a fan of how game logic is also in this file
             if Game.player.held.exists
-                drop_held_item();
-            else    
-                try_pickup_nearest_item();
+                drop_held();
+            else
+                try_pickup();
         }
 
         // shifting resources around
@@ -67,16 +67,16 @@ handle_input :: inline ()
                 if !Game.player.held.exists
                 {
                     // look for nearest container
-                    closest := get_closest_item_in_range(50);
-                    if closest.exists && (closest.value.id == .BASKET || closest.value.id == .CHEST)
+                    nearest := get_nearest_holdable_in_range(50);
+                    if nearest.exists && nearest.value.tag == .CONTAINER
                     {
-                        container.value = *closest.value.container;
+                        container.value = *nearest.value.container;
                         container.exists = true;
                     }
                 }
                 else
                 {
-                    if Game.player.held.value.id == .BASKET 
+                    if Game.player.held.value.tag == .CONTAINER && Game.player.held.value.container.id == .BASKET
                     {
                         container.value = *Game.player.held.value.container;
                         container.exists = true;
@@ -112,8 +112,9 @@ handle_input :: inline ()
     else // debug on
     {
         key := GetKeyPressed();
-        if key > 0 && key < 255
+        if key > 0 && key < 255 && key != 92 // 92 == '\'
         {
+
             if !Debug.line then Debug.line = sprint("%", to_string(*(cast(u8) key), 1));
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
             Debug.c.curPos.x += (Debug.fontSize/2) + Debug.fontSpacing;

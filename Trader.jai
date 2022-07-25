@@ -22,7 +22,7 @@ Building :: struct
         {
             resource: Resource_ID;
             amount: int;
-            item: Entity;
+            itemId: Container_ID;
         }
     }
 }
@@ -41,6 +41,23 @@ Person :: struct
     held: Maybe(Entity);
     toolBelt: Maybe(Equipment);
     weaponBelt: Maybe(Equipment);
+}
+
+Collider :: struct
+{
+    type: Collider_Type;
+
+    union
+    {
+        rect: Vector2;
+        radius: float;
+    }
+}
+
+Collider_Type :: enum
+{
+    RECT;
+    CIRCLE;
 }
 
 Npc :: struct

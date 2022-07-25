@@ -63,18 +63,14 @@ debug_is_command_valid :: (cmd: string)
     // @THOUGHT: maybe use a proc shared with game state for creating objects
     if cmd == "SPAWN BASKET"
     {
-        basket: Entity;
-        basket.id = .BASKET;
-        basket.position = Game.player.position + Game.player.forward * 50;
-        basket.container.capacity = 100;
+        pos := Game.player.position + Game.player.forward * 50;
+        basket := NewContainer(.BASKET, pos);
         array_add(*Game.itemsOnGround, basket); 
     }
     if cmd == "SPAWN CHEST"
     {
-        chest: Entity;
-        chest.id = .CHEST;
-        chest.position = Game.player.position + Game.player.forward * 50;
-        chest.container.capacity = 300;
+        pos := Game.player.position + Game.player.forward * 50;
+        chest := NewContainer(.CHEST, pos);
         array_add(*Game.itemsOnGround, chest);
     }
     if cmd == "FILL POCKETS"
@@ -83,6 +79,10 @@ debug_is_command_valid :: (cmd: string)
         {
             <<it = 10;
         }
+    }
+    if cmd == "TP"
+    {
+        Game.player.position = .{-1000, -1000};
     }
 }
 
