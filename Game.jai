@@ -88,8 +88,22 @@ game_loop :: inline ()
             if min_dist < 100
             {
                 resource := resourceList[nearest_index];
-                has_harvested := false;
 
+                if resource.id == .WOOD
+                {
+                    if player.toolBelt.exists
+                    {
+                        has_axe := false;
+                        for player.toolBelt.value.contents
+                        {
+                            if it.item.id == .LUMBER_AXE then has_axe = true;
+                        }
+                        if !has_axe return;
+                    }
+                    else return;
+                }
+
+                has_harvested := false;
                 // try to fill held first
                 if player.held.exists && player.held.value.tag == .CONTAINER
                 {
