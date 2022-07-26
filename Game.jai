@@ -638,8 +638,9 @@ game_reset :: ()
         lumberaxe: Entity = NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.itemsOnGround, lumberaxe);
 
-        pos = xy(random_get_within_range(-1000, 1000), random_get_within_range(-1000, 1000));
+        pos = Game.player.position + .{200, -100};
         sword: Entity = NewItem(.SWORD, collider, pos);
+        array_add(*Game.itemsOnGround, sword);
     }
     // init equipment on ground
     {
@@ -790,16 +791,24 @@ try_pickup :: ()
                 item := closest_item.value.item;
                 if item.type ==
                 {
-                    case .LUMBER_AXE;
-                        if player.toolBelt.exists
+                    case .LUMBER_AXE; if player.toolBelt.exists
+                    {
+                        toolbelt := *player.toolBelt.value;
+                        if toolbelt.contents.count < toolbelt.capacity
                         {
-                            toolbelt := *player.toolBelt.value;
-                            if toolbelt.contents.count < toolbelt.capacity
-                            {
-                                array_add(*toolbelt.contents, closest_item.value);
-                                was_picked_up = true;
-                            }
+                            array_add(*toolbelt.contents, closest_item.value);
+                            was_picked_up = true;
                         }
+                    }
+                    case .SWORD; if player.weaponBelt.exists
+                    {
+                        weaponbelt := *player.weaponBelt.value;
+                        if weaponbelt.contents.count < weaponbelt.capacity
+                        {
+                            array_add(*weaponbelt.contents, closest_item.value);
+                            was_picked_up = true;
+                        }
+                    }
                 }
             case .CONTAINER;
                 newHeld: = NewMaybe(<<closest_item.value);
