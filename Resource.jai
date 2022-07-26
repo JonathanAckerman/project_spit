@@ -80,9 +80,9 @@ Inventory :: struct
 // @Note: I'm trusting that this will only be passed valid Container Entity_ID's atm
 NewContainer :: (id: Container_ID, pos: Vector2 = .{0, 0}) -> Entity
 {
-    c: Entity;
-    c.position = pos;
-    c.tag = .CONTAINER;
+    e: Entity;
+    e.position = pos;
+    e.tag = .CONTAINER;
     cap: int;
     if id ==
     {
@@ -91,9 +91,38 @@ NewContainer :: (id: Container_ID, pos: Vector2 = .{0, 0}) -> Entity
         case .CHEST;
             cap = 300;
     }
-    c.container.capacity = cap;
-    c.container.id = id;
-    return c;
+    e.container.capacity = cap;
+    e.container.id = id;
+    return e;
+}
+
+NewItem :: (id: Item_ID, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+{
+    e: Entity;
+    e.position = pos;
+    e.tag = .ITEM;
+    e.item.id = id;
+    e.collider = coll;
+    return e;
+}
+
+NewEquipment :: (id: Equipment_ID, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+{
+    e: Entity;
+    e.position = pos;
+    e.tag = .EQUIPMENT;
+    e.equipment.id = id;
+    cap: int;
+    if id ==
+    {
+        case .TOOL_BELT;
+            cap = 3;
+        case .WEAPON_BELT;
+            cap = 3;
+    }
+    e.equipment.capacity = cap;
+    e.collider = coll;
+    return e;
 }
 
 Container_ID :: enum

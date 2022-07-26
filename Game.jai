@@ -803,7 +803,7 @@ drop_held :: ()
 try_pickup :: ()
 {
     using Game;
-    closest_item, index := get_nearest_holdable_in_range(50);
+    closest_item, index := get_nearest_holdable_in_range(100);
     was_picked_up := false;
     if closest_item.exists
     {

@@ -54,25 +54,43 @@ debug_console :: (dt: float)
 
 debug_is_command_valid :: (cmd: string)
 {
-    // for i: 0..c_style_strlen(to_c_string(cmd)) - 1
-    // {
-        
-    // }
-
     // @TEMP: for now just match a string, later maybe have lexical parsing
-    // @THOUGHT: maybe use a proc shared with game state for creating objects
+    // Containers
     if cmd == "SPAWN BASKET"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        basket := NewContainer(.BASKET, pos);
-        array_add(*Game.itemsOnGround, basket); 
+        container := NewContainer(.BASKET, pos);
+        array_add(*Game.containersOnGround, container); 
     }
     if cmd == "SPAWN CHEST"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        chest := NewContainer(.CHEST, pos);
-        array_add(*Game.itemsOnGround, chest);
+        container := NewContainer(.CHEST, pos);
+        array_add(*Game.containersOnGround, container);
     }
+
+    // Items
+    if cmd == "SPAWN AXE"
+    {
+        pos := Game.player.position + Game.player.forward * 50;
+        item := NewItem(.LUMBER_AXE, pos, Collider.{type = .CIRCLE, radius = 10});
+        array_add(*Game.itemsOnGround, item);
+    }
+
+    // Equipment
+    if cmd == "SPAWN TOOLBELT"
+    {
+        pos := Game.player.position + Game.player.forward * 50;
+        equipment := NewEquipment(.TOOL_BELT, pos, Collider.{type = .RECT, rect = .{60, 15}});
+        array_add(*Game.equipmentOnGround, equipment);
+    }
+    if cmd == "SPAWN WEAPONBELT"
+    {
+        pos := Game.player.position + Game.player.forward * 50;
+        equipment := NewEquipment(.WEAPON_BELT, pos, Collider.{type = .RECT, rect = .{60, 15}});
+        array_add(*Game.equipmentOnGround, equipment);
+    }
+
     if cmd == "FILL POCKETS"
     {
         for *Game.player.pockets.contents
@@ -83,6 +101,10 @@ debug_is_command_valid :: (cmd: string)
     if cmd == "TP"
     {
         Game.player.position = .{-1000, -1000};
+    }
+    if cmd == "GOTTAGOFAST"
+    {
+        Game.player.speed = 50;
     }
 }
 
