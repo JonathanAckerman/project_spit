@@ -2,9 +2,9 @@ Building :: struct
 {
     position: Vector2;
     collider: Collider = .{type = .RECT};
-    bldgType: BldgType;
+    bldgType: Bldg_Type;
 
-    BldgType :: enum
+    Bldg_Type :: enum
     {
         TRADER;
         SHOP;
@@ -14,15 +14,15 @@ Building :: struct
     {
         using trader: struct
         {
-            want: Resource_ID;
-            have: Resource_ID;
+            want: Resource_Type;
+            have: Resource_Type;
         }
 
         using shop: struct
         {
-            resource: Resource_ID;
+            resource: Resource_Type;
             amount: int;
-            itemId: Container_ID;
+            itemId: Container_Type;
         }
     }
 }
@@ -45,7 +45,7 @@ Person :: struct
 
 Collider :: struct
 {
-    type: ColliderType;
+    type: Collider_Type;
 
     union
     {
@@ -53,7 +53,7 @@ Collider :: struct
         radius: float;
     }
 
-    ColliderType :: enum
+    Collider_Type :: enum
     {
         RECT;
         CIRCLE;

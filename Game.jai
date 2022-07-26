@@ -463,9 +463,9 @@ game_loop :: inline ()
         // ui
         {
             // pockets
-            resource_names := enum_names(Resource_ID);
+            resource_names := enum_names(Resource_Type);
             DrawText(xx "Resources:", 20, 20, 20, BLACK);
-            for r, r_index: enum_values_as_s64(Resource_ID)
+            for r, r_index: enum_values_as_s64(Resource_Type)
             {
                 y_pos := 20 + 20 * (r_index + 1);
                 line := tprint("%: %", resource_names[r_index], player.pockets.contents[r]);
@@ -589,11 +589,11 @@ game_reset :: ()
         // @TODO: check for overlapping
         x := random_get_within_range(-1000, 1000);
         y := random_get_within_range(-1000, 1000);
-        want := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        want := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         have := want;
         while have == want
         {
-            have = random_get() % xx (enum_highest_value(Resource_ID) + 1);
+            have = random_get() % xx (enum_highest_value(Resource_Type) + 1);
         }
         size: float = xx clamp(random_get(), 50, 100);
         
@@ -601,8 +601,8 @@ game_reset :: ()
         r.position = xy(x, y);
         r.collider.rect = xy(size, size);
         r.bldgType = .TRADER;
-        r.want = cast(Resource_ID) want;
-        r.have = cast(Resource_ID) have;
+        r.want = cast(Resource_Type) want;
+        r.have = cast(Resource_Type) have;
 
         array_add(*Game.buildings, r);
     }
@@ -715,7 +715,7 @@ get_closest_bldg_to_player :: () -> *Building, float
     return *buildings[nearest_index], min_dist;
 }
 
-get_closest_bldg_to_player :: (type: Building.BldgType) -> *Building, float
+get_closest_bldg_to_player :: (type: Building.Bldg_Type) -> *Building, float
 {
     using Game;
     nearest_index := 0;
@@ -887,12 +887,12 @@ populate_resources :: ()
     {
         x := random_get_within_range(-1000, 1000);
         y := random_get_within_range(-1000, 1000);
-        id := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        id := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         quantity := max(random_get() % 20, 10);
 
         r : Resource;
         r.position = xy(x, y);
-        r.id = cast(Resource_ID) id;
+        r.id = cast(Resource_Type) id;
         r.quantity = xx quantity;
 
         array_add(*Game.resourceList, r);

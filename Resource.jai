@@ -1,12 +1,12 @@
 Resource :: struct 
 {
     position: Vector2 = ---;
-    id: Resource_ID;
+    id: Resource_Type;
     quantity: int; 
 }
 
 
-Resource_ID :: enum
+Resource_Type :: enum
 {
     COPPER;
     IRON;
@@ -15,7 +15,7 @@ Resource_ID :: enum
     FIBER;
 }
 
-get_resource_color :: (r: Resource_ID) -> Color
+get_resource_color :: (r: Resource_Type) -> Color
 {
     if #complete r ==
     {
@@ -55,17 +55,17 @@ Entity :: struct
 
 Item :: struct
 {
-    id: Item_ID;
+    id: Item_Type;
 }
 Container :: struct
 {
-    id: Container_ID;
+    id: Container_Type;
     capacity: int;
-    contents: [#run enum_highest_value(Resource_ID) + 1] int;
+    contents: [#run enum_highest_value(Resource_Type) + 1] int;
 }
 Equipment :: struct
 {
-    id: Equipment_ID;
+    id: Equipment_Type;
     using #as inventory: Inventory;
 }
 
@@ -78,7 +78,7 @@ Inventory :: struct
 }
 
 // @Note: I'm trusting that this will only be passed valid Container Entity_ID's atm
-NewContainer :: (id: Container_ID, pos: Vector2 = .{0, 0}) -> Entity
+NewContainer :: (id: Container_Type, pos: Vector2 = .{0, 0}) -> Entity
 {
     e: Entity;
     e.position = pos;
@@ -96,7 +96,7 @@ NewContainer :: (id: Container_ID, pos: Vector2 = .{0, 0}) -> Entity
     return e;
 }
 
-NewItem :: (id: Item_ID, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+NewItem :: (id: Item_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
 {
     e: Entity;
     e.position = pos;
@@ -106,7 +106,7 @@ NewItem :: (id: Item_ID, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
     return e;
 }
 
-NewEquipment :: (id: Equipment_ID, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+NewEquipment :: (id: Equipment_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
 {
     e: Entity;
     e.position = pos;
@@ -125,17 +125,17 @@ NewEquipment :: (id: Equipment_ID, pos: Vector2 = .{0, 0}, coll: Collider) -> En
     return e;
 }
 
-Container_ID :: enum
+Container_Type :: enum
 {
     BASKET;
     CHEST;
 }
-Equipment_ID :: enum
+Equipment_Type :: enum
 {
     TOOL_BELT;
     WEAPON_BELT;
 }
-Item_ID :: enum
+Item_Type :: enum
 {
     CARPENTERS_HAMMER;
     LUMBER_AXE;
