@@ -52,10 +52,10 @@ NewBuilding :: (type: Bldg_Type, pos: Vector2, resource: Resource_Type, amount: 
 Person :: struct
 {
     position: Vector2 = .{200, 200};
+    collider: Collider = Collider.{type = .CIRCLE, radius = 20};
     forward: Vector2 = .{1, 0};
     color: Color = BLACK;
     speed: float = 6.0;
-    collider: Collider = Collider.{type = .CIRCLE, radius = 20};
 
     velocity: Vector2;
 

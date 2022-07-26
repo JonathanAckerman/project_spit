@@ -5,7 +5,6 @@ Resource :: struct
     quantity: int; 
 }
 
-
 Resource_Type :: enum
 {
     COPPER;
@@ -32,11 +31,14 @@ get_resource_color :: (r: Resource_Type) -> Color
     }
 }
 
+_Entity_ID: u64 = 0;
+
 Entity :: struct
 {
     position: Vector2;
     collider: Collider;
     tag: Entity_Type;
+    id: u64;
 
     union
     {
@@ -78,11 +80,20 @@ Inventory :: struct
     contents: [..] Entity;
 }
 
-NewContainer :: (type: Container_Type, pos: Vector2 = .{0, 0}) -> Entity
+NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> Entity
 {
     e: Entity;
     e.position = pos;
-    e.tag = .CONTAINER;
+    e.collider = collider;
+    e.tag = tag;
+    e.id = _Entity_ID;
+    _Entity_ID += 1;
+    return e;
+}
+
+NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> Entity
+{
+    e: Entity = NewEntityBase(pos, collider, .CONTAINER);
     cap: int;
     if type ==
     {
@@ -96,21 +107,16 @@ NewContainer :: (type: Container_Type, pos: Vector2 = .{0, 0}) -> Entity
     return e;
 }
 
-NewItem :: (type: Item_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> Entity
 {
-    e: Entity;
-    e.position = pos;
-    e.tag = .ITEM;
+    e: Entity = NewEntityBase(pos, collider, .ITEM);
     e.item.type = type;
-    e.collider = coll;
     return e;
 }
 
-NewEquipment :: (type: Equipment_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> Entity
 {
-    e: Entity;
-    e.position = pos;
-    e.tag = .EQUIPMENT;
+    e: Entity = NewEntityBase(pos, collider, .EQUIPMENT);
     e.equipment.type = type;
     cap: int;
     if type ==
@@ -121,7 +127,6 @@ NewEquipment :: (type: Equipment_Type, pos: Vector2 = .{0, 0}, coll: Collider) -
             cap = 3;
     }
     e.equipment.capacity = cap;
-    e.collider = coll;
     return e;
 }
 

@@ -234,7 +234,7 @@ game_loop :: inline ()
                         }
                     }
 
-                    item := NewContainer(nearest_shop.building.itemType);
+                    item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 30}});
                     if !player.held.exists 
                     {
                         newHeld: Maybe(Entity);
@@ -636,15 +636,20 @@ game_reset :: ()
 
     // init items on ground
     {
-        lumberaxe: Entity = NewItem(.LUMBER_AXE, Game.player.position + .{100, -100}, Collider.{type = .CIRCLE, radius = 10});
+        pos := Game.player.position + .{100, -100};
+        collider := Collider.{type = .CIRCLE, radius = 10};
+        lumberaxe: Entity = NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.itemsOnGround, lumberaxe);
     }
     // init equipment on ground
     {
-        toolbelt: Entity = NewEquipment(.TOOL_BELT, Game.player.position + .{0, -100}, Collider.{type = .RECT, rect = .{60, 15}});
+        pos := Game.player.position + .{0, -100};
+        collider := Collider.{type = .RECT, rect = .{60, 15}};
+        toolbelt: Entity = NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, toolbelt);
 
-        weaponbelt: Entity = NewEquipment(.WEAPON_BELT, Game.player.position + .{0, -200}, Collider.{type = .RECT, rect = .{60, 15}});
+        pos = Game.player.position + .{0, -200};
+        weaponbelt: Entity = NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, weaponbelt);
     }
 }

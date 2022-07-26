@@ -77,13 +77,16 @@ debug_is_command_valid :: (cmd: string)
     if cmd == "SPAWN BASKET"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        container := NewContainer(.BASKET, pos);
+        collider := Collider.{type = .RECT, rect = .{20, 30}};
+        container := NewContainer(.BASKET, collider, pos);
         array_add(*Game.containersOnGround, container); 
     }
+    
     if cmd == "SPAWN CHEST"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        container := NewContainer(.CHEST, pos);
+        collider := Collider.{type = .RECT, rect = .{20, 30}};
+        container := NewContainer(.CHEST, collider, pos);
         array_add(*Game.containersOnGround, container);
     }
 
@@ -91,7 +94,8 @@ debug_is_command_valid :: (cmd: string)
     if cmd == "SPAWN AXE"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        item := NewItem(.LUMBER_AXE, pos, Collider.{type = .CIRCLE, radius = 10});
+        collider := Collider.{type = .CIRCLE, radius = 10};
+        item := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.itemsOnGround, item);
     }
 
@@ -99,13 +103,15 @@ debug_is_command_valid :: (cmd: string)
     if cmd == "SPAWN TOOLBELT"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        equipment := NewEquipment(.TOOL_BELT, pos, Collider.{type = .RECT, rect = .{60, 15}});
+        collider := Collider.{type = .RECT, rect = .{60, 15}};
+        equipment := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, equipment);
     }
     if cmd == "SPAWN WEAPONBELT"
     {
         pos := Game.player.position + Game.player.forward * 50;
-        equipment := NewEquipment(.WEAPON_BELT, pos, Collider.{type = .RECT, rect = .{60, 15}});
+        collider := Collider.{type = .RECT, rect = .{60, 15}};
+        equipment := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, equipment);
     }
 
