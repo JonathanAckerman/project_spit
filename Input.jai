@@ -111,13 +111,13 @@ handle_input :: inline ()
     }
     else // debug on
     {
+        // write character
         key := GetKeyPressed();
         if key > 0 && key < 255 && key != 92 // 92 == '\'
         {
 
             if !Debug.line then Debug.line = sprint("%", to_string(*(cast(u8) key), 1));
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
-            // Debug.c.curPos.x += (Debug.fontSize/2) + Debug.fontSpacing;
             Debug.c.charNumber += 1;
         }
 
@@ -135,6 +135,7 @@ handle_input :: inline ()
             Debug.line = "";
         }
 
+        // delete character
         if IsKeyPressed(xx KeyboardKey.BACKSPACE)
         {
             if Debug.line
@@ -145,6 +146,7 @@ handle_input :: inline ()
             }
         }
 
+        // cycle through history
         if IsKeyPressed(xx KeyboardKey.KEY_UP)
         {
             if Debug.history.count > 0
@@ -156,10 +158,21 @@ handle_input :: inline ()
             }
         }
 
+        // clear line
         if IsKeyPressed(xx KeyboardKey.DELETE)
         {
             Debug.line = "";
             Debug.c.charNumber = 0;
+        }
+
+        // list commands
+        if IsKeyPressed(xx KeyboardKey.KEY_RIGHT)
+        {
+            Debug.listCommands = true;
+        }
+        if IsKeyPressed(xx KeyboardKey.KEY_LEFT)
+        {
+            Debug.listCommands = false;
         }
     }
 

@@ -56,6 +56,18 @@ debug_console :: (dt: float)
     {
         DrawTextEx(font, to_c_string(line), xy(c.basePos.x, c.curPos.y), fontSize, fontSpacing, WHITE);
     }
+
+    if listCommands
+    {
+        base_x := WINDOW_WIDTH / 2.0;
+        base_y := c.basePos.y + 5.0;
+        for Debug.commandList
+        {
+            x := base_x + (300 * (it_index / 6));
+            y := base_y + ((fontSize * 1.5) * (it_index % 6));
+            DrawTextEx(font, to_c_string(it), xy(x, y), fontSize, fontSpacing, GREEN);
+        }
+    }
 }
 
 debug_is_command_valid :: (cmd: string)

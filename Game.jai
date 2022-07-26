@@ -36,6 +36,21 @@ Debug: struct
     font: Font;
     fontSize := 28.0;
     fontSpacing := 1.0;
+
+    listCommands := false;
+    commandList: [] string = .[
+        "SPAWN BASKET",
+        "SPAWN CHEST",
+        "SPAWN AXE",
+        "SPAWN TOOLBELT",
+        "SPAWN WEAPONBELT",
+        "FILL POCKETS",
+        "MUSK",
+        "TP",
+        "GOTTAGOFAST",
+        "REPOP RESOURCES",
+        "RESET"
+    ];
 }
 
 game_loop :: inline ()
