@@ -1,7 +1,7 @@
 Building :: struct
 {
     position: Vector2;
-    size: int;
+    collider: Collider = .{type = .RECT};
     bldgType: BldgType;
 
     BldgType :: enum
@@ -31,9 +31,9 @@ Person :: struct
 {
     position: Vector2 = .{200, 200};
     forward: Vector2 = .{1, 0};
-    radius: int = 20;
     color: Color = BLACK;
     speed: float = 6.0;
+    collider: Collider = Collider.{type = .CIRCLE, radius = 20};
 
     velocity: Vector2;
 
@@ -45,19 +45,19 @@ Person :: struct
 
 Collider :: struct
 {
-    type: Collider_Type;
+    type: ColliderType;
 
     union
     {
         rect: Vector2;
         radius: float;
     }
-}
 
-Collider_Type :: enum
-{
-    RECT;
-    CIRCLE;
+    ColliderType :: enum
+    {
+        RECT;
+        CIRCLE;
+    }
 }
 
 Npc :: struct

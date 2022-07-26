@@ -55,10 +55,10 @@ game_loop :: inline ()
         {
             for buildings
             {
-                if player.position.x + player.radius > it.position.x - it.size/2 &&
-                player.position.x - player.radius < it.position.x + it.size/2 &&
-                player.position.y + player.radius > it.position.y - it.size/2 &&
-                player.position.y - player.radius < it.position.y + it.size/2
+                if player.position.x + player.collider.radius > it.position.x - it.collider.rect.x/2 &&
+                player.position.x - player.collider.radius < it.position.x + it.collider.rect.x/2 &&
+                player.position.y + player.collider.radius > it.position.y - it.collider.rect.y/2 &&
+                player.position.y - player.collider.radius < it.position.y + it.collider.rect.y/2
                 {
                     player.position += unit_vector(player.position - it.position) * length(player.velocity);
                 }
@@ -275,10 +275,10 @@ game_loop :: inline ()
                         collided := false;
                         for bldg: Game.buildings
                         {
-                            if x > bldg.position.x - bldg.size/2 &&
-                            x < bldg.position.x + bldg.size/2 &&
-                            y > bldg.position.y - bldg.size/2 && 
-                            y < bldg.position.y + bldg.size/2
+                            if x > bldg.position.x - bldg.collider.rect.x/2 &&
+                            x < bldg.position.x + bldg.collider.rect.x/2 &&
+                            y > bldg.position.y - bldg.collider.rect.y/2 && 
+                            y < bldg.position.y + bldg.collider.rect.y/2
                             {
                                 // try again with new position
                                 x = random_get_within_range(npc.position.x - 200, npc.position.x + 200);
@@ -377,8 +377,8 @@ game_loop :: inline ()
         {
             for buildings
             {
-                drawpos := it.position - xy(it.size/2.0, it.size/2.0);
-                DrawRectangleV(drawpos + camera_vector, xy(xx it.size, xx it.size), BLACK);
+                drawpos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0);
+                DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y), BLACK);
 
                 if it.bldgType == .TRADER
                 {
@@ -390,9 +390,9 @@ game_loop :: inline ()
                 if it.bldgType == .SHOP
                 {
                     if it.itemId == .BASKET
-                        draw_item_basket((it.position - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
+                        draw_item_basket((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
                     if it.itemId == .CHEST
-                        draw_item_chest((it.position - xy(it.size/8.0, it.size/8.0)) + camera_vector, it.size/4.0);
+                        draw_item_chest((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
                 }
             }
 
@@ -408,7 +408,7 @@ game_loop :: inline ()
             for itemsOnGround if it.item.id ==
             {
                 case .LUMBER_AXE;
-                    DrawCircleV(it.position + camera_vector, it.size.x, GRAY);
+                    DrawCircleV(it.position + camera_vector, it.collider.radius, GRAY);
             }
 
             for containersOnGround if it.container.id ==
@@ -422,9 +422,9 @@ game_loop :: inline ()
             for equipmentOnGround if it.equipment.id ==
             {
                 case .TOOL_BELT;
-                    DrawRectangleV(it.position - xy(it.size.x/2.0, it.size.y/2.0) + camera_vector, it.size, GREEN);
+                    DrawRectangleV(it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector, it.collider.rect, GREEN);
                 case .WEAPON_BELT;
-                    DrawRectangleV(it.position - xy(it.size.x/2.0, it.size.y/2.0) + camera_vector, it.size, RED);
+                    DrawRectangleV(it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector, it.collider.rect, RED);
             }
         }
 
@@ -432,16 +432,16 @@ game_loop :: inline ()
         for npcs
         {
             ss_npc := it.position + camera_vector;
-            DrawCircle(xx ss_npc.x, xx ss_npc.y, xx it.radius, it.color);
-            front := ss_npc + it.forward * cast(float) it.radius;
+            DrawCircle(xx ss_npc.x, xx ss_npc.y, xx it.collider.radius, it.color);
+            front := ss_npc + it.forward * cast(float) it.collider.radius;
             DrawLineEx(xx ss_npc, xx front, 2.0, WHITE);
         }
 
         // player
         {
             ss_player := player.position + camera_vector;
-            DrawCircle(xx ss_player.x, xx ss_player.y, xx player.radius, player.color);
-            front := ss_player + player.forward * cast(float) player.radius;
+            DrawCircle(xx ss_player.x, xx ss_player.y, xx player.collider.radius, player.color);
+            front := ss_player + player.forward * cast(float) player.collider.radius;
             DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
         }
 
@@ -593,11 +593,11 @@ game_reset :: ()
         {
             have = random_get() % xx (enum_highest_value(Resource_ID) + 1);
         }
-        size := clamp(random_get(), 50, 100);
+        size: float = xx clamp(random_get(), 50, 100);
         
         r : Building;
         r.position = xy(x, y);
-        r.size = xx size;
+        r.collider.rect = xy(size, size);
         r.bldgType = .TRADER;
         r.want = cast(Resource_ID) want;
         r.have = cast(Resource_ID) have;
@@ -608,7 +608,7 @@ game_reset :: ()
     // init shops
     basket_shop : Building;
     basket_shop.position = xy(-1100, -1100);
-    basket_shop.size = 50;
+    basket_shop.collider.rect = .{50, 50};
     basket_shop.bldgType = .SHOP;
     basket_shop.resource = .FIBER;
     basket_shop.amount = 10;
@@ -616,7 +616,7 @@ game_reset :: ()
     array_add(*Game.buildings, basket_shop);
     chest_shop : Building;
     chest_shop.position = xy(-900, -1100);
-    chest_shop.size = 50;
+    chest_shop.collider.rect = .{50, 50};
     chest_shop.bldgType = .SHOP;
     chest_shop.resource = .WOOD;
     chest_shop.amount = 10;
@@ -636,9 +636,9 @@ game_reset :: ()
             for Game.buildings
             {
                 if x > it.position.x &&
-                x < it.position.x + it.size &&
+                x < it.position.x + it.collider.rect.x &&
                 y > it.position.y && 
-                y < it.position.y + it.size
+                y < it.position.y + it.collider.rect.y
                 {
                     // try again with new position
                     x = random_get_within_range(-1000, 1000);
@@ -660,7 +660,7 @@ game_reset :: ()
         lumberaxe: Entity;
         {
             lumberaxe.position = Game.player.position + .{100, -100};
-            lumberaxe.size = .{10, 10};
+            lumberaxe.collider = Collider.{type = .CIRCLE, radius = 10};
             lumberaxe.tag = .ITEM;
             lumberaxe.item.id = .LUMBER_AXE;
             array_add(*Game.itemsOnGround, lumberaxe);
@@ -671,7 +671,7 @@ game_reset :: ()
         toolbelt: Entity;
         {
             toolbelt.position = Game.player.position + .{0, -100};
-            toolbelt.size = .{60, 15};
+            toolbelt.collider = Collider.{type = .RECT, rect = .{60, 15}};
             toolbelt.tag = .EQUIPMENT;
             toolbelt.equipment.id = .TOOL_BELT;
             toolbelt.equipment.capacity = 3;
@@ -680,7 +680,7 @@ game_reset :: ()
         weaponbelt: Entity;
         {
             weaponbelt.position = Game.player.position + .{0, -200};
-            weaponbelt.size = .{60, 15};
+            weaponbelt.collider = Collider.{type = .RECT, rect = .{60, 15}};
             weaponbelt.tag = .EQUIPMENT;
             weaponbelt.equipment.id = .WEAPON_BELT;
             weaponbelt.equipment.capacity = 3;
@@ -691,9 +691,9 @@ game_reset :: ()
 
 compute_interact_range :: (b: Building) -> float
 {
-    bldg_half_width := b.size/2.0;
+    bldg_half_width := b.collider.rect.x/2.0;
     bldg_center_to_corner_length := sqrt(2 * (bldg_half_width * bldg_half_width));
-    return bldg_center_to_corner_length + Game.player.radius + 10.0;
+    return bldg_center_to_corner_length + Game.player.collider.radius + 10.0;
 }
 
 get_closest_bldg_to_player :: () -> *Building, float

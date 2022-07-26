@@ -35,7 +35,7 @@ get_resource_color :: (r: Resource_ID) -> Color
 Entity :: struct
 {
     position: Vector2;
-    size: Vector2;
+    collider: Collider;
     tag: EntityType;
 
     EntityType :: enum
@@ -134,7 +134,7 @@ draw_item :: (pos: Vector2, e: Entity)
             if e.item.id ==
             {
                 case .LUMBER_AXE;
-                    DrawCircleV(pos, e.size.x, GRAY);
+                    DrawCircleV(pos, e.collider.radius, GRAY);
             }
     }
 }
