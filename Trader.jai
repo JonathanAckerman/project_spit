@@ -1,14 +1,6 @@
 Building :: struct
 {
-    position: Vector2;
-    collider: Collider = .{type = .RECT};
-    bldgType: Bldg_Type;
-
-    Bldg_Type :: enum
-    {
-        TRADER;
-        SHOP;
-    }
+    type: Bldg_Type;
 
     union
     {
@@ -22,9 +14,39 @@ Building :: struct
         {
             resource: Resource_Type;
             amount: int;
-            itemId: Container_Type;
+            itemType: Container_Type;
         }
     }
+}
+
+Bldg_Type :: enum
+{
+    TRADER;
+    SHOP;
+}
+
+NewBuilding :: (type: Bldg_Type, pos: Vector2, want: Resource_Type, have: Resource_Type) -> Entity
+{
+    e: Entity;
+    e.position = pos;
+    e.collider = Collider.{type = .RECT, rect = .{100, 100}};
+    e.tag = .BUILDING;
+    e.building.type = .TRADER;
+    e.building.want = want;
+    e.building.have = have;
+    return e;
+}
+NewBuilding :: (type: Bldg_Type, pos: Vector2, resource: Resource_Type, amount: int, selling: Container_Type) -> Entity
+{
+    e: Entity;
+    e.position = pos;
+    e.collider = Collider.{type = .RECT, rect = .{50, 50}};
+    e.tag = .BUILDING;
+    e.building.type = .SHOP;
+    e.building.resource = resource;
+    e.building.amount = amount;
+    e.building.itemType = selling;
+    return e;
 }
 
 Person :: struct

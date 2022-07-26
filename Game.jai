@@ -19,7 +19,7 @@ Game: struct
     }
 
     resourceList:       [..] Resource;
-    buildings:          [..] Building;
+    buildings:          [..] Entity;
     itemsOnGround:      [..] Entity;
     containersOnGround: [..] Entity;
     equipmentOnGround:  [..] Entity;
@@ -104,14 +104,14 @@ game_loop :: inline ()
             {
                 resource := resourceList[nearest_index];
 
-                if resource.id == .WOOD
+                if resource.type == .WOOD
                 {
                     if player.toolBelt.exists
                     {
                         has_axe := false;
                         for player.toolBelt.value.contents
                         {
-                            if it.item.id == .LUMBER_AXE then has_axe = true;
+                            if it.item.type == .LUMBER_AXE then has_axe = true;
                         }
                         if !has_axe return;
                     }
@@ -123,7 +123,7 @@ game_loop :: inline ()
                 if player.held.exists && player.held.value.tag == .CONTAINER
                 {
                     basket := *player.held.value.container;
-                    if basket.id == .BASKET
+                    if basket.type == .BASKET
                     {
                         basket_weight := compute_container_weight(basket);
                         if basket_weight < basket.capacity
@@ -132,7 +132,7 @@ game_loop :: inline ()
                             amount := ifx basket_weight + resource.quantity > basket.capacity
                                 then basket.capacity - basket_weight
                                 else resource.quantity;
-                            basket.contents[resource.id] += amount;
+                            basket.contents[resource.type] += amount;
                             array_unordered_remove_by_index(*resourceList, nearest_index);
                             has_harvested = true;
                         }
@@ -140,10 +140,10 @@ game_loop :: inline ()
                 }
 
                 // pockets can only hold 10 of each resource
-                if !has_harvested && player.pockets.contents[resource.id] < 10
+                if !has_harvested && player.pockets.contents[resource.type] < 10
                 {
-                    player.pockets.contents[resource.id] += resource.quantity;
-                    player.pockets.contents[resource.id] = min(player.pockets.contents[resource.id], 10);
+                    player.pockets.contents[resource.type] += resource.quantity;
+                    player.pockets.contents[resource.type] = min(player.pockets.contents[resource.type], 10);
                     array_unordered_remove_by_index(*resourceList, nearest_index);
                 }
             }
@@ -166,7 +166,7 @@ game_loop :: inline ()
                 found_wanted_resource := false;
                 for containers
                 {
-                    if it.contents[nearest.want] > 0
+                    if it.contents[nearest.building.want] > 0
                     {
                         from = it;
                         found_wanted_resource = true;
@@ -177,10 +177,10 @@ game_loop :: inline ()
                 if !found_wanted_resource return;
 
                 // look for a valid inventory to put it into
-                if containers[0].contents[nearest.have] < 10
+                if containers[0].contents[nearest.building.have] < 10
                 {
-                    from.contents[nearest.want] -= 1;
-                    containers[0].contents[nearest.have] += 1;
+                    from.contents[nearest.building.want] -= 1;
+                    containers[0].contents[nearest.building.have] += 1;
                 }
                 else
                 {
@@ -189,8 +189,8 @@ game_loop :: inline ()
                         if it_index == 0 continue; // skip the player's pockets since it functions differently
                         if compute_container_weight(it) < it.capacity
                         {
-                            from.contents[nearest.want] -= 1;
-                            it.contents[nearest.have] += 1;
+                            from.contents[nearest.building.want] -= 1;
+                            it.contents[nearest.building.have] += 1;
                             break;
                         }
                     }
@@ -209,9 +209,9 @@ game_loop :: inline ()
             {
                 nearby_containers := get_nearby_containers();
 
-                cost := nearest_shop.amount;
+                cost := nearest_shop.building.amount;
                 total_available := 0;
-                for nearby_containers { total_available += it.contents[nearest_shop.resource]; }
+                for nearby_containers { total_available += it.contents[nearest_shop.building.resource]; }
                 if total_available >= cost // we can afford it
                 {
                     // pay the cost
@@ -220,7 +220,7 @@ game_loop :: inline ()
                     {
                         if paid < cost
                         {
-                            containerAmount := *it.contents[nearest_shop.resource];
+                            containerAmount := *it.contents[nearest_shop.building.resource];
                             if <<containerAmount >= cost - paid
                             {
                                 <<containerAmount -= cost - paid;
@@ -234,7 +234,7 @@ game_loop :: inline ()
                         }
                     }
 
-                    item := NewContainer(nearest_shop.itemId);
+                    item := NewContainer(nearest_shop.building.itemType);
                     if !player.held.exists 
                     {
                         newHeld: Maybe(Entity);
@@ -362,7 +362,7 @@ game_loop :: inline ()
         BeginDrawing();
         ClearBackground(WHITE);
         
-        // map
+        // draw map
         {
             top := -1000.0;
             left := -1000.0;
@@ -378,36 +378,35 @@ game_loop :: inline ()
             }
         }
 
-        // resources
+        // draw resources
         {
             for resourceList
             {
                 ss_resource := it.position + camera_vector;
-                resource_color := get_resource_color(it.id);
+                resource_color := get_resource_color(it.type);
                 DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, resource_color);
             }
         }
 
-        // buildings
+        // draw buildings
         {
             for buildings
             {
                 drawpos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0);
                 DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y), BLACK);
 
-                if it.bldgType == .TRADER
+                if it.building.type ==
                 {
-                    want_color := get_resource_color(it.want);
-                    have_color := get_resource_color(it.have);
-                    DrawRectangleV((it.position - .{16, 8}) + camera_vector, .{16, 16}, want_color);
-                    DrawRectangleV((it.position + .{16, 8}) + camera_vector, .{16, 16}, have_color);
-                }
-                if it.bldgType == .SHOP
-                {
-                    if it.itemId == .BASKET
-                        draw_item_basket((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
-                    if it.itemId == .CHEST
-                        draw_item_chest((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
+                    case .TRADER;
+                        want_color := get_resource_color(it.building.want);
+                        have_color := get_resource_color(it.building.have);
+                        DrawRectangleV((it.position - .{16, 8}) + camera_vector, .{16, 16}, want_color);
+                        DrawRectangleV((it.position + .{16, 8}) + camera_vector, .{16, 16}, have_color);
+                    case .SHOP;
+                        if it.building.itemType == .BASKET
+                            draw_item_basket((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
+                        if it.building.itemType == .CHEST
+                            draw_item_chest((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
                 }
             }
 
@@ -418,15 +417,15 @@ game_loop :: inline ()
                 DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
         }
 
-        // items in world
+        // draw items in world
         {
-            for itemsOnGround if it.item.id ==
+            for itemsOnGround if it.item.type ==
             {
                 case .LUMBER_AXE;
                     DrawCircleV(it.position + camera_vector, it.collider.radius, GRAY);
             }
 
-            for containersOnGround if it.container.id ==
+            for containersOnGround if it.container.type ==
             {
                 case .BASKET;
                     draw_item_basket(it.position + camera_vector, 20.0);
@@ -434,7 +433,7 @@ game_loop :: inline ()
                     draw_item_chest(it.position + camera_vector, 20.0);
             }
 
-            for equipmentOnGround if it.equipment.id ==
+            for equipmentOnGround if it.equipment.type ==
             {
                 case .TOOL_BELT;
                     DrawRectangleV(it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector, it.collider.rect, GREEN);
@@ -443,7 +442,7 @@ game_loop :: inline ()
             }
         }
 
-        // npcs
+        // draw npcs
         for npcs
         {
             ss_npc := it.position + camera_vector;
@@ -452,7 +451,7 @@ game_loop :: inline ()
             DrawLineEx(xx ss_npc, xx front, 2.0, WHITE);
         }
 
-        // player
+        // draw player
         {
             ss_player := player.position + camera_vector;
             DrawCircle(xx ss_player.x, xx ss_player.y, xx player.collider.radius, player.color);
@@ -460,9 +459,9 @@ game_loop :: inline ()
             DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
         }
 
-        // ui
+        // draw ui
         {
-            // pockets
+            // draw pockets
             resource_names := enum_names(Resource_Type);
             DrawText(xx "Resources:", 20, 20, 20, BLACK);
             for r, r_index: enum_values_as_s64(Resource_Type)
@@ -472,13 +471,13 @@ game_loop :: inline ()
                 DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
             }
 
-            // held
+            // draw held
             xpos := 20.0;
             DrawText(xx "Held:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
             if player.held.exists 
             {
-                if player.held.value.tag == .CONTAINER if player.held.value.container.id ==
+                if player.held.value.tag == .CONTAINER if player.held.value.container.type ==
                 {
                     case .BASKET;
                         draw_item_basket(xy(xpos + 20.0, WINDOW_HEIGHT - 65), 20.0);
@@ -494,7 +493,7 @@ game_loop :: inline ()
                         xpos += 80.0;
                 }
             }
-            // tool belt
+            // draw tool belt
             xpos = 90;
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
             if player.toolBelt.exists
@@ -512,7 +511,7 @@ game_loop :: inline ()
                     }
                 }
             }
-            // weapon belt
+            // draw weapon belt
             xpos = 160;
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
             if player.weaponBelt.exists
@@ -525,23 +524,23 @@ game_loop :: inline ()
                 }
             }
 
-            // nearby inventory
+            // draw nearby inventory
             nearest_entity := get_nearest_holdable_in_range(50);
             if nearest_entity.exists
             {
                 drawPos := nearest_entity.value.position + camera_vector;
                 if nearest_entity.value.tag == .CONTAINER then drawPos += .{30, -110};
-                id: Any;
+                type: Any;
                 if nearest_entity.value.tag ==
                 {
                     case .CONTAINER;
-                        id = nearest_entity.value.container.id;
+                        type = nearest_entity.value.container.type;
                     case .ITEM;
-                        id = nearest_entity.value.item.id;
+                        type = nearest_entity.value.item.type;
                     case .EQUIPMENT;
-                        id = nearest_entity.value.equipment.id;
+                        type = nearest_entity.value.equipment.type;
                 }
-                DrawText(to_c_string(tprint("%", id)), xx drawPos.x, xx drawPos.y, 20, BLACK);
+                DrawText(to_c_string(tprint("%", type)), xx drawPos.x, xx drawPos.y, 20, BLACK);
 
                 if nearest_entity.value.tag == .CONTAINER
                 {
@@ -592,37 +591,15 @@ game_reset :: ()
         want := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         have := want;
         while have == want
-        {
             have = random_get() % xx (enum_highest_value(Resource_Type) + 1);
-        }
-        size: float = xx clamp(random_get(), 50, 100);
-        
-        r : Building;
-        r.position = xy(x, y);
-        r.collider.rect = xy(size, size);
-        r.bldgType = .TRADER;
-        r.want = cast(Resource_Type) want;
-        r.have = cast(Resource_Type) have;
-
-        array_add(*Game.buildings, r);
+        e: Entity = NewBuilding(.TRADER, xy(x, y), xx want, xx have);
+        array_add(*Game.buildings, e);
     }
 
     // init shops
-    basket_shop : Building;
-    basket_shop.position = xy(-1100, -1100);
-    basket_shop.collider.rect = .{50, 50};
-    basket_shop.bldgType = .SHOP;
-    basket_shop.resource = .FIBER;
-    basket_shop.amount = 10;
-    basket_shop.itemId = .BASKET;
+    basket_shop: Entity = NewBuilding(.SHOP, xy(-1100, -1100), .FIBER, 10, .BASKET);
     array_add(*Game.buildings, basket_shop);
-    chest_shop : Building;
-    chest_shop.position = xy(-900, -1100);
-    chest_shop.collider.rect = .{50, 50};
-    chest_shop.bldgType = .SHOP;
-    chest_shop.resource = .WOOD;
-    chest_shop.amount = 10;
-    chest_shop.itemId = .CHEST;
+    chest_shop: Entity = NewBuilding(.SHOP, xy(-900, -1100), .WOOD, 10, .CHEST);
     array_add(*Game.buildings, chest_shop);
 
     // init npcs
@@ -659,46 +636,27 @@ game_reset :: ()
 
     // init items on ground
     {
-        lumberaxe: Entity;
-        {
-            lumberaxe.position = Game.player.position + .{100, -100};
-            lumberaxe.collider = Collider.{type = .CIRCLE, radius = 10};
-            lumberaxe.tag = .ITEM;
-            lumberaxe.item.id = .LUMBER_AXE;
-            array_add(*Game.itemsOnGround, lumberaxe);
-        }
+        lumberaxe: Entity = NewItem(.LUMBER_AXE, Game.player.position + .{100, -100}, Collider.{type = .CIRCLE, radius = 10});
+        array_add(*Game.itemsOnGround, lumberaxe);
     }
     // init equipment on ground
     {
-        toolbelt: Entity;
-        {
-            toolbelt.position = Game.player.position + .{0, -100};
-            toolbelt.collider = Collider.{type = .RECT, rect = .{60, 15}};
-            toolbelt.tag = .EQUIPMENT;
-            toolbelt.equipment.id = .TOOL_BELT;
-            toolbelt.equipment.capacity = 3;
-            array_add(*Game.equipmentOnGround, toolbelt);
-        }
-        weaponbelt: Entity;
-        {
-            weaponbelt.position = Game.player.position + .{0, -200};
-            weaponbelt.collider = Collider.{type = .RECT, rect = .{60, 15}};
-            weaponbelt.tag = .EQUIPMENT;
-            weaponbelt.equipment.id = .WEAPON_BELT;
-            weaponbelt.equipment.capacity = 3;
-            array_add(*Game.equipmentOnGround, weaponbelt);
-        }
+        toolbelt: Entity = NewEquipment(.TOOL_BELT, Game.player.position + .{0, -100}, Collider.{type = .RECT, rect = .{60, 15}});
+        array_add(*Game.equipmentOnGround, toolbelt);
+
+        weaponbelt: Entity = NewEquipment(.WEAPON_BELT, Game.player.position + .{0, -200}, Collider.{type = .RECT, rect = .{60, 15}});
+        array_add(*Game.equipmentOnGround, weaponbelt);
     }
 }
 
-compute_interact_range :: (b: Building) -> float
+compute_interact_range :: (building: Entity) -> float
 {
-    bldg_half_width := b.collider.rect.x/2.0;
+    bldg_half_width := building.collider.rect.x/2.0;
     bldg_center_to_corner_length := sqrt(2 * (bldg_half_width * bldg_half_width));
     return bldg_center_to_corner_length + Game.player.collider.radius + 10.0;
 }
 
-get_closest_bldg_to_player :: () -> *Building, float
+get_closest_bldg_to_player :: () -> *Entity, float
 {
     using Game;
     nearest_index := 0;
@@ -715,12 +673,12 @@ get_closest_bldg_to_player :: () -> *Building, float
     return *buildings[nearest_index], min_dist;
 }
 
-get_closest_bldg_to_player :: (type: Building.Bldg_Type) -> *Building, float
+get_closest_bldg_to_player :: (type: Bldg_Type) -> *Entity, float
 {
     using Game;
     nearest_index := 0;
     min_dist := length(buildings[0].position - player.position);
-    for buildings if it.bldgType == type
+    for buildings if it.building.type == type
     {
         dist := length(it.position - player.position);
         if dist < min_dist
@@ -764,7 +722,7 @@ get_nearby_containers :: () -> [..] *Container
     if player.held.exists && player.held.value.tag == .CONTAINER
     {
         basket := player.held.value.container;
-        if basket.id == .BASKET
+        if basket.type == .BASKET
             array_add(*result, *basket);
     }
 
@@ -813,24 +771,19 @@ try_pickup :: ()
         {
             case .EQUIPMENT;
                 equipment := closest_item.value.equipment;
-                if equipment.id ==
+                e := NewMaybe(equipment);
+                if equipment.type ==
                 {
                     case .TOOL_BELT;
-                        e: Maybe(Equipment);
-                        e.exists = true;
-                        e.value = equipment;
                         player.toolBelt = e;
                         was_picked_up = true;
                     case .WEAPON_BELT;
-                        e: Maybe(Equipment);
-                        e.exists = true;
-                        e.value = equipment;
                         player.weaponBelt = e;
                         was_picked_up = true;
                 }
             case .ITEM;
                 item := closest_item.value.item;
-                if item.id ==
+                if item.type ==
                 {
                     case .LUMBER_AXE;
                         if player.toolBelt.exists
@@ -887,12 +840,12 @@ populate_resources :: ()
     {
         x := random_get_within_range(-1000, 1000);
         y := random_get_within_range(-1000, 1000);
-        id := random_get() % xx (enum_highest_value(Resource_Type) + 1);
+        type := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         quantity := max(random_get() % 20, 10);
 
         r : Resource;
         r.position = xy(x, y);
-        r.id = cast(Resource_Type) id;
+        r.type = cast(Resource_Type) type;
         r.quantity = xx quantity;
 
         array_add(*Game.resourceList, r);

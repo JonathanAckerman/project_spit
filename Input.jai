@@ -76,7 +76,7 @@ handle_input :: inline ()
                 }
                 else
                 {
-                    if Game.player.held.value.tag == .CONTAINER && Game.player.held.value.container.id == .BASKET
+                    if Game.player.held.value.tag == .CONTAINER && Game.player.held.value.container.type == .BASKET
                     {
                         container.value = *Game.player.held.value.container;
                         container.exists = true;

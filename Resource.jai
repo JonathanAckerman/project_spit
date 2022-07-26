@@ -1,7 +1,7 @@
 Resource :: struct 
 {
     position: Vector2 = ---;
-    id: Resource_Type;
+    type: Resource_Type;
     quantity: int; 
 }
 
@@ -36,36 +36,37 @@ Entity :: struct
 {
     position: Vector2;
     collider: Collider;
-    tag: EntityType;
-
-    EntityType :: enum
-    {
-        ITEM;
-        CONTAINER;
-        EQUIPMENT;
-    }
+    tag: Entity_Type;
 
     union
     {
         #as item: Item;
         #as container: Container;
         #as equipment: Equipment;
+        #as building: Building;
     }
+}
+Entity_Type :: enum
+{
+    ITEM;
+    CONTAINER;
+    EQUIPMENT;
+    BUILDING;
 }
 
 Item :: struct
 {
-    id: Item_Type;
+    type: Item_Type;
 }
 Container :: struct
 {
-    id: Container_Type;
+    type: Container_Type;
     capacity: int;
     contents: [#run enum_highest_value(Resource_Type) + 1] int;
 }
 Equipment :: struct
 {
-    id: Equipment_Type;
+    type: Equipment_Type;
     using #as inventory: Inventory;
 }
 
@@ -77,14 +78,13 @@ Inventory :: struct
     contents: [..] Entity;
 }
 
-// @Note: I'm trusting that this will only be passed valid Container Entity_ID's atm
-NewContainer :: (id: Container_Type, pos: Vector2 = .{0, 0}) -> Entity
+NewContainer :: (type: Container_Type, pos: Vector2 = .{0, 0}) -> Entity
 {
     e: Entity;
     e.position = pos;
     e.tag = .CONTAINER;
     cap: int;
-    if id ==
+    if type ==
     {
         case .BASKET;
             cap = 100;
@@ -92,28 +92,28 @@ NewContainer :: (id: Container_Type, pos: Vector2 = .{0, 0}) -> Entity
             cap = 300;
     }
     e.container.capacity = cap;
-    e.container.id = id;
+    e.container.type = type;
     return e;
 }
 
-NewItem :: (id: Item_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+NewItem :: (type: Item_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
 {
     e: Entity;
     e.position = pos;
     e.tag = .ITEM;
-    e.item.id = id;
+    e.item.type = type;
     e.collider = coll;
     return e;
 }
 
-NewEquipment :: (id: Equipment_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
+NewEquipment :: (type: Equipment_Type, pos: Vector2 = .{0, 0}, coll: Collider) -> Entity
 {
     e: Entity;
     e.position = pos;
     e.tag = .EQUIPMENT;
-    e.equipment.id = id;
+    e.equipment.type = type;
     cap: int;
-    if id ==
+    if type ==
     {
         case .TOOL_BELT;
             cap = 3;
@@ -160,7 +160,7 @@ draw_item :: (pos: Vector2, e: Entity)
     if e.tag ==
     {
         case .ITEM;
-            if e.item.id ==
+            if e.item.type ==
             {
                 case .LUMBER_AXE;
                     DrawCircleV(pos, e.collider.radius, GRAY);
