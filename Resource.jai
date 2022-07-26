@@ -1,19 +1,3 @@
-Resource :: struct 
-{
-    position: Vector2 = ---;
-    type: Resource_Type;
-    quantity: int; 
-}
-
-Resource_Type :: enum
-{
-    COPPER;
-    IRON;
-    WATER;
-    WOOD;
-    FIBER;
-}
-
 get_resource_color :: (r: Resource_Type) -> Color
 {
     if #complete r ==
@@ -42,6 +26,7 @@ Entity :: struct
 
     union
     {
+        #as resource: Resource;
         #as item: Item;
         #as container: Container;
         #as equipment: Equipment;
@@ -50,12 +35,18 @@ Entity :: struct
 }
 Entity_Type :: enum
 {
+    RESOURCE;
     ITEM;
     CONTAINER;
     EQUIPMENT;
     BUILDING;
 }
 
+Resource :: struct 
+{
+    type: Resource_Type;
+    quantity: int;
+}
 Item :: struct
 {
     type: Item_Type;
@@ -130,6 +121,14 @@ NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0
     return e;
 }
 
+Resource_Type :: enum
+{
+    COPPER;
+    IRON;
+    WATER;
+    WOOD;
+    FIBER;
+}
 Container_Type :: enum
 {
     BASKET;
@@ -148,10 +147,15 @@ Item_Type :: enum
     WHIP;
 }
 
-draw_item :: (e: Entity, pos: Vector2, scale: float = 1.0)
+// @Note: doesn't handle buildings yet
+draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
 {
+    scale *= Game.camera.zoom;
     if e.tag ==
     {
+        case .RESOURCE;
+            resource_color := get_resource_color(e.resource.type);
+            DrawCircleV(pos, xx e.resource.quantity, resource_color);
         case .ITEM; if e.item.type ==
         {
             case .LUMBER_AXE;
@@ -180,6 +184,7 @@ draw_item :: (e: Entity, pos: Vector2, scale: float = 1.0)
 
 draw_ui_representation :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
 {
+    scale *= Game.camera.zoom;
     if type ==
     {
         case .BASKET;

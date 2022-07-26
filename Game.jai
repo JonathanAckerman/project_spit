@@ -15,10 +15,11 @@ Game: struct
 
     camera: struct
     {
+        zoom := 1.0;
         position: Vector2;
     }
 
-    resourceList:       [..] Resource;
+    resourceList:       [..] Entity;
     buildings:          [..] Entity;
     itemsOnGround:      [..] Entity;
     containersOnGround: [..] Entity;
@@ -102,7 +103,7 @@ game_loop :: inline ()
             }
             if min_dist < 100
             {
-                resource := resourceList[nearest_index];
+                resource := resourceList[nearest_index].resource;
 
                 if resource.type == .WOOD
                 {
@@ -381,8 +382,7 @@ game_loop :: inline ()
             for resourceList
             {
                 ss_resource := it.position + camera_vector;
-                resource_color := get_resource_color(it.type);
-                DrawCircle(xx ss_resource.x, xx ss_resource.y, xx it.quantity, resource_color);
+                draw_entity(it, ss_resource);
             }
         }
 
@@ -418,19 +418,19 @@ game_loop :: inline ()
         {
             for itemsOnGround
             {
-                draw_item(it, it.position + camera_vector);
+                draw_entity(it, it.position + camera_vector);
             }
 
             for containersOnGround
             {
                 pos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.x/2.0) + camera_vector;
-                draw_item(it, pos);
+                draw_entity(it, pos);
             }
 
             for equipmentOnGround
             {
                 pos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector;
-                draw_item(it, pos);
+                draw_entity(it, pos);
             }
         }
 
@@ -472,7 +472,7 @@ game_loop :: inline ()
                 if player.held.value.tag == .CONTAINER if player.held.value.container.type ==
                 {
                     case .BASKET;
-                        draw_item(player.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
+                        draw_entity(player.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
                         for r, r_index: player.held.value.container.contents
                         {
                             y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
@@ -481,7 +481,7 @@ game_loop :: inline ()
                         }
                         xpos += 80.0;
                     case .CHEST;
-                        draw_item(player.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
+                        draw_entity(player.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
                         xpos += 80.0;
                 }
             }
@@ -499,7 +499,7 @@ game_loop :: inline ()
                     if i < player.toolBelt.value.contents.count
                     {
                         item := player.toolBelt.value.contents[i];
-                        draw_item(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
+                        draw_entity(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
                     }
                 }
             }
@@ -516,7 +516,7 @@ game_loop :: inline ()
                     if i < player.weaponBelt.value.contents.count
                     {
                         item := player.weaponBelt.value.contents[i];
-                        draw_item(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
+                        draw_entity(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
                     }
                 }
             }
@@ -855,10 +855,12 @@ populate_resources :: ()
         type := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         quantity := max(random_get() % 20, 10);
 
-        r : Resource;
+        r : Entity;
         r.position = xy(x, y);
-        r.type = cast(Resource_Type) type;
-        r.quantity = xx quantity;
+        r.collider = Collider.{type = .CIRCLE, radius = 10};
+        r.tag = .RESOURCE;
+        r.resource.type = xx type;
+        r.resource.quantity = xx quantity;
 
         array_add(*Game.resourceList, r);
     }
