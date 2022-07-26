@@ -31,7 +31,7 @@ Debug: struct
     c: DebugCursor;
     line: string;
     history: [..] string;
-    lineNumber := 0;
+    historyIndex := -1;
 
     font: Font;
     fontSize := 28.0;
@@ -565,20 +565,7 @@ game_reset :: ()
     random_seed(seed);
 
     //init resources
-    for i: 1..20
-    {
-        x := random_get_within_range(-1000, 1000);
-        y := random_get_within_range(-1000, 1000);
-        id := random_get() % xx (enum_highest_value(Resource_ID) + 1);
-        quantity := max(random_get() % 20, 10);
-
-        r : Resource;
-        r.position = xy(x, y);
-        r.id = cast(Resource_ID) id;
-        r.quantity = xx quantity;
-
-        array_add(*Game.resourceList, r);
-    }
+    populate_resources();
 
     //init traders
     num_traders := clamp(random_get(), 3, 5);
@@ -876,5 +863,23 @@ Get_Nearest_To_Player :: (arr: [..] Entity) #expand
             `nearest_index = it_index;
             `nearest_source = arr;
         }
+    }
+}
+
+populate_resources :: ()
+{
+    for i: 1..20
+    {
+        x := random_get_within_range(-1000, 1000);
+        y := random_get_within_range(-1000, 1000);
+        id := random_get() % xx (enum_highest_value(Resource_ID) + 1);
+        quantity := max(random_get() % 20, 10);
+
+        r : Resource;
+        r.position = xy(x, y);
+        r.id = cast(Resource_ID) id;
+        r.quantity = xx quantity;
+
+        array_add(*Game.resourceList, r);
     }
 }

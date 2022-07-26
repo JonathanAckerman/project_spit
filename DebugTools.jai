@@ -10,7 +10,13 @@ debug_console :: (dt: float)
 {
     using Debug;
     // draw background
-    DrawRectangleV(.{10.0, WINDOW_HEIGHT - 250.0}, .{WINDOW_WIDTH - 20, 240}, .{0, 0, 0, 230});
+    DrawRectangleV(.{10, WINDOW_HEIGHT - 250}, .{WINDOW_WIDTH - 20, 240}, .{0, 0, 0, 230});
+
+    // update cursor
+    xpos := c.basePos.x + ((Debug.fontSize/2) + Debug.fontSpacing) * c.charNumber;
+    ypos := c.basePos.y + (Debug.fontSize * 1.5) * c.lineNumber;
+    ypos = clamp(ypos, c.basePos.y, WINDOW_HEIGHT - 40);
+    c.curPos = xy(xpos, ypos);
 
     // draw cursor
     if c.blinkState
@@ -26,21 +32,21 @@ debug_console :: (dt: float)
     }
 
     // draw history
-    if lineNumber < 5
+    if c.lineNumber < 5
     {
         historyPos := c.basePos;
         for history
         {
-            DrawTextEx(font, to_c_string(it), historyPos, fontSize, fontSpacing, WHITE);
+            DrawTextEx(font, to_c_string(it), historyPos, fontSize, fontSpacing, GRAY);
             historyPos += xy(0, fontSize * 1.5);
         }
     }
     else
     {
         historyPos := c.basePos;
-        for i: (lineNumber - 5)..(lineNumber - 1)
+        for i: (c.lineNumber - 5)..(c.lineNumber - 1)
         {
-            DrawTextEx(font, to_c_string(history[i]), historyPos, fontSize, fontSpacing, WHITE);
+            DrawTextEx(font, to_c_string(history[i]), historyPos, fontSize, fontSpacing, GRAY);
             historyPos += xy(0, fontSize * 1.5);
         }
     }
@@ -98,6 +104,13 @@ debug_is_command_valid :: (cmd: string)
             <<it = 10;
         }
     }
+    if cmd == "MUSK"
+    {
+        for *Game.player.pockets.contents
+        {
+            <<it = 200_000_000_000;
+        }
+    }
     if cmd == "TP"
     {
         Game.player.position = .{-1000, -1000};
@@ -106,12 +119,23 @@ debug_is_command_valid :: (cmd: string)
     {
         Game.player.speed = 50;
     }
+    if cmd == "REPOP RESOURCES"
+    {
+        array_reset(*Game.resourceList);
+        populate_resources();
+    }
+    if cmd == "RESET"
+    {
+        game_reset();
+    }
 }
 
 DebugCursor :: struct
 {
     curPos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
     basePos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
+    charNumber := 0;
+    lineNumber := 0;
     size: Vector2;
     blinkState := true;
     blinkTimer := 0.5;

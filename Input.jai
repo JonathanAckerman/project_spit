@@ -117,23 +117,22 @@ handle_input :: inline ()
 
             if !Debug.line then Debug.line = sprint("%", to_string(*(cast(u8) key), 1));
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
-            Debug.c.curPos.x += (Debug.fontSize/2) + Debug.fontSpacing;
+            // Debug.c.curPos.x += (Debug.fontSize/2) + Debug.fontSpacing;
+            Debug.c.charNumber += 1;
         }
 
+        // submit command
         if IsKeyPressed(xx KeyboardKey.ENTER)
         {
-            // submit command
-            Debug.lineNumber += 1;
+            // CR
+            Debug.c.charNumber = 0;
+            // LF
+            Debug.c.lineNumber += 1;
             debug_is_command_valid(Debug.line);
             // add current line to history
-            array_add(*Debug.history, sprint("%0%", Debug.line, "\n"));
+            array_add(*Debug.history, Debug.line);
             // reset current line
             Debug.line = "";
-
-            // CRLF
-            Debug.c.curPos.x = Debug.c.basePos.x;
-            if Debug.lineNumber < 6
-                Debug.c.curPos.y += Debug.fontSize * 1.5;
         }
 
         if IsKeyPressed(xx KeyboardKey.BACKSPACE)
@@ -141,8 +140,26 @@ handle_input :: inline ()
             if Debug.line
             {
                 Debug.line.count -= 1;
+                Debug.c.charNumber -= 1;
                 Debug.c.curPos.x -= (Debug.fontSize/2) + Debug.fontSpacing;
             }
+        }
+
+        if IsKeyPressed(xx KeyboardKey.KEY_UP)
+        {
+            if Debug.history.count > 0
+            {
+                Debug.historyIndex += 1;
+                if Debug.historyIndex == Debug.history.count then Debug.historyIndex = 0;
+                Debug.line = Debug.history[(Debug.history.count - 1) - Debug.historyIndex];
+                Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
+            }
+        }
+
+        if IsKeyPressed(xx KeyboardKey.DELETE)
+        {
+            Debug.line = "";
+            Debug.c.charNumber = 0;
         }
     }
 
