@@ -234,12 +234,10 @@ game_loop :: inline ()
                         }
                     }
 
-                    item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 30}});
+                    item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 20}});
                     if !player.held.exists 
                     {
-                        newHeld: Maybe(Entity);
-                        newHeld.exists = true;
-                        newHeld.value = item;
+                        newHeld := NewMaybe(item);
                         player.held = newHeld;
                     }
                     else // drop the item nearby
@@ -403,10 +401,9 @@ game_loop :: inline ()
                         DrawRectangleV((it.position - .{16, 8}) + camera_vector, .{16, 16}, want_color);
                         DrawRectangleV((it.position + .{16, 8}) + camera_vector, .{16, 16}, have_color);
                     case .SHOP;
-                        if it.building.itemType == .BASKET
-                            draw_item_basket((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
-                        if it.building.itemType == .CHEST
-                            draw_item_chest((it.position - xy(it.collider.rect.x/8.0, it.collider.rect.y/8.0)) + camera_vector, it.collider.rect.x/4.0);
+                        collider := Collider.{type = .RECT, rect = .{20, 20}};
+                        pos := it.position - xy(collider.rect.x/2.5, it.collider.rect.y/4) + camera_vector;
+                        draw_ui_representation(pos, collider, 0.8, it.building.itemType);
                 }
             }
 
@@ -419,26 +416,21 @@ game_loop :: inline ()
 
         // draw items in world
         {
-            for itemsOnGround if it.item.type ==
+            for itemsOnGround
             {
-                case .LUMBER_AXE;
-                    DrawCircleV(it.position + camera_vector, it.collider.radius, GRAY);
+                draw_item(it, it.position + camera_vector);
             }
 
-            for containersOnGround if it.container.type ==
+            for containersOnGround
             {
-                case .BASKET;
-                    draw_item_basket(it.position + camera_vector, 20.0);
-                case .CHEST;
-                    draw_item_chest(it.position + camera_vector, 20.0);
+                pos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.x/2.0) + camera_vector;
+                draw_item(it, pos);
             }
 
-            for equipmentOnGround if it.equipment.type ==
+            for equipmentOnGround
             {
-                case .TOOL_BELT;
-                    DrawRectangleV(it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector, it.collider.rect, GREEN);
-                case .WEAPON_BELT;
-                    DrawRectangleV(it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector, it.collider.rect, RED);
+                pos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector;
+                draw_item(it, pos);
             }
         }
 
@@ -480,7 +472,7 @@ game_loop :: inline ()
                 if player.held.value.tag == .CONTAINER if player.held.value.container.type ==
                 {
                     case .BASKET;
-                        draw_item_basket(xy(xpos + 20.0, WINDOW_HEIGHT - 65), 20.0);
+                        draw_item(player.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
                         for r, r_index: player.held.value.container.contents
                         {
                             y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
@@ -489,7 +481,7 @@ game_loop :: inline ()
                         }
                         xpos += 80.0;
                     case .CHEST;
-                        draw_item_chest(xy(xpos + 20.0, WINDOW_HEIGHT - 55), 20.0);
+                        draw_item(player.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
                         xpos += 80.0;
                 }
             }
@@ -507,7 +499,7 @@ game_loop :: inline ()
                     if i < player.toolBelt.value.contents.count
                     {
                         item := player.toolBelt.value.contents[i];
-                        draw_item(xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50), item); //draw inv
+                        draw_item(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
                     }
                 }
             }
@@ -521,6 +513,11 @@ game_loop :: inline ()
                 for i: 0..player.weaponBelt.value.capacity - 1
                 {
                     DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv
+                    if i < player.weaponBelt.value.contents.count
+                    {
+                        item := player.weaponBelt.value.contents[i];
+                        draw_item(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
+                    }
                 }
             }
 
@@ -640,6 +637,9 @@ game_reset :: ()
         collider := Collider.{type = .CIRCLE, radius = 10};
         lumberaxe: Entity = NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.itemsOnGround, lumberaxe);
+
+        pos = xy(random_get_within_range(-1000, 1000), random_get_within_range(-1000, 1000));
+        sword: Entity = NewItem(.SWORD, collider, pos);
     }
     // init equipment on ground
     {
@@ -802,9 +802,7 @@ try_pickup :: ()
                         }
                 }
             case .CONTAINER;
-                newHeld: Maybe(Entity);
-                newHeld.exists = true;
-                newHeld.value = <<closest_item.value;
+                newHeld: = NewMaybe(<<closest_item.value);
                 player.held = newHeld;
                 was_picked_up = true;
         }

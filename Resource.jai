@@ -148,27 +148,45 @@ Item_Type :: enum
     WHIP;
 }
 
-draw_item_basket :: (pos: Vector2, size: float)
-{
-    DrawRectangleV(pos, xy(size, size), BEIGE);
-    DrawCircleV(pos + xy(size/2.0, size), size/2.0, BEIGE);
-}
-
-draw_item_chest :: (pos: Vector2, size: float)
-{
-    DrawRectangleV(pos, xy(size, size), DARKGREEN);
-    DrawCircleV(pos + xy(size/2.0, 0), size/2.0, DARKGREEN);
-}
-
-draw_item :: (pos: Vector2, e: Entity)
+draw_item :: (e: Entity, pos: Vector2, scale: float = 1.0)
 {
     if e.tag ==
     {
-        case .ITEM;
-            if e.item.type ==
-            {
-                case .LUMBER_AXE;
-                    DrawCircleV(pos, e.collider.radius, GRAY);
-            }
+        case .ITEM; if e.item.type ==
+        {
+            case .LUMBER_AXE;
+                DrawCircleV(pos, e.collider.radius * scale, GRAY);
+            case .SWORD;
+                DrawCircleV(pos, e.collider.radius * scale, BLACK);
+        }
+        case .CONTAINER; if e.container.type ==
+        {
+            case .BASKET;
+                DrawRectangleV(pos, e.collider.rect * scale, BEIGE);
+                DrawCircleV(pos + xy(e.collider.rect.x/2.0, e.collider.rect.y), (e.collider.rect.x/2.0) * scale, BEIGE);
+            case .CHEST;
+                DrawRectangleV(pos, e.collider.rect * scale, DARKGREEN);
+                DrawCircleV(pos + xy(e.collider.rect.x/2.0, 0), (e.collider.rect.x/2.0) * scale, DARKGREEN);
+        }
+        case .EQUIPMENT; if e.equipment.type ==
+        {
+            case .TOOL_BELT;
+                DrawRectangleV(pos, e.collider.rect * scale, GREEN);
+            case .WEAPON_BELT;
+                DrawRectangleV(pos, e.collider.rect * scale, RED);
+        }
+    }
+}
+
+draw_ui_representation :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
+{
+    if type ==
+    {
+        case .BASKET;
+            DrawRectangleV(pos, collider.rect * scale, BEIGE);
+            DrawCircleV(pos + xy(collider.rect.x/2.0 - 2, collider.rect.y - 2), (collider.rect.x/2.0) * scale, BEIGE);
+        case .CHEST;
+            DrawRectangleV(pos + .{0, 8}, collider.rect * scale, DARKGREEN);
+            DrawCircleV(pos + xy(collider.rect.x/2.0 - 2, 6), (collider.rect.x/2.0) * scale, DARKGREEN);
     }
 }
