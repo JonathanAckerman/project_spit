@@ -1,6 +1,6 @@
 handle_input :: inline () 
 {
-    if !Game.debug
+    if !Debug.isActive
     {
         // movement
         new_velocity: Vector2;
@@ -194,7 +194,8 @@ handle_input :: inline ()
     // debug
     if IsKeyPressed(xx KeyboardKey.BACKSLASH)
     {
-        Game.debug = !Game.debug;
+        Debug.isActive = !Debug.isActive;
+        if !Debug.showEntityInfo then Debug.showEntityInfo = true;
         Debug.c.size = xy(Debug.fontSize/2, Debug.fontSize * 0.66);
     }
 }

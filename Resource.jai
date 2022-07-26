@@ -147,7 +147,7 @@ Item_Type :: enum
     WHIP;
 }
 
-// @Note: doesn't handle buildings yet
+// @TODO: handle buildings and people
 draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
 {
     scale *= Game.camera.zoom;
@@ -155,7 +155,7 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
     {
         case .RESOURCE;
             resource_color := get_resource_color(e.resource.type);
-            DrawCircleV(pos, xx e.resource.quantity, resource_color);
+            DrawCircleV(pos, xx e.resource.quantity * scale, resource_color);
         case .ITEM; if e.item.type ==
         {
             case .LUMBER_AXE;
@@ -182,6 +182,7 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
     }
 }
 
+// @TODO: handle camera zoom 
 draw_ui_representation :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
 {
     scale *= Game.camera.zoom;

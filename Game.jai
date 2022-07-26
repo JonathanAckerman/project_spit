@@ -2,7 +2,6 @@ Game: struct
 {
     resetting: bool;
     paused: bool;
-    debug: bool;
 
     player: struct 
     {
@@ -19,6 +18,7 @@ Game: struct
         position: Vector2;
     }
 
+    entityList:         [..] *[..]Entity;
     resourceList:       [..] Entity;
     buildings:          [..] Entity;
     itemsOnGround:      [..] Entity;
@@ -29,6 +29,7 @@ Game: struct
 
 Debug: struct
 {
+    isActive := false;
     c: DebugCursor;
     line: string;
     history: [..] string;
@@ -50,8 +51,11 @@ Debug: struct
         "TP",
         "GOTTAGOFAST",
         "REPOP RESOURCES",
-        "RESET"
+        "RESET",
+        "DEBUG INFO 0",
+        "DEBUG INFO 1"
     ];
+    showEntityInfo := false;
 }
 
 game_loop :: inline ()
@@ -554,9 +558,20 @@ game_loop :: inline ()
 
         // debug
         {
-            if debug
+            if Debug.showEntityInfo
             {
                 debug_player_position();
+                for entityList
+                {
+                    for <<it
+                    {
+                        debug_entity_info(it);
+                    }
+                }
+            }
+
+            if Debug.isActive
+            {
                 debug_console(dt);
             }
         }
@@ -571,6 +586,14 @@ game_reset :: ()
 {
     log("RESETTING GAME");
     Game = .{};
+
+    // init entityList
+    array_add(*Game.entityList, *Game.resourceList);
+    array_add(*Game.entityList, *Game.buildings);
+    array_add(*Game.entityList, *Game.itemsOnGround);
+    array_add(*Game.entityList, *Game.containersOnGround);
+    array_add(*Game.entityList, *Game.equipmentOnGround);
+
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
     random_seed(seed);
@@ -855,10 +878,10 @@ populate_resources :: ()
         type := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         quantity := max(random_get() % 20, 10);
 
-        r : Entity;
-        r.position = xy(x, y);
-        r.collider = Collider.{type = .CIRCLE, radius = 10};
-        r.tag = .RESOURCE;
+        collider: Collider;
+        collider.type = .CIRCLE;
+        collider.radius = xx quantity;
+        r := NewEntityBase(xy(x, y), collider, .RESOURCE);
         r.resource.type = xx type;
         r.resource.quantity = xx quantity;
 

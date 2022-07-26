@@ -3,7 +3,16 @@ debug_player_position :: ()
     using Game;
     camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
     ss_player := player.position + camera_vector;
-    DrawText(to_c_string(tprint("%", player.position)), xx (ss_player.x + 30.0), xx ss_player.y, 16, PINK);
+    DrawText(to_c_string(tprint("pos: %", player.position)), xx (ss_player.x + 30.0), xx ss_player.y, 16, PINK);
+}
+
+debug_entity_info :: (e: Entity)
+{
+    using Game;
+    camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
+    ss_entity := e.position + camera_vector;
+    DrawText(to_c_string(tprint("pos: %", e.position)), xx (ss_entity.x + 30.0), xx ss_entity.y, 16, PINK);
+    DrawText(to_c_string(tprint("ID:  %", e.id)), xx (ss_entity.x + 30.0), xx (ss_entity.y + 20.0), 16, PINK);
 }
 
 debug_console :: (dt: float)
@@ -63,9 +72,9 @@ debug_console :: (dt: float)
         base_y := c.basePos.y + 5.0;
         for Debug.commandList
         {
-            x := base_x + (300 * (it_index / 6));
+            x := base_x + (230 * (it_index / 6));
             y := base_y + ((fontSize * 1.5) * (it_index % 6));
-            DrawTextEx(font, to_c_string(it), xy(x, y), fontSize, fontSpacing, GREEN);
+            DrawTextEx(font, to_c_string(it), xy(x, y), fontSize - 6, fontSpacing, GREEN);
         }
     }
 }
@@ -81,7 +90,7 @@ debug_is_command_valid :: (cmd: string)
         container := NewContainer(.BASKET, collider, pos);
         array_add(*Game.containersOnGround, container); 
     }
-    
+
     if cmd == "SPAWN CHEST"
     {
         pos := Game.player.position + Game.player.forward * 50;
@@ -145,6 +154,14 @@ debug_is_command_valid :: (cmd: string)
     if cmd == "RESET"
     {
         game_reset();
+    }
+    if cmd == "DEBUG INFO 0"
+    {
+        Debug.showEntityInfo = false;
+    }
+    if cmd == "DEBUG INFO 1"
+    {
+        Debug.showEntityInfo = true;
     }
 }
 
