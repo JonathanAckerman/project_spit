@@ -4,10 +4,7 @@ Game: struct
     paused: bool;
 
     player: Entity;
-    // @@@: remove these
-    tryHarvest := false;
-    tryTrade := false;
-
+    grid: [20][20] GridTile;
     camera: struct
     {
         zoom := 1.0;
@@ -21,6 +18,10 @@ Game: struct
     containersOnGround: [..] Entity;
     equipmentOnGround:  [..] Entity;
     npcs:               [..] Entity;
+
+    // input state
+    tryHarvest := false;
+    tryTrade := false;
 }
 
 Debug: struct
@@ -238,7 +239,7 @@ game_loop :: inline ()
                     item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 20}});
                     if !player.person.held.exists 
                     {
-                        newHeld := NewMaybe(*item); // @HERE
+                        newHeld := NewMaybe(*item);
                         player.person.held = newHeld;
                     }
                     else // drop the item nearby
@@ -362,20 +363,19 @@ game_loop :: inline ()
         ClearBackground(WHITE);
         
         // draw map
+        for i: 0..19
         {
-            top := -1000.0;
-            left := -1000.0;
-            for row: 0..20
+            for j: 0..19
             {
-                ss_rect := xy(left, -1000.0 + row * 100.0) + camera_vector;
-                DrawLineV(xx ss_rect, xx ss_rect + xy(2000, 0), LIGHTGRAY);
-            }
-            for col: 0..20
-            {
-                ss_rect := xy(-1000.0 + col * 100.0, top) + camera_vector;
-                DrawLineV(xx ss_rect, xx ss_rect + xy(0, 2000), LIGHTGRAY);
+                grid[i][j].pos = xy(-1000.0 + j * 100.0, -1000.0 + i * 100.0) + camera_vector;
+                if j > 0 then grid[i][j].pos.x -= j;
+                if i > 0 then grid[i][j].pos.y -= i;
+                DrawRectangleLines(xx grid[i][j].pos.x, xx grid[i][j].pos.y, xx 100.0, xx 100.0, LIGHTGRAY);
             }
         }
+
+        DrawLineEx(xy(-1000, -1200) + camera_vector, xy(-1000, -950) + camera_vector, 1, BLUE);
+        DrawLineEx(xy(-900, -1200) + camera_vector, xy(-900, -950) + camera_vector, 1, BLUE);
 
         // draw resources
         {
@@ -834,7 +834,7 @@ try_pickup :: ()
                 }
             case .CONTAINER;
                 newHeld: = NewMaybe(closest_item.value);
-                player.person.held = newHeld; // @HERE
+                player.person.held = newHeld;
                 was_picked_up = true;
         }
 

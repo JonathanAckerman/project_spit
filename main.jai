@@ -24,6 +24,7 @@ main :: () {
 #load "Trader.jai";
 #load "DebugTools.jai";
 #load "Maybe.jai";
+#load "Grid.jai";
 
 #import "Raylib-Jai";
 #import "Basic";
