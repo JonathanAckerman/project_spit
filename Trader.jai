@@ -27,18 +27,17 @@ Bldg_Type :: enum
 
 Person :: struct
 {
-    position: Vector2 = .{200, 200};
-    collider: Collider = Collider.{type = .CIRCLE, radius = 20};
-    forward: Vector2 = .{1, 0};
     color: Color = BLACK;
-    speed: float = 6.0;
 
+    forward: Vector2 = .{1, 0};
+    speed: float = 6.0;
     velocity: Vector2;
 
     pockets: Container;
-    held: Maybe(Entity);
+    held: Maybe(*Entity);
     toolBelt: Maybe(Equipment);
     weaponBelt: Maybe(Equipment);
+    ai: Maybe(AI);
 }
 
 Collider :: struct
@@ -58,19 +57,14 @@ Collider :: struct
     }
 }
 
-Npc :: struct
+AI :: struct
 {
-    using person: Person;
+    isSpeaking := false; // make this a state enum?
+    speakDuration := 4.0;
+    speakTimer := 0.0;
     
-    ai: struct
-    {
-        isSpeaking := false; // make this a state enum?
-        speakDuration := 4.0;
-        speakTimer := 0.0;
-        
-        goalPosition: Vector2;
-        hasGoal := false;
-        goalResetTimer: float;
-        goalResetDuration: float;
-    }
+    goalPosition: Vector2;
+    hasGoal := false;
+    goalResetTimer: float;
+    goalResetDuration: float;
 }

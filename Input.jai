@@ -20,33 +20,33 @@ handle_input :: inline ()
         {
             new_velocity.x = 1.0;
         }
-        Game.player.velocity = unit_vector(new_velocity) * Game.player.speed;
+        Game.player.person.velocity = unit_vector(new_velocity) * Game.player.person.speed;
 
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            Game.player.tryHarvest = true;
+            Game.tryHarvest = true;
         }
         else
         {
-            Game.player.tryHarvest = false; 
+            Game.tryHarvest = false; 
         }
 
         // trading
         if IsKeyPressed(xx KeyboardKey.T)
         {
-            Game.player.tryTrade = true;
+            Game.tryTrade = true;
         }
         else
         {
-            Game.player.tryTrade = false; 
+            Game.tryTrade = false; 
         }
 
         // drop item
         if IsKeyPressed(xx KeyboardKey.Y)
         {
             // @TODO: not a fan of how game logic is also in this file
-            if Game.player.held.exists
+            if Game.player.person.held.exists
                 drop_held();
             else
                 try_pickup();
@@ -64,7 +64,7 @@ handle_input :: inline ()
             if resource_index != -1 // if we got an input for shifting resources
             {
                 container: Maybe(*Container);
-                if !Game.player.held.exists
+                if !Game.player.person.held.exists
                 {
                     // look for nearest container
                     nearest := get_nearest_holdable_in_range(50);
@@ -76,9 +76,9 @@ handle_input :: inline ()
                 }
                 else
                 {
-                    if Game.player.held.value.tag == .CONTAINER && Game.player.held.value.container.type == .BASKET
+                    if Game.player.person.held.value.tag == .CONTAINER && Game.player.person.held.value.container.type == .BASKET
                     {
-                        container.value = *Game.player.held.value.container;
+                        container.value = *Game.player.person.held.value.container;
                         container.exists = true;
                     }
                 }
@@ -90,19 +90,19 @@ handle_input :: inline ()
                         // shift out of pockets
                         container_weight := 0;
                         for container.value.contents { container_weight += it; } 
-                        if Game.player.pockets.contents[resource_index] > 0 && container_weight < container.value.capacity
+                        if Game.player.person.pockets.contents[resource_index] > 0 && container_weight < container.value.capacity
                         {
                             container.value.contents[resource_index] += 1;    
-                            Game.player.pockets.contents[resource_index] -= 1;
+                            Game.player.person.pockets.contents[resource_index] -= 1;
                         }
                     }
                     else
                     {
                         // shift into pockets
-                        if container.value.contents[resource_index] > 0 && Game.player.pockets.contents[resource_index] < 10
+                        if container.value.contents[resource_index] > 0 && Game.player.person.pockets.contents[resource_index] < 10
                         {
                             container.value.contents[resource_index] -= 1;
-                            Game.player.pockets.contents[resource_index] += 1;
+                            Game.player.person.pockets.contents[resource_index] += 1;
                         }
                     }
                 }

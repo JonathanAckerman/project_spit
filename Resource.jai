@@ -31,6 +31,7 @@ Entity :: struct
         #as container: Container;
         #as equipment: Equipment;
         #as building: Building;
+        #as person: Person;
     }
 }
 Entity_Type :: enum
@@ -40,6 +41,7 @@ Entity_Type :: enum
     CONTAINER;
     EQUIPMENT;
     BUILDING;
+    PERSON;
 }
 
 Resource :: struct 
@@ -80,6 +82,16 @@ NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> Entity
     e.id = _Entity_ID;
     _Entity_ID += 1;
     return e;
+}
+
+NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> Entity
+{
+    collider := Collider.{type = .CIRCLE, radius = 20.0};
+    e: Entity = NewEntityBase(pos, collider, .PERSON);
+    e.person.color = ifx ai.exists then BROWN else BLACK;
+    e.person.speed = 6.0;
+    e.person.forward = .{0, -1};
+    return  e;
 }
 
 // @Note: I might not need to pass in type since traders and shops have their own functions, or try to combine the functs

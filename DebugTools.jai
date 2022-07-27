@@ -4,6 +4,7 @@ debug_player_position :: ()
     camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
     ss_player := player.position + camera_vector;
     DrawText(to_c_string(tprint("pos: %", player.position)), xx (ss_player.x + 30.0), xx ss_player.y, 16, PINK);
+    DrawText(to_c_string(tprint("ID:  %", player.id)), xx (ss_player.x + 30.0), xx (ss_player.y + 20.0), 16, PINK);
 }
 
 debug_entity_info :: (e: Entity)
@@ -85,7 +86,7 @@ debug_is_command_valid :: (cmd: string)
     // Containers
     if cmd == "SPAWN BASKET"
     {
-        pos := Game.player.position + Game.player.forward * 50;
+        pos := Game.player.position + Game.player.person.forward * 50;
         collider := Collider.{type = .RECT, rect = .{20, 30}};
         container := NewContainer(.BASKET, collider, pos);
         array_add(*Game.containersOnGround, container); 
@@ -93,7 +94,7 @@ debug_is_command_valid :: (cmd: string)
 
     if cmd == "SPAWN CHEST"
     {
-        pos := Game.player.position + Game.player.forward * 50;
+        pos := Game.player.position + Game.player.person.forward * 50;
         collider := Collider.{type = .RECT, rect = .{20, 30}};
         container := NewContainer(.CHEST, collider, pos);
         array_add(*Game.containersOnGround, container);
@@ -102,7 +103,7 @@ debug_is_command_valid :: (cmd: string)
     // Items
     if cmd == "SPAWN AXE"
     {
-        pos := Game.player.position + Game.player.forward * 50;
+        pos := Game.player.position + Game.player.person.forward * 50;
         collider := Collider.{type = .CIRCLE, radius = 10};
         item := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.itemsOnGround, item);
@@ -111,14 +112,14 @@ debug_is_command_valid :: (cmd: string)
     // Equipment
     if cmd == "SPAWN TOOLBELT"
     {
-        pos := Game.player.position + Game.player.forward * 50;
+        pos := Game.player.position + Game.player.person.forward * 50;
         collider := Collider.{type = .RECT, rect = .{60, 15}};
         equipment := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, equipment);
     }
     if cmd == "SPAWN WEAPONBELT"
     {
-        pos := Game.player.position + Game.player.forward * 50;
+        pos := Game.player.position + Game.player.person.forward * 50;
         collider := Collider.{type = .RECT, rect = .{60, 15}};
         equipment := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, equipment);
@@ -126,14 +127,14 @@ debug_is_command_valid :: (cmd: string)
 
     if cmd == "FILL POCKETS"
     {
-        for *Game.player.pockets.contents
+        for *Game.player.person.pockets.contents
         {
             <<it = 10;
         }
     }
     if cmd == "MUSK"
     {
-        for *Game.player.pockets.contents
+        for *Game.player.person.pockets.contents
         {
             <<it = 200_000_000_000;
         }
@@ -144,7 +145,7 @@ debug_is_command_valid :: (cmd: string)
     }
     if cmd == "GOTTAGOFAST"
     {
-        Game.player.speed = 50;
+        Game.player.person.speed = 50;
     }
     if cmd == "REPOP RESOURCES"
     {
