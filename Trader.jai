@@ -4,6 +4,7 @@ Building :: struct
 
     union
     {
+        // @TODO: Consider generalizing traders/shops to all possess a 'want: [..] Entity', and 'have: [..] Entity'
         using trader: struct
         {
             want: Resource_Type;
@@ -15,6 +16,7 @@ Building :: struct
             resource: Resource_Type;
             amount: int;
             itemType: Container_Type;
+            // item: Entity;
         }
     }
 }

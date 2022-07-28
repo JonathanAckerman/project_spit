@@ -180,14 +180,14 @@ handle_input :: inline ()
         }
 
         // zoom in camera
-        if IsKeyPressed(xx KeyboardKey.EQUAL)
+        if IsKeyDown(xx KeyboardKey.EQUAL)
         {
-            Game.camera.zoom += 0.2;   
+            Game.camera.zoom *= 1.02;   
         }
         // zoom out camera
-        if IsKeyPressed(xx KeyboardKey.MINUS)
+        if IsKeyDown(xx KeyboardKey.MINUS)
         {
-            Game.camera.zoom -= 0.2;   
+            Game.camera.zoom *= 0.98;   
         }
     }
 
@@ -195,7 +195,7 @@ handle_input :: inline ()
     if IsKeyPressed(xx KeyboardKey.BACKSLASH)
     {
         Debug.isActive = !Debug.isActive;
-        if !Debug.showEntityInfo then Debug.showEntityInfo = true;
         Debug.c.size = xy(Debug.fontSize/2, Debug.fontSize * 0.66);
+        // if !Debug.showEntityInfo then Debug.showEntityInfo = true;
     }
 }

@@ -1,5 +1,6 @@
 WINDOW_WIDTH :: 1536;
 WINDOW_HEIGHT :: 864;
+WINDOW_CENTER :: Vector2.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2};
 
 main :: () {
     window_title := to_c_string("project_spit");

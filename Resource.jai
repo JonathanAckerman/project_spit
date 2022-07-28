@@ -220,7 +220,6 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
 // @TODO: handle camera zoom 
 draw_ui_representation :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
 {
-    scale *= Game.camera.zoom;
     if type ==
     {
         case .BASKET;

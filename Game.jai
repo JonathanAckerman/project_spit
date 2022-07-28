@@ -4,7 +4,7 @@ Game: struct
     paused: bool;
 
     player: Entity;
-    grid: [20][20] GridTile;
+    map: Grid;
     camera: struct
     {
         zoom := 1.0;
@@ -66,8 +66,6 @@ game_loop :: inline ()
     camera_vector: Vector2;
     // Simulate
     {
-        camera.position = player.position;
-
         // collision
         {
             for buildings
@@ -84,9 +82,10 @@ game_loop :: inline ()
 
         player.position += player.person.velocity;
         if length(player.person.velocity) != 0 then player.person.forward = unit_vector(player.person.velocity);
-
         player.person.velocity = .{};
-        camera_vector = .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
+
+        camera.position = player.position;
+        camera_vector = WINDOW_CENTER - camera.position * camera.zoom;
 
         harvestNearestResource :: ()
         {
@@ -360,6 +359,7 @@ game_loop :: inline ()
     // Draw
     {
         BeginDrawing();
+        BeginDrawing();
         ClearBackground(WHITE);
         
         // draw map
@@ -367,10 +367,11 @@ game_loop :: inline ()
         {
             for j: 0..19
             {
-                grid[i][j].pos = xy(-1000.0 + j * 100.0, -1000.0 + i * 100.0) + camera_vector;
-                if j > 0 then grid[i][j].pos.x -= j;
-                if i > 0 then grid[i][j].pos.y -= i;
-                DrawRectangleLines(xx grid[i][j].pos.x, xx grid[i][j].pos.y, xx 100.0, xx 100.0, LIGHTGRAY);
+                map.grid[i][j].x = j * map.tileSize * camera.zoom + camera_vector.x;
+                map.grid[i][j].y = i * map.tileSize * camera.zoom + camera_vector.y;
+                if j > 0 then map.grid[i][j].x -= j;
+                if i > 0 then map.grid[i][j].y -= i;
+                DrawRectangleLines(xx map.grid[i][j].x, xx map.grid[i][j].y, xx (map.tileSize * camera.zoom), xx (map.tileSize * camera.zoom), LIGHTGRAY);
             }
         }
 
@@ -381,7 +382,7 @@ game_loop :: inline ()
         {
             for resourceList
             {
-                ss_resource := it.position + camera_vector;
+                ss_resource := it.position * camera.zoom + camera_vector;
                 draw_entity(it, ss_resource);
             }
         }
@@ -390,46 +391,47 @@ game_loop :: inline ()
         {
             for buildings
             {
-                drawpos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0);
-                DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y), BLACK);
+                drawpos := (it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0)) * camera.zoom;
+                DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y) * camera.zoom, BLACK);
 
                 if it.building.type ==
                 {
                     case .TRADER;
                         want_color := get_resource_color(it.building.want);
                         have_color := get_resource_color(it.building.have);
-                        DrawRectangleV((it.position - .{16, 8}) + camera_vector, .{16, 16}, want_color);
-                        DrawRectangleV((it.position + .{16, 8}) + camera_vector, .{16, 16}, have_color);
+                        DrawRectangleV((it.position - .{16, 8}) * camera.zoom + camera_vector, .{16, 16} * camera.zoom, want_color);
+                        DrawRectangleV((it.position + .{16, 8}) * camera.zoom + camera_vector, .{16, 16} * camera.zoom, have_color);
                     case .SHOP;
                         collider := Collider.{type = .RECT, rect = .{20, 20}};
-                        pos := it.position - xy(collider.rect.x/2.5, it.collider.rect.y/4) + camera_vector;
-                        draw_ui_representation(pos, collider, 0.8, it.building.itemType);
+                        pos := (it.position - xy(collider.rect.x/2.5, it.collider.rect.y/4)) * camera.zoom + camera_vector;
+                        // draw_ui_representation(pos, collider, 0.8 * camera.zoom, it.building.itemType);
+                        
                 }
             }
 
             nearest, dist := get_closest_bldg_to_player();
-            ss_bldg := nearest.position + camera_vector;
+            ss_bldg := nearest.position * camera.zoom + camera_vector;
             interact_range := compute_interact_range(nearest);
             if dist < interact_range
-                DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range, BLACK);
+                DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range * camera.zoom, BLACK);
         }
 
         // draw items in world
         {
             for itemsOnGround
             {
-                draw_entity(it, it.position + camera_vector);
+                draw_entity(it, it.position * camera.zoom + camera_vector);
             }
 
             for containersOnGround
             {
-                pos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.x/2.0) + camera_vector;
+                pos := (it.position - xy(it.collider.rect.x/2.0, it.collider.rect.x/2.0)) * camera.zoom + camera_vector;
                 draw_entity(it, pos);
             }
 
             for equipmentOnGround
             {
-                pos := it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0) + camera_vector;
+                pos := (it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0)) * camera.zoom + camera_vector;
                 draw_entity(it, pos);
             }
         }
@@ -437,17 +439,17 @@ game_loop :: inline ()
         // draw npcs
         for npcs
         {
-            ss_npc := it.position + camera_vector;
-            DrawCircle(xx ss_npc.x, xx ss_npc.y, xx it.collider.radius, it.person.color);
-            front := ss_npc + it.person.forward * cast(float) it.collider.radius;
+            ss_npc := it.position * camera.zoom + camera_vector;
+            DrawCircle(xx ss_npc.x, xx ss_npc.y, xx it.collider.radius * camera.zoom, it.person.color);
+            front := ss_npc + it.person.forward * cast(float) it.collider.radius * camera.zoom;
             DrawLineEx(xx ss_npc, xx front, 2.0, WHITE);
         }
 
         // draw player
         {
-            ss_player := player.position + camera_vector;
-            DrawCircle(xx ss_player.x, xx ss_player.y, xx player.collider.radius, player.person.color);
-            front := ss_player + player.person.forward * cast(float) player.collider.radius;
+            ss_player := player.position * camera.zoom + camera_vector;
+            DrawCircle(xx ss_player.x, xx ss_player.y, xx player.collider.radius * camera.zoom, player.person.color);
+            front := ss_player + player.person.forward * cast(float) player.collider.radius * camera.zoom;
             DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
         }
 
@@ -525,7 +527,7 @@ game_loop :: inline ()
             nearest_entity := get_nearest_holdable_in_range(50);
             if nearest_entity.exists
             {
-                drawPos := nearest_entity.value.position + camera_vector;
+                drawPos := nearest_entity.value.position * camera.zoom + camera_vector;
                 if nearest_entity.value.tag == .CONTAINER then drawPos += .{30, -110};
                 type: Any;
                 if nearest_entity.value.tag ==
@@ -606,8 +608,8 @@ game_reset :: ()
     for 1..num_traders
     {
         // @TODO: check for overlapping
-        x := random_get_within_range(-1000, 1000);
-        y := random_get_within_range(-1000, 1000);
+        x := random_get_within_range(0, 2000);
+        y := random_get_within_range(0, 2000);
         want := random_get() % xx (enum_highest_value(Resource_Type) + 1);
         have := want;
         while have == want
@@ -617,16 +619,16 @@ game_reset :: ()
     }
 
     // init shops
-    basket_shop: Entity = NewBuilding(.SHOP, xy(-1100, -1100), .FIBER, 10, .BASKET);
+    basket_shop: Entity = NewBuilding(.SHOP, xy(Game.map.left() - 100.0, Game.map.top() - 100.0), .FIBER, 10, .BASKET);
     array_add(*Game.buildings, basket_shop);
-    chest_shop: Entity = NewBuilding(.SHOP, xy(-900, -1100), .WOOD, 10, .CHEST);
+    chest_shop: Entity = NewBuilding(.SHOP, xy(Game.map.left() + 100.0, Game.map.top() - 100.0), .WOOD, 10, .CHEST);
     array_add(*Game.buildings, chest_shop);
 
     // init npcs
     for 1..7
     {
-        x := random_get_within_range(-1000, 1000);
-        y := random_get_within_range(-1000, 1000);
+        x := random_get_within_range(xx Game.map.left(), xx Game.map.right());
+        y := random_get_within_range(xx Game.map.top(), xx Game.map.bottom());
         check_collision := true;
         while check_collision
         {
@@ -639,8 +641,8 @@ game_reset :: ()
                 y < it.position.y + it.collider.rect.y
                 {
                     // try again with new position
-                    x = random_get_within_range(-1000, 1000);
-                    y = random_get_within_range(-1000, 1000);
+                    x = random_get_within_range(xx Game.map.left(), xx Game.map.right());
+                    y = random_get_within_range(xx Game.map.top(), xx Game.map.bottom());
                     collided = true;
                     break;
                 }

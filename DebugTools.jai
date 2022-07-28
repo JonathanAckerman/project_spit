@@ -2,7 +2,7 @@ debug_player_position :: ()
 {
     using Game;
     camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
-    ss_player := player.position + camera_vector;
+    ss_player := player.position * camera.zoom + camera_vector;
     DrawText(to_c_string(tprint("pos: %", player.position)), xx (ss_player.x + 30.0), xx ss_player.y, 16, PINK);
     DrawText(to_c_string(tprint("ID:  %", player.id)), xx (ss_player.x + 30.0), xx (ss_player.y + 20.0), 16, PINK);
 }
@@ -11,7 +11,7 @@ debug_entity_info :: (e: Entity)
 {
     using Game;
     camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
-    ss_entity := e.position + camera_vector;
+    ss_entity := e.position * camera.zoom + camera_vector;
     DrawText(to_c_string(tprint("pos: %", e.position)), xx (ss_entity.x + 30.0), xx ss_entity.y, 16, PINK);
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx (ss_entity.x + 30.0), xx (ss_entity.y + 20.0), 16, PINK);
 }
