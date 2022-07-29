@@ -3,8 +3,8 @@ Game: struct
     resetting: bool;
     paused: bool;
 
-    player: Entity;
-    map: Grid;
+    player: Player;
+    grid: Grid;
     camera: struct
     {
         zoom := 1.0;
@@ -13,11 +13,11 @@ Game: struct
 
     entityList:         [..] *[..]Entity;
     resourceList:       [..] Entity;
-    buildings:          [..] Entity;
     itemsOnGround:      [..] Entity;
     containersOnGround: [..] Entity;
     equipmentOnGround:  [..] Entity;
     npcs:               [..] Entity;
+    shops:              [..] Shop;
 
     // input state
     tryHarvest := false;
@@ -43,8 +43,6 @@ Debug: struct
         "SPAWN AXE",
         "SPAWN TOOLBELT",
         "SPAWN WEAPONBELT",
-        "FILL POCKETS",
-        "MUSK",
         "TP",
         "GOTTAGOFAST",
         "REPOP RESOURCES",
@@ -68,16 +66,7 @@ game_loop :: inline ()
     {
         // collision
         {
-            for buildings
-            {
-                if player.position.x + player.collider.radius > it.position.x - it.collider.rect.x/2 &&
-                player.position.x - player.collider.radius < it.position.x + it.collider.rect.x/2 &&
-                player.position.y + player.collider.radius > it.position.y - it.collider.rect.y/2 &&
-                player.position.y - player.collider.radius < it.position.y + it.collider.rect.y/2
-                {
-                    player.position += unit_vector(player.position - it.position) * length(player.person.velocity);
-                }
-            }
+            
         }
 
         player.position += player.person.velocity;
@@ -87,170 +76,139 @@ game_loop :: inline ()
         camera.position = player.position;
         camera_vector = WINDOW_CENTER - camera.position * camera.zoom;
 
-        harvestNearestResource :: ()
+        harvestResource :: ()
         {
             using Game;
-            nearest_index := 0;
-            min_dist := length(resourceList[0].position - player.position);
+
+            // compile list of resources in range, sort by distance to player
+            resource_info :: struct { entity: *Entity; direction: Vector2; }
+            sorted_resources: [..] resource_info;
             for resourceList
             {
-                dist := length(it.position - player.position);
-                if dist < min_dist
+                player_to_resource : Vector2 = it.position - player.position;
+                if length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
                 {
-                    min_dist = dist;
-                    nearest_index = it_index;
+                    info: resource_info;
+                    info.entity = *resourceList[it_index];
+                    info.direction = player_to_resource;
+                    array_add(*sorted_resources, info);
                 }
             }
-            if min_dist < 100
+
+            less_than :: (a, b) => cast(s64) (length(a.direction) - length(b.direction));
+            bubble_sort(sorted_resources, less_than);
+
+            // find the first resource we are able to harvest
+            resource_to_harvest: Maybe(resource_info);
+            for sorted_resources
             {
-                resource := resourceList[nearest_index].resource;
-
-                if resource.type == .WOOD
+                if it.entity.resource.type ==
                 {
-                    if player.person.toolBelt.exists
-                    {
-                        has_axe := false;
-                        for player.person.toolBelt.value.contents
+                    // trees require the lumber axe equipped
+                    case .TREE;
+                        if player.person.held.exists && player.person.held.value.tag == .ITEM
                         {
-                            if it.item.type == .LUMBER_AXE then has_axe = true;
-                        }
-                        if !has_axe return;
-                    }
-                    else return;
-                }
-
-                has_harvested := false;
-                // try to fill held first
-                if player.person.held.exists && player.person.held.value.tag == .CONTAINER
-                {
-                    basket := *player.person.held.value.container;
-                    if basket.type == .BASKET
-                    {
-                        basket_weight := compute_container_weight(basket);
-                        if basket_weight < basket.capacity
-                        {
-                            // calculate the max that we can add to the basket
-                            amount := ifx basket_weight + resource.quantity > basket.capacity
-                                then basket.capacity - basket_weight
-                                else resource.quantity;
-                            basket.contents[resource.type] += amount;
-                            array_unordered_remove_by_index(*resourceList, nearest_index);
-                            has_harvested = true;
-                        }
-                    }
-                }
-
-                // pockets can only hold 10 of each resource
-                if !has_harvested && player.person.pockets.contents[resource.type] < 10
-                {
-                    player.person.pockets.contents[resource.type] += resource.quantity;
-                    player.person.pockets.contents[resource.type] = min(player.person.pockets.contents[resource.type], 10);
-                    array_unordered_remove_by_index(*resourceList, nearest_index);
-                }
-            }
-        }
-        if tryHarvest then harvestNearestResource();
-
-        tradeWithNearestTrader :: ()
-        {
-            using Game;
-            // get nearest trader
-            nearest, dist := get_closest_bldg_to_player(.TRADER);
-
-            // check trade range
-            trader_range := compute_interact_range(nearest);
-            if dist < trader_range
-            {
-                containers := get_nearby_containers();
-                from: *Container;
-                // look in all nearby inventories for wanted resource
-                found_wanted_resource := false;
-                for containers
-                {
-                    if it.contents[nearest.building.want] > 0
-                    {
-                        from = it;
-                        found_wanted_resource = true;
-                        break;
-                    }
-                }
-
-                if !found_wanted_resource return;
-
-                // look for a valid inventory to put it into
-                if containers[0].contents[nearest.building.have] < 10
-                {
-                    from.contents[nearest.building.want] -= 1;
-                    containers[0].contents[nearest.building.have] += 1;
-                }
-                else
-                {
-                    for containers
-                    {
-                        if it_index == 0 continue; // skip the player's pockets since it functions differently
-                        if compute_container_weight(it) < it.capacity
-                        {
-                            from.contents[nearest.building.want] -= 1;
-                            it.contents[nearest.building.have] += 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        if tryTrade then tradeWithNearestTrader();
-
-        buyFromNearestShop :: ()
-        {
-            using Game;
-            nearest_shop, dist := get_closest_bldg_to_player(.SHOP);
-            // check shop range
-            shop_range := compute_interact_range(nearest_shop);
-            if dist < shop_range
-            {
-                nearby_containers := get_nearby_containers();
-
-                cost := nearest_shop.building.amount;
-                total_available := 0;
-                for nearby_containers { total_available += it.contents[nearest_shop.building.resource]; }
-                if total_available >= cost // we can afford it
-                {
-                    // pay the cost
-                    paid := 0;
-                    for nearby_containers
-                    {
-                        if paid < cost
-                        {
-                            containerAmount := *it.contents[nearest_shop.building.resource];
-                            if <<containerAmount >= cost - paid
+                            if player.person.held.value.item.type == .LUMBER_AXE
                             {
-                                <<containerAmount -= cost - paid;
+                                resource_to_harvest.value = it;
+                                resource_to_harvest.exists = true;
                                 break;
                             }
-                            else
-                            {
-                                paid += <<containerAmount;
-                                <<containerAmount = 0;
-                            }
                         }
-                    }
-
-                    item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 20}});
-                    if !player.person.held.exists 
-                    {
-                        newHeld := NewMaybe(*item);
-                        player.person.held = newHeld;
-                    }
-                    else // drop the item nearby
-                    {
-                        // @TODO: make size (world or ui) a lookup rather than state on the object
-                        item.position = nearest_shop.position + .{0, -100};
-                        array_add(*itemsOnGround, item);
-                    }
+                    case;
+                        resource_to_harvest.value = it;
+                        resource_to_harvest.exists = true;
+                        break;
                 }
             }
+
+            // Drop by-product of harvest on the ground. Some resources like water will instead be loaded directly into an inventory
+            if resource_to_harvest.exists
+            {
+                by_product := NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.entity.position + unit_vector(resource_to_harvest.value.direction) * 15);
+                array_add(*itemsOnGround, by_product);
+                swap_and_pop(*resourceList, resource_to_harvest.value.entity); 
+            }
         }
-        if tryTrade then buyFromNearestShop();
+        if tryHarvest then harvestResource();
+
+        buyFromShop :: ()
+        {
+            using Game;
+
+            // check if the player is in a shop area
+            shop: Maybe(*Shop);
+            for s, s_index: shops
+            {
+                player_grid_cell := world_to_grid(player.position);
+                for s.area if it == player_grid_cell
+                {
+                    shop.value = *s;
+                    shop.exists = true;
+                }
+            }
+
+            if !shop.exists || shop.value.deals.count == 0 then return;
+
+            // get the nearest deal to the player
+            nearest_deal := shop.value.deals[0];
+            nearest_deal_dist := length(nearest_deal.ware.position - player.position);
+            for shop.value.deals
+            {
+                dist := length(it.ware.position - player.position);
+                if dist < nearest_deal_dist
+                {
+                    nearest_deal = it;
+                    nearest_deal_dist = dist;
+                }
+            }
+
+            if nearest_deal_dist < player.interactRange
+            {
+                // nearby_containers := get_nearby_containers();
+
+                // cost := nearest_deal.price.amount;
+                // total_available := 0;
+                // //@@@: ugh now the concept of currency goes out the window
+                // for nearby_containers { total_available += it.contents[nearest_shop.building.resource]; }
+                // if total_available >= cost // we can afford it
+                // {
+                //     // pay the cost
+                //     paid := 0;
+                //     for nearby_containers
+                //     {
+                //         if paid < cost
+                //         {
+                //             containerAmount := *it.contents[nearest_shop.building.resource];
+                //             if <<containerAmount >= cost - paid
+                //             {
+                //                 <<containerAmount -= cost - paid;
+                //                 break;
+                //             }
+                //             else
+                //             {
+                //                 paid += <<containerAmount;
+                //                 <<containerAmount = 0;
+                //             }
+                //         }
+                //     }
+
+                //     item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 20}});
+                //     if !player.person.held.exists 
+                //     {
+                //         newHeld := NewMaybe(*item);
+                //         player.person.held = newHeld;
+                //     }
+                //     else // drop the item nearby
+                //     {
+                //         // @TODO: make size (world or ui) a lookup rather than state on the object
+                //         item.position = nearest_shop.position + .{0, -100};
+                //         array_add(*itemsOnGround, item);
+                //     }
+                // }
+            }
+        }
+        if tryTrade then buyFromShop();
 
         talkToNearestNPC :: ()
         {
@@ -283,26 +241,26 @@ game_loop :: inline ()
                 {
                     x := random_get_within_range(npc.position.x - 200, npc.position.x + 200);
                     y := random_get_within_range(-npc.position.y - 200, npc.position.y + 200);
-                    check_collision := true;
-                    while check_collision
-                    {
-                        collided := false;
-                        for bldg: Game.buildings
-                        {
-                            if x > bldg.position.x - bldg.collider.rect.x/2 &&
-                            x < bldg.position.x + bldg.collider.rect.x/2 &&
-                            y > bldg.position.y - bldg.collider.rect.y/2 && 
-                            y < bldg.position.y + bldg.collider.rect.y/2
-                            {
-                                // try again with new position
-                                x = random_get_within_range(npc.position.x - 200, npc.position.x + 200);
-                                y = random_get_within_range(-npc.position.y - 200, npc.position.y + 200);
-                                collided = true;
-                                break;
-                            }
-                        }
-                        if !collided then check_collision = false;
-                    }
+                    // check_collision := true;
+                    // while check_collision
+                    // {
+                    //     collided := false;
+                    //     for bldg: Game.buildings
+                    //     {
+                    //         if x > bldg.position.x - bldg.collider.rect.x/2 &&
+                    //         x < bldg.position.x + bldg.collider.rect.x/2 &&
+                    //         y > bldg.position.y - bldg.collider.rect.y/2 && 
+                    //         y < bldg.position.y + bldg.collider.rect.y/2
+                    //         {
+                    //             // try again with new position
+                    //             x = random_get_within_range(npc.position.x - 200, npc.position.x + 200);
+                    //             y = random_get_within_range(-npc.position.y - 200, npc.position.y + 200);
+                    //             collided = true;
+                    //             break;
+                    //         }
+                    //     }
+                    //     if !collided then check_collision = false;
+                    // }
                     npc.person.ai.value.goalPosition = xy(x, y);
                     npc.person.ai.value.goalResetTimer = 0.0;
                     npc.person.ai.value.goalResetDuration = 0.0;
@@ -362,21 +320,19 @@ game_loop :: inline ()
         BeginDrawing();
         ClearBackground(WHITE);
         
-        // draw map
+        // draw grid
         for i: 0..19
         {
             for j: 0..19
             {
-                map.grid[i][j].x = j * map.tileSize * camera.zoom + camera_vector.x;
-                map.grid[i][j].y = i * map.tileSize * camera.zoom + camera_vector.y;
-                if j > 0 then map.grid[i][j].x -= j;
-                if i > 0 then map.grid[i][j].y -= i;
-                DrawRectangleLines(xx map.grid[i][j].x, xx map.grid[i][j].y, xx (map.tileSize * camera.zoom), xx (map.tileSize * camera.zoom), LIGHTGRAY);
+                gc: GridCell;
+                gc.x = j;
+                gc.y = i;
+                grid.cells[i][j] = gc;
+                drawpos := grid_to_world(i, j) * camera.zoom + camera_vector;
+                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
             }
         }
-
-        DrawLineEx(xy(-1000, -1200) + camera_vector, xy(-1000, -950) + camera_vector, 1, BLUE);
-        DrawLineEx(xy(-900, -1200) + camera_vector, xy(-900, -950) + camera_vector, 1, BLUE);
 
         // draw resources
         {
@@ -389,31 +345,25 @@ game_loop :: inline ()
 
         // draw buildings
         {
-            for buildings
-            {
-                drawpos := (it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0)) * camera.zoom;
-                DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y) * camera.zoom, BLACK);
+            // for buildings
+            // {
+            //     drawpos := (it.position - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0)) * camera.zoom;
+            //     DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y) * camera.zoom, BLACK);
 
-                if it.building.type ==
-                {
-                    case .TRADER;
-                        want_color := get_resource_color(it.building.want);
-                        have_color := get_resource_color(it.building.have);
-                        DrawRectangleV((it.position - .{16, 8}) * camera.zoom + camera_vector, .{16, 16} * camera.zoom, want_color);
-                        DrawRectangleV((it.position + .{16, 8}) * camera.zoom + camera_vector, .{16, 16} * camera.zoom, have_color);
-                    case .SHOP;
-                        collider := Collider.{type = .RECT, rect = .{20, 20}};
-                        pos := (it.position - xy(collider.rect.x/2.5, it.collider.rect.y/4)) * camera.zoom + camera_vector;
-                        // draw_ui_representation(pos, collider, 0.8 * camera.zoom, it.building.itemType);
+            //     if it.building.type ==
+            //     {
+            //         case .SHOP;
+            //             collider := Collider.{type = .RECT, rect = .{20, 20}};
+            //             pos := (it.position - xy(collider.rect.x/2.5, it.collider.rect.y/4)) * camera.zoom + camera_vector;
                         
-                }
-            }
+            //     }
+            // }
 
-            nearest, dist := get_closest_bldg_to_player();
-            ss_bldg := nearest.position * camera.zoom + camera_vector;
-            interact_range := compute_interact_range(nearest);
-            if dist < interact_range
-                DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range * camera.zoom, BLACK);
+            // nearest, dist := get_closest_bldg_to_player();
+            // ss_bldg := nearest.position * camera.zoom + camera_vector;
+            // interact_range := compute_interact_range(nearest);
+            // if dist < interact_range
+            //     DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range * camera.zoom, BLACK);
         }
 
         // draw items in world
@@ -456,14 +406,14 @@ game_loop :: inline ()
         // draw ui
         {
             // draw pockets
-            resource_names := enum_names(Resource_Type);
-            DrawText(xx "Resources:", 20, 20, 20, BLACK);
-            for r, r_index: enum_values_as_s64(Resource_Type)
-            {
-                y_pos := 20 + 20 * (r_index + 1);
-                line := tprint("%: %", resource_names[r_index], player.person.pockets.contents[r]);
-                DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
-            }
+            // resource_names := enum_names(Resource_Type);
+            // DrawText(xx "Resources:", 20, 20, 20, BLACK);
+            // for r, r_index: enum_values_as_s64(Resource_Type)
+            // {
+            //     y_pos := 20 + 20 * (r_index + 1);
+            //     line := tprint("%: %", resource_names[r_index], player.person.pockets.contents[r]);
+            //     DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
+            // }
 
             // draw held
             xpos := 20.0;
@@ -475,12 +425,12 @@ game_loop :: inline ()
                 {
                     case .BASKET;
                         draw_entity(player.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
-                        for r, r_index: player.person.held.value.container.contents
-                        {
-                            y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
-                            line := tprint("%: %", resource_names[r_index], r);
-                            DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
-                        }
+                        // for r, r_index: player.person.held.value.container.contents
+                        // {
+                        //     y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
+                        //     line := tprint("%: %", resource_names[r_index], r);
+                        //     DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
+                        // }
                         xpos += 80.0;
                     case .CHEST;
                         draw_entity(player.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
@@ -541,16 +491,16 @@ game_loop :: inline ()
                 }
                 DrawText(to_c_string(tprint("%", type)), xx drawPos.x, xx drawPos.y, 20, BLACK);
 
-                if nearest_entity.value.tag == .CONTAINER
-                {
-                    drawPos += .{0, 20};
-                    for r, r_index: nearest_entity.value.container.contents
-                    {
-                        line := tprint("%: %", resource_names[r_index], r);
-                        DrawText(to_c_string(line), xx drawPos.x, xx drawPos.y, 20, BLACK);
-                        drawPos.y += 20;
-                    }
-                }
+                // if nearest_entity.value.tag == .CONTAINER
+                // {
+                //     drawPos += .{0, 20};
+                //     for r, r_index: nearest_entity.value.container.contents
+                //     {
+                //         line := tprint("%: %", resource_names[r_index], r);
+                //         DrawText(to_c_string(line), xx drawPos.x, xx drawPos.y, 20, BLACK);
+                //         drawPos.y += 20;
+                //     }
+                // }
             }
         }
 
@@ -586,11 +536,10 @@ game_reset :: ()
     Game = .{};
 
     noAI: Maybe(AI);
-    Game.player = NewPerson(.{200, 200}, noAI);
+    Game.player.entity = NewPerson(.{200, 200}, noAI);
 
     // init entityList
     array_add(*Game.entityList, *Game.resourceList);
-    array_add(*Game.entityList, *Game.buildings);
     array_add(*Game.entityList, *Game.itemsOnGround);
     array_add(*Game.entityList, *Game.containersOnGround);
     array_add(*Game.entityList, *Game.equipmentOnGround);
@@ -603,56 +552,56 @@ game_reset :: ()
     //init resources
     populate_resources();
 
-    //init traders
-    num_traders := clamp(random_get(), 3, 5);
-    for 1..num_traders
-    {
-        // @TODO: check for overlapping
-        x := random_get_within_range(0, 2000);
-        y := random_get_within_range(0, 2000);
-        want := random_get() % xx (enum_highest_value(Resource_Type) + 1);
-        have := want;
-        while have == want
-            have = random_get() % xx (enum_highest_value(Resource_Type) + 1);
-        e: Entity = NewBuilding(.TRADER, xy(x, y), xx want, xx have);
-        array_add(*Game.buildings, e);
-    }
-
-    // init shops
-    basket_shop: Entity = NewBuilding(.SHOP, xy(Game.map.left() - 100.0, Game.map.top() - 100.0), .FIBER, 10, .BASKET);
-    array_add(*Game.buildings, basket_shop);
-    chest_shop: Entity = NewBuilding(.SHOP, xy(Game.map.left() + 100.0, Game.map.top() - 100.0), .WOOD, 10, .CHEST);
-    array_add(*Game.buildings, chest_shop);
-
     // init npcs
     for 1..7
     {
-        x := random_get_within_range(xx Game.map.left(), xx Game.map.right());
-        y := random_get_within_range(xx Game.map.top(), xx Game.map.bottom());
-        check_collision := true;
-        while check_collision
-        {
-            collided := false;
-            for Game.buildings
-            {
-                if x > it.position.x &&
-                x < it.position.x + it.collider.rect.x &&
-                y > it.position.y && 
-                y < it.position.y + it.collider.rect.y
-                {
-                    // try again with new position
-                    x = random_get_within_range(xx Game.map.left(), xx Game.map.right());
-                    y = random_get_within_range(xx Game.map.top(), xx Game.map.bottom());
-                    collided = true;
-                    break;
-                }
-            }
-            if !collided then check_collision = false;
-        }
+        x := random_get_within_range(xx Game.grid.left(), xx Game.grid.right());
+        y := random_get_within_range(xx Game.grid.top(), xx Game.grid.bottom());
+        // check_collision := true;
+        // while check_collision
+        // {
+        //     collided := false;
+        //     for Game.buildings
+        //     {
+        //         if x > it.position.x &&
+        //         x < it.position.x + it.collider.rect.x &&
+        //         y > it.position.y && 
+        //         y < it.position.y + it.collider.rect.y
+        //         {
+        //             // try again with new position
+        //             x = random_get_within_range(xx Game.grid.left(), xx Game.grid.right());
+        //             y = random_get_within_range(xx Game.grid.top(), xx Game.grid.bottom());
+        //             collided = true;
+        //             break;
+        //         }
+        //     }
+        //     if !collided then check_collision = false;
+        // }
         ai: AI;
         npc: Entity = NewPerson(xy(x, y), NewMaybe(ai));
         npc.person.speed = 0.5;
         array_add(*Game.npcs, npc);
+    }
+
+    // init shops
+    {
+        area := GridCell.[
+            .{0, 0}, .{1, 0}, .{2, 0},
+            .{1, 0}, .{1, 1}, .{1, 2},
+        ];
+
+        pos := grid_to_world(area[0], true);
+        collider := Collider.{type = .RECT, rect = .{20, 20}};
+        ware := NewContainer(.BASKET, collider, pos);
+        price := Price.{amount = 10, entityStandIn = .{tag = .ITEM, item = .FIBER}};
+        basket_deal: Deal;
+        basket_deal.price = price;
+        basket_deal.ware = ware;
+
+        deals: [1] Deal;
+        deals[0] = basket_deal;
+
+        basket_shop: Shop = NewShop(area, deals, *Game.npcs[0]);
     }
 
     // init items on ground
@@ -679,45 +628,22 @@ game_reset :: ()
     }
 }
 
-compute_interact_range :: (building: Entity) -> float
+get_nearest_shop_to_player :: () -> *Shop, float
 {
-    bldg_half_width := building.collider.rect.x/2.0;
-    bldg_center_to_corner_length := sqrt(2 * (bldg_half_width * bldg_half_width));
-    return bldg_center_to_corner_length + Game.player.collider.radius + 10.0;
-}
-
-get_closest_bldg_to_player :: () -> *Entity, float
-{
-    using Game;
-    nearest_index := 0;
-    min_dist := length(buildings[0].position - player.position);
-    for buildings
-    {
-        dist := length(it.position - player.position);
-        if dist < min_dist
-        {
-            min_dist = dist;
-            nearest_index = it_index;
-        }
-    }
-    return *buildings[nearest_index], min_dist;
-}
-
-get_closest_bldg_to_player :: (type: Bldg_Type) -> *Entity, float
-{
-    using Game;
-    nearest_index := 0;
-    min_dist := length(buildings[0].position - player.position);
-    for buildings if it.building.type == type
-    {
-        dist := length(it.position - player.position);
-        if dist < min_dist
-        {
-            min_dist = dist;
-            nearest_index = it_index;
-        }
-    }
-    return *buildings[nearest_index], min_dist;
+    // using Game;
+    // nearest_index := 0;
+    // min_dist := length(buildings[0].position - player.position);
+    // for buildings
+    // {
+    //     dist := length(it.position - player.position);
+    //     if dist < min_dist
+    //     {
+    //         min_dist = dist;
+    //         nearest_index = it_index;
+    //     }
+    // }
+    // return *buildings[nearest_index], min_dist;
+    return null, 0.0;
 }
 
 // @Bug: What if you are nearer to an entity that can't be picked up, but *also* in range of one that can? it should pick up the nearest that can
@@ -767,7 +693,7 @@ get_nearby_containers :: () -> [..] *Container
 compute_container_weight :: (c: Container) -> int
 {
     total := 0;
-    for c.contents { total += it; }
+    for c.contents { total += 1; }
     return total;
 }
 

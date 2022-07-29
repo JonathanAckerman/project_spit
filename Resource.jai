@@ -2,15 +2,15 @@ get_resource_color :: (r: Resource_Type) -> Color
 {
     if #complete r ==
     {
-        case .IRON;
-            return RED;
-        case .COPPER;
+        case .COPPER_VEIN;
             return GREEN;
+        case .IRON_VEIN;
+            return RED;
         case .WATER;
             return BLUE;
-        case .WOOD;
+        case .TREE;
             return DARKGREEN;
-        case .FIBER;
+        case .BUSH;
             return BEIGE;
     }
 }
@@ -30,17 +30,16 @@ Entity :: struct
         #as item: Item;
         #as container: Container;
         #as equipment: Equipment;
-        #as building: Building;
         #as person: Person;
     }
 }
+
 Entity_Type :: enum
 {
     RESOURCE;
     ITEM;
     CONTAINER;
     EQUIPMENT;
-    BUILDING;
     PERSON;
 }
 
@@ -48,23 +47,58 @@ Resource :: struct
 {
     type: Resource_Type;
     quantity: int;
+    harvestRequirement: Item;
 }
+Resource_Type :: enum
+{
+    COPPER_VEIN;
+    IRON_VEIN;
+    WATER;
+    TREE;
+    BUSH;
+}
+
 Item :: struct
 {
     type: Item_Type;
 }
+Item_Type :: enum
+{
+    // tools
+    CARPENTERS_HAMMER;
+    LUMBER_AXE;
+    // weapons
+    SWORD;
+    WHIP;
+    // byproducts
+    COPPER_NUGGET;
+    IRON_NUGGET;
+    WATER;
+    WOOD_LOG;
+    FIBER;
+}
+
 Container :: struct
 {
     type: Container_Type;
-    capacity: int;
-    contents: [#run enum_highest_value(Resource_Type) + 1] int;
+    using #as inventory: Inventory;
 }
+Container_Type :: enum
+{
+    BASKET;
+    CHEST;
+}
+
 Equipment :: struct
 {
     type: Equipment_Type;
     using #as inventory: Inventory;
 }
-
+Equipment_Type :: enum
+{
+    TOOL_BELT;
+    WEAPON_BELT;
+}
 
 // @Note: Inventory does not have an entity
 Inventory :: struct
@@ -81,39 +115,6 @@ NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> Entity
     e.tag = tag;
     e.id = _Entity_ID;
     _Entity_ID += 1;
-    return e;
-}
-
-NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> Entity
-{
-    collider := Collider.{type = .CIRCLE, radius = 20.0};
-    e: Entity = NewEntityBase(pos, collider, .PERSON);
-    e.person.color = ifx ai.exists then BROWN else BLACK;
-    e.person.speed = 6.0;
-    e.person.forward = .{0, -1};
-    return  e;
-}
-
-// @Note: I might not need to pass in type since traders and shops have their own functions, or try to combine the functs
-// Traders
-NewBuilding :: (type: Bldg_Type, pos: Vector2, want: Resource_Type, have: Resource_Type) -> Entity
-{
-    collider := Collider.{type = .RECT, rect = .{100, 100}};
-    e: Entity = NewEntityBase(pos, collider, .BUILDING);
-    e.building.type = .TRADER;
-    e.building.want = want;
-    e.building.have = have;
-    return e;
-}
-// Shops
-NewBuilding :: (type: Bldg_Type, pos: Vector2, resource: Resource_Type, amount: int, selling: Container_Type) -> Entity
-{
-    collider := Collider.{type = .RECT, rect = .{50, 50}};
-    e: Entity = NewEntityBase(pos, collider, .BUILDING);
-    e.building.type = .SHOP;
-    e.building.resource = resource;
-    e.building.amount = amount;
-    e.building.itemType = selling;
     return e;
 }
 
@@ -156,32 +157,6 @@ NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0
     return e;
 }
 
-Resource_Type :: enum
-{
-    COPPER;
-    IRON;
-    WATER;
-    WOOD;
-    FIBER;
-}
-Container_Type :: enum
-{
-    BASKET;
-    CHEST;
-}
-Equipment_Type :: enum
-{
-    TOOL_BELT;
-    WEAPON_BELT;
-}
-Item_Type :: enum
-{
-    CARPENTERS_HAMMER;
-    LUMBER_AXE;
-    SWORD;
-    WHIP;
-}
-
 // @TODO: handle buildings and people
 draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
 {
@@ -197,6 +172,8 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
                 DrawCircleV(pos, e.collider.radius * scale, GRAY);
             case .SWORD;
                 DrawCircleV(pos, e.collider.radius * scale, BLACK);
+            case .WOOD_LOG;
+                DrawCircleV(pos, e.collider.radius * scale, BROWN);
         }
         case .CONTAINER; if e.container.type ==
         {

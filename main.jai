@@ -26,6 +26,7 @@ main :: () {
 #load "DebugTools.jai";
 #load "Maybe.jai";
 #load "Grid.jai";
+#load "Utils.jai";
 
 #import "Raylib-Jai";
 #import "Basic";

@@ -1,30 +1,39 @@
-Building :: struct
+Shop :: struct
 {
-    type: Bldg_Type;
+    owner: *Entity;
+    area: [] GridCell;
+    deals: [] Deal;
+}
 
-    union
+Deal :: struct
+{
+    price: Price;
+    ware: Entity;
+}
+
+Price :: struct
+{
+    amount: int;
+    using entityStandIn: struct
     {
-        // @TODO: Consider generalizing traders/shops to all possess a 'want: [..] Entity', and 'have: [..] Entity'
-        using trader: struct
-        {
-            want: Resource_Type;
-            have: Resource_Type;
-        }
+        tag: Entity_Type;
 
-        using shop: struct
+        union
         {
-            resource: Resource_Type;
-            amount: int;
-            itemType: Container_Type;
-            // item: Entity;
+            item: Item_Type;
+            container: Container_Type;
+            equipment: Equipment_Type;
         }
     }
 }
 
-Bldg_Type :: enum
+NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> Shop
 {
-    TRADER;
-    SHOP;
+    shop: Shop;
+    shop.area = area;
+    shop.deals = deals;
+    shop.owner = owner;
+    return shop;
 }
 
 Person :: struct
@@ -42,6 +51,22 @@ Person :: struct
     ai: Maybe(AI);
 }
 
+NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> Entity
+{
+    collider := Collider.{type = .CIRCLE, radius = 20.0};
+    e: Entity = NewEntityBase(pos, collider, .PERSON);
+    e.person.color = ifx ai.exists then BROWN else BLACK;
+    e.person.speed = 6.0;
+    e.person.forward = .{0, -1};
+    return  e;
+}
+
+Player :: struct
+{
+    interactRange := 100.0;
+    using #as entity: Entity;
+}
+
 Collider :: struct
 {
     type: Collider_Type;
@@ -52,11 +77,12 @@ Collider :: struct
         radius: float;
     }
 
-    Collider_Type :: enum
-    {
-        RECT;
-        CIRCLE;
-    }
+}
+
+Collider_Type :: enum
+{
+    RECT;
+    CIRCLE;
 }
 
 AI :: struct

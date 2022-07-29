@@ -1,19 +1,25 @@
 debug_player_position :: ()
 {
     using Game;
-    camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
+    camera_vector := WINDOW_CENTER - camera.position * camera.zoom;
     ss_player := player.position * camera.zoom + camera_vector;
-    DrawText(to_c_string(tprint("pos: %", player.position)), xx (ss_player.x + 30.0), xx ss_player.y, 16, PINK);
-    DrawText(to_c_string(tprint("ID:  %", player.id)), xx (ss_player.x + 30.0), xx (ss_player.y + 20.0), 16, PINK);
+    drawpos := ss_player + xy(30 * camera.zoom, 0);
+    DrawText(to_c_string(tprint("pos: %", player.position)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * camera.zoom;
+    DrawText(to_c_string(tprint("ID:  %", player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 }
 
 debug_entity_info :: (e: Entity)
 {
     using Game;
-    camera_vector := .{WINDOW_WIDTH/2, WINDOW_HEIGHT/2} - player.position;
+    camera_vector := WINDOW_CENTER - camera.position * camera.zoom;
     ss_entity := e.position * camera.zoom + camera_vector;
-    DrawText(to_c_string(tprint("pos: %", e.position)), xx (ss_entity.x + 30.0), xx ss_entity.y, 16, PINK);
-    DrawText(to_c_string(tprint("ID:  %", e.id)), xx (ss_entity.x + 30.0), xx (ss_entity.y + 20.0), 16, PINK);
+    drawpos := ss_entity + xy(30 * camera.zoom, 0);
+    DrawText(to_c_string(tprint("pos: %", e.position)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * camera.zoom;
+    DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * camera.zoom;
+    DrawText(to_c_string(tprint("Ent_Type:  %", e.tag)), xx drawpos.x, xx drawpos.y, 16, PINK);
 }
 
 debug_console :: (dt: float)
@@ -125,20 +131,6 @@ debug_is_command_valid :: (cmd: string)
         array_add(*Game.equipmentOnGround, equipment);
     }
 
-    if cmd == "FILL POCKETS"
-    {
-        for *Game.player.person.pockets.contents
-        {
-            <<it = 10;
-        }
-    }
-    if cmd == "MUSK"
-    {
-        for *Game.player.person.pockets.contents
-        {
-            <<it = 200_000_000_000;
-        }
-    }
     if cmd == "TP"
     {
         Game.player.position = .{-1000, -1000};
