@@ -1,3 +1,10 @@
+Input: struct
+{
+    harvest := false;
+    trade := false;
+    equipSlot := -1;
+}
+
 handle_input :: inline () 
 {
     if !Debug.isActive
@@ -25,21 +32,21 @@ handle_input :: inline ()
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            Game.tryHarvest = true;
+            Input.harvest = true;
         }
         else
         {
-            Game.tryHarvest = false; 
+            Input.harvest = false; 
         }
 
         // trading
         if IsKeyPressed(xx KeyboardKey.T)
         {
-            Game.tryTrade = true;
+            Input.trade = true;
         }
         else
         {
-            Game.tryTrade = false; 
+            Input.trade = false; 
         }
 
         // drop item
@@ -51,6 +58,13 @@ handle_input :: inline ()
             else
                 try_pickup();
         }
+
+        if IsKeyPressed(xx KeyboardKey.ONE) then Input.equipSlot = 0;
+        else if IsKeyPressed(xx KeyboardKey.TWO) then Input.equipSlot = 1;
+        else if IsKeyPressed(xx KeyboardKey.THREE) then Input.equipSlot = 2;
+        else if IsKeyPressed(xx KeyboardKey.FOUR) then Input.equipSlot = 3;
+        else if IsKeyPressed(xx KeyboardKey.FIVE) then Input.equipSlot = 4;
+        else if IsKeyPressed(xx KeyboardKey.SIX) then Input.equipSlot = 5;
 
         // shifting resources around
         // {

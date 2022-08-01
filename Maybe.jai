@@ -11,3 +11,9 @@ NewMaybe :: (thing: $T) -> Maybe(T)
     m.value = thing;
     return m;
 }
+
+set :: (m: Maybe($T), v: T)
+{
+    m.value = v;
+    m.exists = true;
+}

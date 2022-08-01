@@ -78,6 +78,15 @@ Item_Type :: enum
     FIBER;
 }
 
+is_tool :: (type: Item_Type) -> bool
+{
+    return type == .CARPENTERS_HAMMER || type == .LUMBER_AXE;
+}
+is_weapon :: (type: Item_Type) -> bool
+{
+    return type == .SWORD || type == .WHIP;
+}
+
 Container :: struct
 {
     type: Container_Type;

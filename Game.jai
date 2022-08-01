@@ -19,9 +19,8 @@ Game: struct
     npcs:               [..] Entity;
     shops:              [..] Shop;
 
-    // input state
-    tryHarvest := false;
-    tryTrade := false;
+    // ui state
+    // highlightedItem: *Entity = ---;
 }
 
 Debug: struct
@@ -75,6 +74,64 @@ game_loop :: inline ()
 
         camera.position = player.position;
         camera_vector = WINDOW_CENTER - camera.position * camera.zoom;
+
+        equipItem :: ()
+        {
+            player := *Game.player.person;
+            if player.toolBelt.exists && player.toolBelt.value.contents.count > 0
+            {
+                if player.held.exists
+                {
+                    if player.held.value.tag ==
+                    {
+                        case .ITEM;
+                            if is_tool(player.held.value.item.type)
+                            {
+                                // swap the held tool and selected tool
+                                temp := player.held.value;
+                                player.held.value = *player.toolBelt.value.contents[0];
+                                player.toolBelt.value.contents[0] = temp;
+                            }
+                            else if is_weapon(player.held.value.item.type)
+                            {
+                                // weaponbelt full, drop weapon on floor
+                                if player.weaponBelt.value.contents.count == player.weaponBelt.value.capacity
+                                {
+                                    array_add(*Game.itemsOnGround, player.held.value);
+                                    player.held.value = *player.toolBelt.value.contents[0];
+                                }
+                                // sheath weapon
+                                else
+                                {
+                                    array_add(*player.weaponBelt.value.contents, <<player.held.value);
+                                    player.held.value = *player.toolBelt.value.contents[0];
+                                }
+                            }
+                        case .CONTAINER;
+                            array_add(*Game.containersOnGround, player.held.value);
+                            player.held.value = *player.toolBelt.value.contents[0];
+                    }
+                    array_unordered_remove_by_index(*player.toolBelt.value.contents, 0);
+                }
+                else
+                {
+                    if Input.equipSlot < 3 // tool
+                    {
+                        player.held.value = *player.toolBelt.value.contents[Input.equipSlot];
+                        player.held.exists = true;
+                        array_unordered_remove_by_index(*player.toolBelt.value.contents, Input.equipSlot);
+                    }
+                    else // weapon
+                    {
+                        player.held.value = *player.weaponBelt.value.contents[Input.equipSlot - 3];
+                        player.held.exists = true;
+                        array_unordered_remove_by_index(*player.weaponBelt.value.contents, Input.equipSlot - 3);
+                    }
+                }
+            }
+            Input.equipSlot = -1;
+        }
+        if Input.equipSlot != -1 then equipItem();
 
         harvestResource :: ()
         {
@@ -130,7 +187,7 @@ game_loop :: inline ()
                 swap_and_pop(*resourceList, resource_to_harvest.value.entity); 
             }
         }
-        if tryHarvest then harvestResource();
+        if Input.harvest then harvestResource();
 
         buyFromShop :: ()
         {
@@ -208,7 +265,7 @@ game_loop :: inline ()
                 // }
             }
         }
-        if tryTrade then buyFromShop();
+        if Input.trade then buyFromShop();
 
         talkToNearestNPC :: ()
         {
@@ -231,7 +288,7 @@ game_loop :: inline ()
                 nearest.person.ai.value.speakTimer = nearest.person.ai.value.speakDuration;
             }
         }
-        if tryTrade then talkToNearestNPC();
+        if Input.trade then talkToNearestNPC();
 
         // npc ai
         {
@@ -416,25 +473,37 @@ game_loop :: inline ()
             // }
 
             // draw held
+            // @Cleanup
             xpos := 20.0;
             DrawText(xx "Held:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
             if player.person.held.exists 
             {
-                if player.person.held.value.tag == .CONTAINER if player.person.held.value.container.type ==
+                if player.person.held.value.tag ==
                 {
-                    case .BASKET;
-                        draw_entity(player.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
-                        // for r, r_index: player.person.held.value.container.contents
-                        // {
-                        //     y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
-                        //     line := tprint("%: %", resource_names[r_index], r);
-                        //     DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
-                        // }
-                        xpos += 80.0;
-                    case .CHEST;
-                        draw_entity(player.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
-                        xpos += 80.0;
+                    case .CONTAINER;
+                        if player.person.held.value.container.type ==
+                        {
+                            case .BASKET;
+                                draw_entity(player.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
+                                // for r, r_index: player.person.held.value.container.contents
+                                // {
+                                //     y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
+                                //     line := tprint("%: %", resource_names[r_index], r);
+                                //     DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
+                                // }
+                                xpos += 80.0;
+                            case .CHEST;
+                                draw_entity(player.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
+                                xpos += 80.0;
+                        }
+                    case .ITEM;
+                        if player.person.held.value.item.type ==
+                        {
+                            case;
+                                draw_entity(player.person.held.value, xy(xpos + 30.0, WINDOW_HEIGHT - 50));
+                                xpos += 80.0;
+                        }
                 }
             }
             // draw tool belt
@@ -534,6 +603,7 @@ game_reset :: ()
 {
     log("RESETTING GAME");
     Game = .{};
+    Input = .{};
 
     noAI: Maybe(AI);
     Game.player.entity = NewPerson(.{200, 200}, noAI);
