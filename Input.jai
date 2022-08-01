@@ -2,11 +2,15 @@ Input: struct
 {
     harvest := false;
     trade := false;
+    pickup := false;
+    drop := false;
     equipSlot := -1;
 }
 
 handle_input :: inline () 
 {
+    using Input;
+
     if !Debug.isActive
     {
         // movement
@@ -32,39 +36,38 @@ handle_input :: inline ()
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            Input.harvest = true;
+            harvest = true;
         }
         else
         {
-            Input.harvest = false; 
+            harvest = false; 
         }
 
         // trading
         if IsKeyPressed(xx KeyboardKey.T)
         {
-            Input.trade = true;
+            trade = true;
         }
         else
         {
-            Input.trade = false; 
+            trade = false; 
         }
 
-        // drop item
         if IsKeyPressed(xx KeyboardKey.Y)
         {
-            // @TODO: not a fan of how game logic is also in this file
-            if Game.player.person.held.exists
-                drop_held();
-            else
-                try_pickup();
+            nearest_item := get_nearest_holdable_in_range(Game.player.interactRange);
+            if nearest_item.exists
+                pickup = true;
+            else if Game.player.person.held.exists
+                drop = true;
         }
 
-        if IsKeyPressed(xx KeyboardKey.ONE) then Input.equipSlot = 0;
-        else if IsKeyPressed(xx KeyboardKey.TWO) then Input.equipSlot = 1;
-        else if IsKeyPressed(xx KeyboardKey.THREE) then Input.equipSlot = 2;
-        else if IsKeyPressed(xx KeyboardKey.FOUR) then Input.equipSlot = 3;
-        else if IsKeyPressed(xx KeyboardKey.FIVE) then Input.equipSlot = 4;
-        else if IsKeyPressed(xx KeyboardKey.SIX) then Input.equipSlot = 5;
+        if IsKeyPressed(xx KeyboardKey.ONE) then equipSlot = 0;
+        else if IsKeyPressed(xx KeyboardKey.TWO) then equipSlot = 1;
+        else if IsKeyPressed(xx KeyboardKey.THREE) then equipSlot = 2;
+        else if IsKeyPressed(xx KeyboardKey.FOUR) then equipSlot = 3;
+        else if IsKeyPressed(xx KeyboardKey.FIVE) then equipSlot = 4;
+        else if IsKeyPressed(xx KeyboardKey.SIX) then equipSlot = 5;
 
         // shifting resources around
         // {

@@ -1,3 +1,33 @@
+Debug: struct
+{
+    isActive := false;
+    c: DebugCursor;
+    line: string;
+    history: [..] string;
+    historyIndex := -1;
+
+    font: Font;
+    fontSize := 28.0;
+    fontSpacing := 1.0;
+
+    listCommands := false;
+    commandList: [] string = .[
+        "SPAWN BASKET",
+        "SPAWN CHEST",
+        "SPAWN AXE",
+        "SPAWN SAW",
+        "SPAWN TOOLBELT",
+        "SPAWN WEAPONBELT",
+        "TP",
+        "GOTTAGOFAST",
+        "REPOP RESOURCES",
+        "RESET",
+        "DEBUG INFO 0",
+        "DEBUG INFO 1"
+    ];
+    showEntityInfo := false;
+}
+
 debug_player_position :: ()
 {
     using Game;
@@ -112,6 +142,13 @@ debug_is_command_valid :: (cmd: string)
         pos := Game.player.position + Game.player.person.forward * 50;
         collider := Collider.{type = .CIRCLE, radius = 10};
         item := NewItem(.LUMBER_AXE, collider, pos);
+        array_add(*Game.itemsOnGround, item);
+    }
+    if cmd == "SPAWN SAW"
+    {
+        pos := Game.player.position + Game.player.person.forward * 50;
+        collider := Collider.{type = .CIRCLE, radius = 10};
+        item := NewItem(.HEWING_SAW, collider, pos);
         array_add(*Game.itemsOnGround, item);
     }
 

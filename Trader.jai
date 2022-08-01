@@ -27,9 +27,9 @@ Price :: struct
     }
 }
 
-NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> Shop
+NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> *Shop
 {
-    shop: Shop;
+    shop := New(Shop);
     shop.area = area;
     shop.deals = deals;
     shop.owner = owner;
@@ -51,10 +51,10 @@ Person :: struct
     ai: Maybe(AI);
 }
 
-NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> Entity
+NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Entity
 {
     collider := Collider.{type = .CIRCLE, radius = 20.0};
-    e: Entity = NewEntityBase(pos, collider, .PERSON);
+    e := NewEntityBase(pos, collider, .PERSON);
     e.person.color = ifx ai.exists then BROWN else BLACK;
     e.person.speed = 6.0;
     e.person.forward = .{0, -1};

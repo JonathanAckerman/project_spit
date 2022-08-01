@@ -67,6 +67,7 @@ Item_Type :: enum
     // tools
     CARPENTERS_HAMMER;
     LUMBER_AXE;
+    HEWING_SAW;
     // weapons
     SWORD;
     WHIP;
@@ -116,9 +117,9 @@ Inventory :: struct
     contents: [..] Entity;
 }
 
-NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> Entity
+NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> *Entity
 {
-    e: Entity;
+    e := New(Entity);
     e.position = pos;
     e.collider = collider;
     e.tag = tag;
@@ -127,9 +128,9 @@ NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> Entity
     return e;
 }
 
-NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> Entity
+NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Entity
 {
-    e: Entity = NewEntityBase(pos, collider, .CONTAINER);
+    e := NewEntityBase(pos, collider, .CONTAINER);
     cap: int;
     if type ==
     {
@@ -143,16 +144,16 @@ NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0
     return e;
 }
 
-NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> Entity
+NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Entity
 {
-    e: Entity = NewEntityBase(pos, collider, .ITEM);
+    e := NewEntityBase(pos, collider, .ITEM);
     e.item.type = type;
     return e;
 }
 
-NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> Entity
+NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Entity
 {
-    e: Entity = NewEntityBase(pos, collider, .EQUIPMENT);
+    e := NewEntityBase(pos, collider, .EQUIPMENT);
     e.equipment.type = type;
     cap: int;
     if type ==
@@ -179,6 +180,8 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
         {
             case .LUMBER_AXE;
                 DrawCircleV(pos, e.collider.radius * scale, GRAY);
+            case .HEWING_SAW;
+                DrawCircleV(pos, e.collider.radius * scale, DARKGRAY);
             case .SWORD;
                 DrawCircleV(pos, e.collider.radius * scale, BLACK);
             case .WOOD_LOG;

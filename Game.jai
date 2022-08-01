@@ -11,45 +11,16 @@ Game: struct
         position: Vector2;
     }
 
-    entityList:         [..] *[..]Entity;
-    resourceList:       [..] Entity;
-    itemsOnGround:      [..] Entity;
-    containersOnGround: [..] Entity;
-    equipmentOnGround:  [..] Entity;
-    npcs:               [..] Entity;
-    shops:              [..] Shop;
+    entityList:         [..]* [..] *Entity;
+    resourceList:       [..] *Entity;
+    itemsOnGround:      [..] *Entity;
+    containersOnGround: [..] *Entity;
+    equipmentOnGround:  [..] *Entity;
+    npcs:               [..] *Entity;
+    shops:              [..] *Shop;
 
     // ui state
     // highlightedItem: *Entity = ---;
-}
-
-Debug: struct
-{
-    isActive := false;
-    c: DebugCursor;
-    line: string;
-    history: [..] string;
-    historyIndex := -1;
-
-    font: Font;
-    fontSize := 28.0;
-    fontSpacing := 1.0;
-
-    listCommands := false;
-    commandList: [] string = .[
-        "SPAWN BASKET",
-        "SPAWN CHEST",
-        "SPAWN AXE",
-        "SPAWN TOOLBELT",
-        "SPAWN WEAPONBELT",
-        "TP",
-        "GOTTAGOFAST",
-        "REPOP RESOURCES",
-        "RESET",
-        "DEBUG INFO 0",
-        "DEBUG INFO 1"
-    ];
-    showEntityInfo := false;
 }
 
 game_loop :: inline ()
@@ -78,60 +49,154 @@ game_loop :: inline ()
         equipItem :: ()
         {
             player := *Game.player.person;
-            if player.toolBelt.exists && player.toolBelt.value.contents.count > 0
+            belt_inventory := ifx Input.equipSlot < 3 then *Game.player.person.toolBelt else *Game.player.person.weaponBelt;
+            slot := ifx Input.equipSlot < 3 then Input.equipSlot else Input.equipSlot - 3;
+
+            if belt_inventory.exists && belt_inventory.value.contents.count > 0
             {
                 if player.held.exists
                 {
                     if player.held.value.tag ==
                     {
                         case .ITEM;
-                            if is_tool(player.held.value.item.type)
+                            sheath_inv: *Equipment;
+                            if is_tool(player.held.value.item.type) then sheath_inv = *player.toolBelt.value;
+                            else if is_weapon(player.held.value.item.type) then sheath_inv = *player.weaponBelt.value;
+                            // @Note: there might be other item types later
+
+                            if sheath_inv.contents.count == sheath_inv.capacity
                             {
-                                // swap the held tool and selected tool
-                                temp := player.held.value;
-                                player.held.value = *player.toolBelt.value.contents[0];
-                                player.toolBelt.value.contents[0] = temp;
-                            }
-                            else if is_weapon(player.held.value.item.type)
-                            {
-                                // weaponbelt full, drop weapon on floor
-                                if player.weaponBelt.value.contents.count == player.weaponBelt.value.capacity
+                                if sheath_inv == *belt_inventory.value
                                 {
-                                    array_add(*Game.itemsOnGround, player.held.value);
-                                    player.held.value = *player.toolBelt.value.contents[0];
+                                    temp := player.held.value;
+                                    player.held.value = *belt_inventory.value.contents[slot];
+                                    belt_inventory.value.contents[slot] = temp;
                                 }
-                                // sheath weapon
                                 else
                                 {
-                                    array_add(*player.weaponBelt.value.contents, <<player.held.value);
-                                    player.held.value = *player.toolBelt.value.contents[0];
+                                    array_add(*Game.itemsOnGround, player.held.value);
+                                    player.held.value = *belt_inventory.value.contents[slot];
                                 }
                             }
+                            else // there is space for held item
+                            {
+                                array_add(*sheath_inv.contents, <<player.held.value);
+                                player.held.value = *belt_inventory.value.contents[slot];
+                            }
+
                         case .CONTAINER;
                             array_add(*Game.containersOnGround, player.held.value);
-                            player.held.value = *player.toolBelt.value.contents[0];
+                            player.held.value = *belt_inventory.value.contents[slot];
                     }
-                    array_unordered_remove_by_index(*player.toolBelt.value.contents, 0);
+                    array_unordered_remove_by_index(*belt_inventory.value.contents, slot);
                 }
                 else
                 {
-                    if Input.equipSlot < 3 // tool
+                    player.held.value = *belt_inventory.value.contents[slot];
+                    player.held.exists = true;
+                    array_unordered_remove_by_index(*belt_inventory.value.contents, slot);
+                }
+            }
+
+            Input.equipSlot = -1; // reset input state
+        }
+        if Input.equipSlot != -1 then equipItem();
+
+        drop_held :: ()
+        {
+            using Game;
+            
+            if !player.person.held.exists return;
+
+            player.person.held.value.position = player.position + player.person.forward;
+            if player.person.held.value.tag ==
+            {
+                case .CONTAINER;
+                    array_add(*containersOnGround, player.person.held.value);
+                case .ITEM;
+                    array_add(*itemsOnGround, player.person.held.value);
+                case .EQUIPMENT;
+                    array_add(*equipmentOnGround, player.person.held.value);
+            }
+            player.person.held.exists = false;
+            Input.drop = false;
+        }
+        if Input.drop then drop_held();
+
+        try_pickup :: ()
+        {
+            using Game;
+            closest_item, index := get_nearest_holdable_in_range(100);
+            was_picked_up := false;
+            if closest_item.exists
+            {
+                if closest_item.value.tag ==
+                {
+                    case .EQUIPMENT;
+                        equipment := closest_item.value.equipment;
+                        e := NewMaybe(equipment);
+                        if equipment.type ==
+                        {
+                            case .TOOL_BELT;
+                                player.person.toolBelt = e;
+                                was_picked_up = true;
+                            case .WEAPON_BELT;
+                                player.person.weaponBelt = e;
+                                was_picked_up = true;
+                        }
+
+                    case .ITEM;
+                        item := closest_item.value.item;
+                        if !player.person.held.exists
+                        {
+                            player.person.held.value = closest_item.value;
+                            print("%\n", player.person.held.value.item);
+                            player.person.held.exists = true;
+                            was_picked_up = true;
+                        }
+                        else
+                        {
+                            dest_inv: *Equipment;
+                            if is_tool(item.type) then dest_inv = *player.person.toolBelt.value;
+                            else if is_weapon(item.type) then dest_inv = *player.person.weaponBelt.value;
+                            // @Note: there might be other item types later
+
+                            if dest_inv.contents.count < dest_inv.capacity
+                            {
+                                array_add(*dest_inv.contents, <<closest_item.value);
+                                was_picked_up = true;
+                            }
+                            else
+                            {
+                                // Here we don't mark was_picked_up since we want to leave the held item on the ground
+                                temp := player.person.held.value;
+                                player.person.held.value = closest_item.value;
+                                <<closest_item.value = <<temp;
+                            }
+                        }
+
+                    case .CONTAINER;
+                        newHeld: = NewMaybe(closest_item.value);
+                        player.person.held = newHeld;
+                        was_picked_up = true;
+                }
+
+                if was_picked_up
+                {
+                    if closest_item.value.tag ==
                     {
-                        player.held.value = *player.toolBelt.value.contents[Input.equipSlot];
-                        player.held.exists = true;
-                        array_unordered_remove_by_index(*player.toolBelt.value.contents, Input.equipSlot);
-                    }
-                    else // weapon
-                    {
-                        player.held.value = *player.weaponBelt.value.contents[Input.equipSlot - 3];
-                        player.held.exists = true;
-                        array_unordered_remove_by_index(*player.weaponBelt.value.contents, Input.equipSlot - 3);
+                        case .CONTAINER;
+                            array_unordered_remove_by_index(*containersOnGround, index);
+                        case .ITEM;
+                            array_unordered_remove_by_index(*itemsOnGround, index);
+                        case .EQUIPMENT;
+                            array_unordered_remove_by_index(*equipmentOnGround, index);
                     }
                 }
             }
-            Input.equipSlot = -1;
+            Input.pickup = false;
         }
-        if Input.equipSlot != -1 then equipItem();
+        if Input.pickup then try_pickup();
 
         harvestResource :: ()
         {
@@ -146,7 +211,7 @@ game_loop :: inline ()
                 if length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
                 {
                     info: resource_info;
-                    info.entity = *resourceList[it_index];
+                    info.entity = resourceList[it_index];
                     info.direction = player_to_resource;
                     array_add(*sorted_resources, info);
                 }
@@ -184,7 +249,7 @@ game_loop :: inline ()
             {
                 by_product := NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.entity.position + unit_vector(resource_to_harvest.value.direction) * 15);
                 array_add(*itemsOnGround, by_product);
-                swap_and_pop(*resourceList, resource_to_harvest.value.entity); 
+                swap_and_pop(*resourceList, *resource_to_harvest.value.entity); 
             }
         }
         if Input.harvest then harvestResource();
@@ -200,7 +265,7 @@ game_loop :: inline ()
                 player_grid_cell := world_to_grid(player.position);
                 for s.area if it == player_grid_cell
                 {
-                    shop.value = *s;
+                    shop.value = s;
                     shop.exists = true;
                 }
             }
@@ -281,7 +346,7 @@ game_loop :: inline ()
                     nearest_index = it_index;
                 }
             }
-            nearest := *npcs[nearest_index];
+            nearest := npcs[nearest_index];
             if min_dist <= 150
             {
                 nearest.person.ai.value.isSpeaking = true;
@@ -292,7 +357,7 @@ game_loop :: inline ()
 
         // npc ai
         {
-            for* npc: npcs
+            for npc: npcs
             {
                 if !npc.person.ai.value.hasGoal && npc.person.ai.value.goalResetTimer <= 0.0
                 {
@@ -543,7 +608,7 @@ game_loop :: inline ()
             }
 
             // draw nearby inventory
-            nearest_entity := get_nearest_holdable_in_range(50);
+            nearest_entity := get_nearest_holdable_in_range(player.interactRange);
             if nearest_entity.exists
             {
                 drawPos := nearest_entity.value.position * camera.zoom + camera_vector;
@@ -648,7 +713,7 @@ game_reset :: ()
         //     if !collided then check_collision = false;
         // }
         ai: AI;
-        npc: Entity = NewPerson(xy(x, y), NewMaybe(ai));
+        npc := NewPerson(xy(x, y), NewMaybe(ai));
         npc.person.speed = 0.5;
         array_add(*Game.npcs, npc);
     }
@@ -671,29 +736,29 @@ game_reset :: ()
         deals: [1] Deal;
         deals[0] = basket_deal;
 
-        basket_shop: Shop = NewShop(area, deals, *Game.npcs[0]);
+        basket_shop := NewShop(area, deals, Game.npcs[0]);
     }
 
     // init items on ground
     {
         pos := Game.player.position + .{100, -100};
         collider := Collider.{type = .CIRCLE, radius = 10};
-        lumberaxe: Entity = NewItem(.LUMBER_AXE, collider, pos);
+        lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.itemsOnGround, lumberaxe);
 
         pos = Game.player.position + .{200, -100};
-        sword: Entity = NewItem(.SWORD, collider, pos);
+        sword := NewItem(.SWORD, collider, pos);
         array_add(*Game.itemsOnGround, sword);
     }
     // init equipment on ground
     {
         pos := Game.player.position + .{0, -100};
         collider := Collider.{type = .RECT, rect = .{60, 15}};
-        toolbelt: Entity = NewEquipment(.TOOL_BELT, collider, pos);
+        toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, toolbelt);
 
         pos = Game.player.position + .{0, -200};
-        weaponbelt: Entity = NewEquipment(.WEAPON_BELT, collider, pos);
+        weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipmentOnGround, weaponbelt);
     }
 }
@@ -733,7 +798,7 @@ get_nearest_holdable_in_range :: (range: float) -> Maybe(*Entity), int
     if min_dist < range
     {
         result.exists = true;
-        result.value = *nearest_source[nearest_index];
+        result.value = nearest_source[nearest_index];
     }
 
     return result, nearest_index;
@@ -767,92 +832,7 @@ compute_container_weight :: (c: Container) -> int
     return total;
 }
 
-drop_held :: ()
-{
-    using Game;
-    
-    if !player.person.held.exists return;
-
-    player.person.held.value.position = player.position + player.person.forward;
-    if player.person.held.value.tag ==
-    {
-        case .CONTAINER;
-            array_add(*containersOnGround, player.person.held.value);
-        case .ITEM;
-            array_add(*itemsOnGround, player.person.held.value);
-        case .EQUIPMENT;
-            array_add(*equipmentOnGround, player.person.held.value);
-    }
-    player.person.held.exists = false;
-}
-
-try_pickup :: ()
-{
-    using Game;
-    closest_item, index := get_nearest_holdable_in_range(100);
-    was_picked_up := false;
-    if closest_item.exists
-    {
-        if closest_item.value.tag ==
-        {
-            case .EQUIPMENT;
-                equipment := closest_item.value.equipment;
-                e := NewMaybe(equipment);
-                if equipment.type ==
-                {
-                    case .TOOL_BELT;
-                        player.person.toolBelt = e;
-                        was_picked_up = true;
-                    case .WEAPON_BELT;
-                        player.person.weaponBelt = e;
-                        was_picked_up = true;
-                }
-            case .ITEM;
-                item := closest_item.value.item;
-                if item.type ==
-                {
-                    case .LUMBER_AXE; if player.person.toolBelt.exists
-                    {
-                        toolbelt := *player.person.toolBelt.value;
-                        if toolbelt.contents.count < toolbelt.capacity
-                        {
-                            array_add(*toolbelt.contents, closest_item.value);
-                            was_picked_up = true;
-                        }
-                    }
-                    case .SWORD; if player.person.weaponBelt.exists
-                    {
-                        weaponbelt := *player.person.weaponBelt.value;
-                        if weaponbelt.contents.count < weaponbelt.capacity
-                        {
-                            array_add(*weaponbelt.contents, closest_item.value);
-                            was_picked_up = true;
-                        }
-                    }
-                }
-            case .CONTAINER;
-                newHeld: = NewMaybe(closest_item.value);
-                player.person.held = newHeld;
-                was_picked_up = true;
-        }
-
-        if was_picked_up
-        {
-            if closest_item.value.tag ==
-            {
-                case .CONTAINER;
-                    array_unordered_remove_by_index(*containersOnGround, index);
-                case .ITEM;
-                    array_unordered_remove_by_index(*itemsOnGround, index);
-                case .EQUIPMENT;
-                    array_unordered_remove_by_index(*equipmentOnGround, index);
-            }
-        }
-    }
-
-}
-
-Get_Nearest_To_Player :: (arr: [..] Entity) #expand
+Get_Nearest_To_Player :: (arr: [..] *Entity) #expand
 {
     for arr
     {
