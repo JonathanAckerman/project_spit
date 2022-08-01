@@ -28,6 +28,17 @@ Debug: struct
     showEntityInfo := false;
 }
 
+DebugCursor :: struct
+{
+    curPos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
+    basePos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
+    charNumber := 0;
+    lineNumber := 0;
+    size: Vector2;
+    blinkState := true;
+    blinkTimer := 0.5;
+}
+
 debug_player_position :: ()
 {
     using Game;
@@ -119,54 +130,52 @@ debug_console :: (dt: float)
 debug_is_command_valid :: (cmd: string)
 {
     // @TEMP: for now just match a string, later maybe have lexical parsing
-    // Containers
-    if cmd == "SPAWN BASKET"
+    cmd_array := split(cmd, " ");
+    if cmd_array.count > 0
     {
-        pos := Game.player.position + Game.player.person.forward * 50;
-        collider := Collider.{type = .RECT, rect = .{20, 30}};
-        container := NewContainer(.BASKET, collider, pos);
-        array_add(*Game.containersOnGround, container); 
+        if begins_with(cmd, "SPAWN")
+        {
+            pos := Game.player.position + Game.player.person.forward * 50;
+            collider: Collider;
+
+            entity: *Entity;
+            array: *[..] *Entity;
+
+            // Containers
+            if cmd_array[1] == "BASKET" || cmd_array[1] == "CHEST"
+            {
+                collider = Collider.{type = .RECT, rect = .{20, 30}};
+                entity = NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
+                array = *Game.containersOnGround;
+            }
+
+            // Items
+            if cmd_array[1] == "AXE" || cmd_array[1] == "SAW" || cmd_array[1] == "HAMMER" || cmd_array[1] == "SWORD" || cmd_array[1] == "WHIP"
+            {
+                if cmd_array[1] == "AXE" then cmd_array[1] = "LUMBER_AXE";
+                if cmd_array[1] == "SAW" then cmd_array[1] = "HEWING_SAW";
+                if cmd_array[1] == "HAMMER" then cmd_array[1] = "CARPENTERS_HAMMER";
+                
+                collider = Collider.{type = .CIRCLE, radius = 10};
+                entity = NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
+                array = *Game.itemsOnGround;
+            }
+
+            // Equipment
+            if cmd_array[1] == "TOOLBELT" || cmd_array[1] == "WEAPONBELT"
+            {
+                if cmd_array[1] == "TOOLBELT" then cmd_array[1] = "TOOL_BELT";
+                if cmd_array[1] == "WEAPONBELT" then cmd_array[1] = "WEAPON_BELT";
+
+                collider = Collider.{type = .RECT, rect = .{60, 15}};
+                entity = NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
+                array = *Game.equipmentOnGround;
+            }
+
+            array_add(array, entity);
+        }
     }
 
-    if cmd == "SPAWN CHEST"
-    {
-        pos := Game.player.position + Game.player.person.forward * 50;
-        collider := Collider.{type = .RECT, rect = .{20, 30}};
-        container := NewContainer(.CHEST, collider, pos);
-        array_add(*Game.containersOnGround, container);
-    }
-
-    // Items
-    if cmd == "SPAWN AXE"
-    {
-        pos := Game.player.position + Game.player.person.forward * 50;
-        collider := Collider.{type = .CIRCLE, radius = 10};
-        item := NewItem(.LUMBER_AXE, collider, pos);
-        array_add(*Game.itemsOnGround, item);
-    }
-    if cmd == "SPAWN SAW"
-    {
-        pos := Game.player.position + Game.player.person.forward * 50;
-        collider := Collider.{type = .CIRCLE, radius = 10};
-        item := NewItem(.HEWING_SAW, collider, pos);
-        array_add(*Game.itemsOnGround, item);
-    }
-
-    // Equipment
-    if cmd == "SPAWN TOOLBELT"
-    {
-        pos := Game.player.position + Game.player.person.forward * 50;
-        collider := Collider.{type = .RECT, rect = .{60, 15}};
-        equipment := NewEquipment(.TOOL_BELT, collider, pos);
-        array_add(*Game.equipmentOnGround, equipment);
-    }
-    if cmd == "SPAWN WEAPONBELT"
-    {
-        pos := Game.player.position + Game.player.person.forward * 50;
-        collider := Collider.{type = .RECT, rect = .{60, 15}};
-        equipment := NewEquipment(.WEAPON_BELT, collider, pos);
-        array_add(*Game.equipmentOnGround, equipment);
-    }
 
     if cmd == "TP"
     {
@@ -195,13 +204,41 @@ debug_is_command_valid :: (cmd: string)
     }
 }
 
-DebugCursor :: struct
+item_type_from_string :: (s: string) -> Maybe(Item_Type)
 {
-    curPos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
-    basePos : Vector2 = .{20.0, WINDOW_HEIGHT - 250.0};
-    charNumber := 0;
-    lineNumber := 0;
-    size: Vector2;
-    blinkState := true;
-    blinkTimer := 0.5;
+    for enum_names(Item_Type)
+    {
+        if s == it
+        {
+            m := NewMaybe(cast(Item_Type) enum_values_as_s64(Item_Type)[it_index]);
+            return m;
+        }
+    }
+    return Nothing(Item_Type);
+}
+
+container_type_from_string :: (s: string) -> Maybe(Container_Type)
+{
+    for enum_names(Container_Type)
+    {
+        if s == it
+        {
+            m := NewMaybe(cast(Container_Type) enum_values_as_s64(Container_Type)[it_index]);
+            return m;
+        }
+    }
+    return Nothing(Container_Type);
+}
+
+equipment_type_from_string :: (s: string) -> Maybe(Equipment_Type)
+{
+    for enum_names(Equipment_Type)
+    {
+        if s == it
+        {
+            m := NewMaybe(cast(Equipment_Type) enum_values_as_s64(Equipment_Type)[it_index]);
+            return m;
+        }
+    }
+    return Nothing(Equipment_Type);
 }

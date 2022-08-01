@@ -12,6 +12,11 @@ NewMaybe :: (thing: $T) -> Maybe(T)
     return m;
 }
 
+Nothing :: ($T: Type = void) -> Maybe(T)
+{
+    return Maybe(T).{};
+}
+
 set :: (m: Maybe($T), v: T)
 {
     m.value = v;
