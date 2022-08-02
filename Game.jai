@@ -88,6 +88,9 @@ game_loop :: inline ()
                             array_add(*Game.containersOnGround, player.held.value);
                             player.held.value = *belt_inventory.value.contents[slot];
                     }
+                    // Swap(*belt_inventory.value.contents[slot], *belt_inventory.value.contents[belt_inventory.value.contents.count - 1]);
+                    // newHeld := pop(*belt_inventory.value.contents);
+                    // player.held.value = *newHeld;
                     array_unordered_remove_by_index(*belt_inventory.value.contents, slot);
                 }
                 else
@@ -150,7 +153,6 @@ game_loop :: inline ()
                         if !player.person.held.exists
                         {
                             player.person.held.value = closest_item.value;
-                            print("%\n", player.person.held.value.item);
                             player.person.held.exists = true;
                             was_picked_up = true;
                         }

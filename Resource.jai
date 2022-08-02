@@ -81,7 +81,7 @@ Item_Type :: enum
 
 is_tool :: (type: Item_Type) -> bool
 {
-    return type == .CARPENTERS_HAMMER || type == .LUMBER_AXE;
+    return type == .CARPENTERS_HAMMER || type == .LUMBER_AXE || type == .HEWING_SAW;
 }
 is_weapon :: (type: Item_Type) -> bool
 {
