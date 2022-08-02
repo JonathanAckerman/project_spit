@@ -380,7 +380,7 @@ game_loop :: inline ()
                 }
             }
             nearest := npcs[nearest_index];
-            if min_dist <= 150
+            if min_dist <= player.interactRange
             {
                 nearest.person.ai.value.isSpeaking = true;
                 nearest.person.ai.value.speakTimer = nearest.person.ai.value.speakDuration;
@@ -738,7 +738,8 @@ game_reset :: ()
         //     if !collided then check_collision = false;
         // }
         ai: AI;
-        npc := NewPerson(xy(x, y), NewMaybe(ai));
+        npcAI := NewMaybe(ai);
+        npc := NewPerson(xy(x, y), npcAI);
         npc.person.speed = 0.5;
         array_add(*Game.npcs, npc);
     }

@@ -55,6 +55,7 @@ NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Entity
 {
     collider := Collider.{type = .CIRCLE, radius = 20.0};
     e := NewEntityBase(pos, collider, .PERSON, ai.exists);
+    e.person.ai = ai;
     e.person.color = ifx ai.exists then BROWN else BLACK;
     e.person.speed = 6.0;
     e.person.forward = .{0, -1};
