@@ -42,27 +42,27 @@ DebugCursor :: struct
     blinkTimer := 0.5;
 }
 
-debug_player_position :: ()
+debug_player_info :: ()
 {
-    using Game;
-    camera_vector := WINDOW_CENTER - camera.position * camera.zoom;
-    ss_player := player.position * camera.zoom + camera_vector;
-    drawpos := ss_player + xy(30 * camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", player.position)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * camera.zoom;
-    DrawText(to_c_string(tprint("ID:  %", player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    camera_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
+    ss_player := Game.player.entity.position.value * Game.camera.zoom + camera_vector;
+    drawpos := ss_player + xy(30 * Game.camera.zoom, 0);
+    DrawText(to_c_string(tprint("pos: %", Game.player.entity.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * Game.camera.zoom;
+    DrawText(to_c_string(tprint("ID:  %", Game.player.entity.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
+
+    DrawCircleLines(xx ss_player.x, xx ss_player.y, Game.player.interactRange, PINK);
 }
 
 debug_entity_info :: (e: Entity)
 {
-    using Game;
-    camera_vector := WINDOW_CENTER - camera.position * camera.zoom;
-    ss_entity := e.position * camera.zoom + camera_vector;
-    drawpos := ss_entity + xy(30 * camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", e.position)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * camera.zoom;
+    camera_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
+    ss_entity := e.position.value * Game.camera.zoom + camera_vector;
+    drawpos := ss_entity + xy(30 * Game.camera.zoom, 0);
+    DrawText(to_c_string(tprint("pos: %", e.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * camera.zoom;
+    drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("Ent_Type:  %", e.tag)), xx drawpos.x, xx drawpos.y, 16, PINK);
 }
 
@@ -138,7 +138,7 @@ debug_is_command_valid :: (cmd: string)
     {
         if begins_with(cmd, "SPAWN")
         {
-            pos := Game.player.position + Game.player.person.forward * 50;
+            pos := Game.player.entity.position.value + Game.player.entity.person.forward * 50;
             collider: Collider;
 
             entity: *Entity;
@@ -149,7 +149,7 @@ debug_is_command_valid :: (cmd: string)
             {
                 collider = Collider.{type = .RECT, rect = .{20, 30}};
                 entity = NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
-                array = *Game.containersOnGround;
+                array = *Game.containers;
             }
 
             // Items
@@ -161,7 +161,7 @@ debug_is_command_valid :: (cmd: string)
                 
                 collider = Collider.{type = .CIRCLE, radius = 10};
                 entity = NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
-                array = *Game.itemsOnGround;
+                array = *Game.items;
             }
 
             // Equipment
@@ -172,7 +172,7 @@ debug_is_command_valid :: (cmd: string)
 
                 collider = Collider.{type = .RECT, rect = .{60, 15}};
                 entity = NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
-                array = *Game.equipmentOnGround;
+                array = *Game.equipment;
             }
 
             array_add(array, entity);
@@ -182,15 +182,15 @@ debug_is_command_valid :: (cmd: string)
 
     if cmd == "TP"
     {
-        Game.player.position = .{-1000, -1000};
+        Game.player.entity.position.value = .{-1000, -1000};
     }
     if cmd == "GOTTAGOFAST"
     {
-        Game.player.person.speed = 50;
+        Game.player.entity.person.speed = 50;
     }
     if cmd == "REPOP RESOURCES"
     {
-        array_reset(*Game.resourceList);
+        array_reset(*Game.resources);
         populate_resources();
     }
     if cmd == "RESET"

@@ -15,23 +15,29 @@ handle_input :: inline ()
     {
         // movement
         new_velocity: Vector2;
+        new_forward: Vector2;
         if IsKeyDown(xx KeyboardKey.W) 
         {
             new_velocity.y = -1.0;
+            new_forward += .{0, -1};
         }
         if IsKeyDown(xx KeyboardKey.A) 
         {
             new_velocity.x = -1.0;
+            new_forward += .{-1, 0};
         }
         if IsKeyDown(xx KeyboardKey.S) 
         {
             new_velocity.y = 1.0;
+            new_forward += .{0, 1};
         }
         if IsKeyDown(xx KeyboardKey.D) 
         {
             new_velocity.x = 1.0;
+            new_forward += .{1, 0};
         }
-        Game.player.person.velocity = unit_vector(new_velocity) * Game.player.person.speed;
+        if length(new_forward) != 0 then Game.player.entity.person.forward = new_forward;
+        Game.player.entity.person.velocity = unit_vector(new_velocity) * Game.player.entity.person.speed;
 
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
@@ -55,10 +61,10 @@ handle_input :: inline ()
 
         if IsKeyPressed(xx KeyboardKey.Y)
         {
-            nearest_item := get_nearest_holdable_in_range(Game.player.interactRange);
-            if nearest_item.exists
+            holdables := get_holdables_in_range(Game.player.interactRange);
+            if holdables.count > 0
                 pickup = true;
-            else if Game.player.person.held.exists
+            else if Game.player.entity.person.held.exists
                 drop = true;
         }
 
@@ -81,7 +87,7 @@ handle_input :: inline ()
         //     if resource_index != -1 // if we got an input for shifting resources
         //     {
         //         container: Maybe(*Container);
-        //         if !Game.player.person.held.exists
+        //         if !Game.player.entity.person.held.exists
         //         {
         //             // look for nearest container
         //             nearest := get_nearest_holdable_in_range(50);
@@ -93,9 +99,9 @@ handle_input :: inline ()
         //         }
         //         else
         //         {
-        //             if Game.player.person.held.value.tag == .CONTAINER && Game.player.person.held.value.container.type == .BASKET
+        //             if Game.player.entity.person.held.value.tag == .CONTAINER && Game.player.entity.person.held.value.container.type == .BASKET
         //             {
-        //                 container.value = *Game.player.person.held.value.container;
+        //                 container.value = *Game.player.entity.person.held.value.container;
         //                 container.exists = true;
         //             }
         //         }
@@ -107,19 +113,19 @@ handle_input :: inline ()
         //                 // shift out of pockets
         //                 container_weight := 0;
         //                 for container.value.contents { container_weight += it; } 
-        //                 if Game.player.person.pockets.contents[resource_index] > 0 && container_weight < container.value.capacity
+        //                 if Game.player.entity.person.pockets.contents[resource_index] > 0 && container_weight < container.value.capacity
         //                 {
         //                     container.value.contents[resource_index] += 1;    
-        //                     Game.player.person.pockets.contents[resource_index] -= 1;
+        //                     Game.player.entity.person.pockets.contents[resource_index] -= 1;
         //                 }
         //             }
         //             else
         //             {
         //                 // shift into pockets
-        //                 if container.value.contents[resource_index] > 0 && Game.player.person.pockets.contents[resource_index] < 10
+        //                 if container.value.contents[resource_index] > 0 && Game.player.entity.person.pockets.contents[resource_index] < 10
         //                 {
         //                     container.value.contents[resource_index] -= 1;
-        //                     Game.player.person.pockets.contents[resource_index] += 1;
+        //                     Game.player.entity.person.pockets.contents[resource_index] += 1;
         //                 }
         //             }
         //         }

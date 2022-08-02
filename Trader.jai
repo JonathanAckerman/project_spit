@@ -54,7 +54,7 @@ Person :: struct
 NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Entity
 {
     collider := Collider.{type = .CIRCLE, radius = 20.0};
-    e := NewEntityBase(pos, collider, .PERSON);
+    e := NewEntityBase(pos, collider, .PERSON, ai.exists);
     e.person.color = ifx ai.exists then BROWN else BLACK;
     e.person.speed = 6.0;
     e.person.forward = .{0, -1};
@@ -64,7 +64,7 @@ NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Entity
 Player :: struct
 {
     interactRange := 100.0;
-    using #as entity: Entity;
+    #as entity: *Entity;
 }
 
 Collider :: struct

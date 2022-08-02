@@ -19,7 +19,7 @@ _Entity_ID: u64 = 0;
 
 Entity :: struct
 {
-    position: Vector2;
+    position: Maybe(Vector2);
     collider: Collider;
     tag: Entity_Type;
     id: u64;
@@ -114,17 +114,35 @@ Equipment_Type :: enum
 Inventory :: struct
 {
     capacity: int;
-    contents: [..] Entity;
+    contents: [..] *Entity;
 }
 
-NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type) -> *Entity
+NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type, is_npc: bool = true) -> *Entity
 {
     e := New(Entity);
-    e.position = pos;
+    e.position.value = pos;
+    e.position.exists = true;
     e.collider = collider;
     e.tag = tag;
     e.id = _Entity_ID;
     _Entity_ID += 1;
+    
+    array: *[..] *Entity;
+    if tag ==
+    {
+        case .CONTAINER;
+            array = *Game.containers;
+        case .ITEM;
+            array = *Game.items;
+        case .EQUIPMENT;
+            array = *Game.equipment;
+        case .RESOURCE;
+            array = *Game.resources;
+        case .PERSON;
+            array = *Game.npcs;
+    }
+    if is_npc then array_add(array, e);
+
     return e;
 }
 
