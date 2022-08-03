@@ -168,6 +168,7 @@ NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Ent
 {
     e := NewEntityBase(pos, collider, .ITEM);
     e.item.type = type;
+    if type == .WOOD_LOG then e.texture.value = LoadTexture("./assets/textures/wood_log.png"); e.texture.exists = true;
     return e;
 }
 
@@ -218,6 +219,11 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
             case .SWORD;
                 DrawCircleV(pos, e.collider.radius * scale, BLACK);
             case .WOOD_LOG;
+                drawpos := pos;
+                drawpos.x -= (e.texture.value.width * scale) / 2;
+                drawpos.y -= (e.texture.value.height * scale) - (10 * scale);
+                DrawTextureEx(e.texture.value, xx drawpos, 0.0, scale, WHITE);
+                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (e.texture.value.width * scale), xx (e.texture.value.height * scale), PINK);
                 DrawCircleV(pos, e.collider.radius * scale, BROWN);
         }
         case .CONTAINER; if e.container.type ==
