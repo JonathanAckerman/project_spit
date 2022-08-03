@@ -24,6 +24,8 @@ Entity :: struct
     tag: Entity_Type;
     id: u64;
 
+    texture: Maybe(Texture2D);
+
     union
     {
         #as resource: Resource;
@@ -192,8 +194,21 @@ draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
     if e.tag ==
     {
         case .RESOURCE;
-            resource_color := get_resource_color(e.resource.type);
-            DrawCircleV(pos, xx e.resource.quantity * scale, resource_color);
+            if e.texture.exists 
+            {
+                drawpos := pos;
+                drawpos.x -= (e.texture.value.width * scale) / 2;
+                drawpos.y -= (e.texture.value.height * scale) - (e.resource.quantity * scale);
+                DrawTextureEx(e.texture.value, xx drawpos, 0.0, scale, WHITE);
+                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (e.texture.value.width * scale), xx (e.texture.value.height * scale), PINK);
+                resource_color := get_resource_color(e.resource.type);
+                DrawCircleV(pos, xx e.resource.quantity * scale, resource_color);
+            }
+            else
+            {
+                resource_color := get_resource_color(e.resource.type);
+                DrawCircleV(pos, xx e.resource.quantity * scale, resource_color);
+            }
         case .ITEM; if e.item.type ==
         {
             case .LUMBER_AXE;

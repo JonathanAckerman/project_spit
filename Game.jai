@@ -895,6 +895,9 @@ populate_resources :: ()
         r.resource.type = xx type;
         r.resource.quantity = xx quantity;
 
+        if r.resource.type == .TREE then r.texture.value = LoadTexture("./assets/textures/tree.png"); r.texture.exists = true;
+
+
         array_add(*Game.resources, r);
     }
 }

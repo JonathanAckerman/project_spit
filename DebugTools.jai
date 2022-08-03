@@ -64,6 +64,12 @@ debug_entity_info :: (e: Entity)
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("Ent_Type:  %", e.tag)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * Game.camera.zoom;
+    if e.tag ==
+    {
+        case .RESOURCE;
+            DrawText(to_c_string(tprint("Res_Type:  %", e.resource.type)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    }
 }
 
 debug_console :: (dt: float)
