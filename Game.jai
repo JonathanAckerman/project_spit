@@ -581,11 +581,11 @@ game_loop :: inline ()
                     // only draw text when player is close enough
                     if npc.ai.value.isSpeaking
                     {
-                        pos := npc.position.value + camera_vector;
+                        pos := to_screen_space(npc.position.value, .{30, -10});
                         if npc.ai.value.speakTimer > 0.0
                         {
                             npc.ai.value.speakTimer -= dt;
-                            DrawText("HI", xx (pos.x + 30), xx (pos.y - 10), 20, BLACK);
+                            DrawText("HI", xx pos.x, xx pos.y, 20, BLACK);
                         }
                     }
                 }
