@@ -68,7 +68,7 @@ game_loop :: inline ()
                             if is_tool(held.value.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
                             else if is_weapon(held.value.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
 
-                            if sheath_inv == null
+                            if sheath_inv == null // drop on ground
                             {
                                 held.value.item.position.value = player.position.value + player.forward;
                                 held.value.item.position.exists = true;
@@ -76,24 +76,38 @@ game_loop :: inline ()
                                 held.value = as_holdable(belt_inventory.value.contents[slot].value);
                             }
                             else
-                            { 
-                                if sheath_inv.contents.count < sheath_inv.capacity
+                            {
+                                if !belt_inventory.value.contents[slot].exists
                                 {
-                                    // array_add(*sheath_inv.contents, NewMaybe(held.value.item));
-                                    // @TODO: Find the first available slot in the sheath array to add the held item into. The above only works for [..] not for [n]
-                                    //        Actually the whole logic of this if is wrong now, the count is always equal to capacity (or should be)
-                                    belt_inventory.value.contents[slot].exists = false;
+                                    Input.equipSlot = -1;
+                                    return; // @FIX: not a fan of this
+                                }
+
+                                if sheath_inv == belt_inventory.value
+                                {
+                                    temp := held.value;
                                     held.value = as_holdable(belt_inventory.value.contents[slot].value);
+                                    belt_inventory.value.contents[slot] = NewMaybe(temp.item);
+                                    Input.equipSlot = -1;
+                                    return; // @FIX: not a fan of this
                                 }
                                 else
                                 {
-                                    if sheath_inv == belt_inventory.value
+                                    has_sheathed := false;
+                                    for sheath_inv.contents // look for first available slot
                                     {
-                                        temp := held.value;
-                                        held.value = as_holdable(belt_inventory.value.contents[slot].value);
-                                        belt_inventory.value.contents[slot] = NewMaybe(temp.item);
+                                        if !it.exists
+                                        {
+                                            sheath_inv.contents[it_index].value = held.value.item;
+                                            sheath_inv.contents[it_index].exists = true;
+                                            has_sheathed = true;
+                                            belt_inventory.value.contents[slot].exists = false;
+                                            held.value = as_holdable(belt_inventory.value.contents[slot].value);
+                                            break;
+                                        }
                                     }
-                                    else
+
+                                    if !has_sheathed // there was no available slot, drop on the ground
                                     {
                                         held.value.item.position.value = player.position.value + player.forward;
                                         held.value.item.position.exists = true;
@@ -193,13 +207,40 @@ game_loop :: inline ()
                             if is_tool(it.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
                             else if is_weapon(it.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
 
-                            if dest_inv == null
+                            if dest_inv == null // item on ground has no place to go but held
                             {
                                 if held.tag ==
                                 {
                                     case .ITEM;
-                                        held.item.position.value = it.item.position.value;
-                                        held.item.position.exists = true;
+                                        sheath_inv : *Equipment = null;
+                                        if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
+                                        else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
+
+                                        if sheath_inv != null
+                                        {
+                                            has_sheathed := false;
+                                            for sheath_inv.contents // look for the first available slot
+                                            {
+                                                if !it.exists
+                                                {
+                                                    sheath_inv.contents[it_index].value = held.item;
+                                                    sheath_inv.contents[it_index].exists = true;
+                                                    has_sheathed = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if !has_sheathed
+                                            {
+                                                held.item.position.value = it.item.position.value;
+                                                held.item.position.exists = true;
+                                            }
+                                        }
+                                        else // swap with item on ground
+                                        {
+                                            held.item.position.value = it.item.position.value;
+                                            held.item.position.exists = true;
+                                        }
                                     case .CONTAINER;
                                         held.container.position.value = it.item.position.value;
                                         held.container.position.exists = true;
@@ -213,14 +254,19 @@ game_loop :: inline ()
                             }
                             else
                             {
-                                if dest_inv.contents.count < dest_inv.capacity
+                                has_sheathed := false;
+                                for slot, slot_index : dest_inv.contents // look for first available slot
                                 {
-                                    // array_add(*dest_inv.contents, it.item);
-                                    // @TODO: same problem as with equip, find the first valid slot
-                                    it.item.position.exists = false;
-                                    break;
+                                    if !slot.exists
+                                    {
+                                        dest_inv.contents[slot_index].value = it.item;
+                                        dest_inv.contents[slot_index].exists = true;
+                                        has_sheathed = true;
+                                        break;
+                                    }
                                 }
-                                else
+
+                                if !has_sheathed // there was no available slot, drop held on the ground
                                 {
                                     if held.tag ==
                                     {
@@ -234,10 +280,10 @@ game_loop :: inline ()
                                             held.equipment.position.value = it.item.position.value;
                                             held.equipment.position.exists = true;
                                     }
-                                    it.item.position.exists = false;
-                                    player.held.value = it;
-                                    break;
                                 }
+
+                                it.item.position.exists = false;
+                                break;
                             }
                         }
 
