@@ -11,15 +11,21 @@ Game: struct
         position: Vector2;
     }
 
-    resources:  [..] *Entity;
-    items:      [..] *Entity;
-    containers: [..] *Entity;
-    equipment:  [..] *Entity;
-    npcs:       [..] *Entity;
+    resources:  [..] *Resource;
+    items:      [..] *Item;
+    containers: [..] *Container;
+    equipment:  [..] *Equipment;
+    npcs:       [..] *Person;
     shops:      [..] *Shop;
 
     // ui state
     // highlightedItem: *Entity = ---;
+}
+
+to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0) -> Vector2
+{
+    to_ss_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
+    return (pos + offset) * scale * Game.camera.zoom + to_ss_vector;
 }
 
 game_loop :: inline ()
@@ -38,17 +44,17 @@ game_loop :: inline ()
             
         }
 
-        if player.entity.position.exists then player.entity.position.value += player.entity.person.velocity;
-        player.entity.person.velocity = .{};
+        if player.position.exists then player.position.value += player.velocity;
+        player.velocity = .{};
 
-        camera.position = player.entity.position.value;
+        camera.position = player.position.value;
         camera_vector = WINDOW_CENTER - camera.position * camera.zoom;
 
         equipItem :: ()
         {
-            player := Game.player.entity;
-            held := *Game.player.entity.person.held;
-            belt_inventory := ifx Input.equipSlot < 3 then *Game.player.entity.person.toolBelt else *Game.player.entity.person.weaponBelt;
+            player := Game.player;
+            held := *Game.player.held;
+            belt_inventory := ifx Input.equipSlot < 3 then *Game.player.toolBelt else *Game.player.weaponBelt;
             slot := ifx Input.equipSlot < 3 then Input.equipSlot else Input.equipSlot - 3;
 
             if belt_inventory.exists && belt_inventory.value.contents.count > 0
@@ -59,51 +65,57 @@ game_loop :: inline ()
                     {
                         case .ITEM;
                             sheath_inv: *Equipment = null;
-                            if is_tool(held.value.item.type) && player.person.toolBelt.exists then sheath_inv = *player.person.toolBelt.value;
-                            else if is_weapon(held.value.item.type) && player.person.weaponBelt.exists then sheath_inv = *player.person.weaponBelt.value;
+                            if is_tool(held.value.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
+                            else if is_weapon(held.value.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
 
                             if sheath_inv == null
                             {
-                                held.value.position.value = player.position.value + player.person.forward;
-                                held.value.position.exists = true;
-                                held.value = belt_inventory.value.contents[slot];
+                                held.value.item.position.value = player.position.value + player.forward;
+                                held.value.item.position.exists = true;
+                                belt_inventory.value.contents[slot].exists = false;
+                                held.value = as_holdable(belt_inventory.value.contents[slot].value);
                             }
                             else
                             { 
                                 if sheath_inv.contents.count < sheath_inv.capacity
                                 {
-                                    array_add(*sheath_inv.contents, held.value);
-                                    held.value = belt_inventory.value.contents[slot];
+                                    // array_add(*sheath_inv.contents, NewMaybe(held.value.item));
+                                    // @TODO: Find the first available slot in the sheath array to add the held item into. The above only works for [..] not for [n]
+                                    //        Actually the whole logic of this if is wrong now, the count is always equal to capacity (or should be)
+                                    belt_inventory.value.contents[slot].exists = false;
+                                    held.value = as_holdable(belt_inventory.value.contents[slot].value);
                                 }
                                 else
                                 {
-                                    if sheath_inv == *belt_inventory.value
+                                    if sheath_inv == belt_inventory.value
                                     {
                                         temp := held.value;
-                                        held.value = belt_inventory.value.contents[slot];
-                                        belt_inventory.value.contents[slot] = temp;
+                                        held.value = as_holdable(belt_inventory.value.contents[slot].value);
+                                        belt_inventory.value.contents[slot] = NewMaybe(temp.item);
                                     }
                                     else
                                     {
-                                        held.value.position.value = player.position.value + player.person.forward;
-                                        held.value.position.exists = true;
-                                        held.value = belt_inventory.value.contents[slot];
+                                        held.value.item.position.value = player.position.value + player.forward;
+                                        held.value.item.position.exists = true;
+                                        belt_inventory.value.contents[slot].exists = false;
+                                        held.value = as_holdable(belt_inventory.value.contents[slot].value);
                                     }
                                 }
                             }
 
                         case .CONTAINER;
-                            held.value.position.value = player.position.value + player.person.forward;
-                            held.value.position.exists = true;
-                            held.value = belt_inventory.value.contents[slot];
+                            held.value.container.position.value = player.position.value + player.forward;
+                            held.value.container.position.exists = true;
+                            belt_inventory.value.contents[slot].exists = false;
+                            held.value = as_holdable(belt_inventory.value.contents[slot].value);
                     }
-                    array_unordered_remove_by_index(*belt_inventory.value.contents, slot);
+                    belt_inventory.value.contents[slot].exists = false;
                 }
                 else
                 {
-                    held.value = belt_inventory.value.contents[slot];
+                    held.value = as_holdable(belt_inventory.value.contents[slot].value);
                     held.exists = true;
-                    array_unordered_remove_by_index(*belt_inventory.value.contents, slot);
+                    belt_inventory.value.contents[slot].exists = false;
                 }
             }
 
@@ -115,11 +127,23 @@ game_loop :: inline ()
         {
             using Game;
             
-            if !player.entity.person.held.exists return;
+            if !player.held.exists return;
 
-            player.entity.person.held.value.position.exists = true;
-            player.entity.person.held.value.position.value = player.entity.position.value + player.entity.person.forward;
-            player.entity.person.held.exists = false;
+            held := player.held.value;
+            if held.tag ==
+            {
+                case .ITEM;
+                    held.item.position.exists = true;
+                    held.item.position.value = player.position.value + player.forward;
+                case .CONTAINER;
+                    held.container.position.exists = true;
+                    held.container.position.value = player.position.value + player.forward;
+                case .EQUIPMENT;
+                    held.equipment.position.exists = true;
+                    held.equipment.position.value = player.position.value + player.forward;
+            }
+
+            player.held.exists = false;
             Input.drop = false;
         }
         if Input.drop then drop_held();
@@ -136,92 +160,144 @@ game_loop :: inline ()
                         if it.equipment.type ==
                         {
                             case .TOOL_BELT;
-                                if !player.entity.person.toolBelt.exists // @Temporary: Eventually swap between belts if the player is already wearing one?
+                                if !player.toolBelt.exists // @Temporary: Eventually swap between belts if the player is already wearing one?
                                 {
-                                    it.position.exists = false;
+                                    it.equipment.position.exists = false;
                                     m := NewMaybe(it.equipment);
-                                    player.entity.person.toolBelt = m;
+                                    player.toolBelt = m;
                                     break;
                                 }
                             case .WEAPON_BELT;
-                                if !player.entity.person.weaponBelt.exists
+                                if !player.weaponBelt.exists
                                 {
-                                    it.position.exists = false;
+                                    it.equipment.position.exists = false;
                                     m := NewMaybe(it.equipment);
-                                    player.entity.person.weaponBelt = m;
+                                    player.weaponBelt = m;
                                     break;
                                 }
                         }
 
                     case .ITEM;
-                        if !player.entity.person.held.exists
+                        if !player.held.exists
                         {
-                            player.entity.person.held.value = it;
-                            player.entity.person.held.exists = true;
-                            player.entity.person.held.value.position.exists = false;
+                            player.held.value = it;
+                            player.held.exists = true;
+                            player.held.value.item.position.exists = false;
                             break;
                         }
                         else
                         {
+                            held := player.held.value;
+
                             dest_inv: *Equipment = null;
-                            if is_tool(it.item.type) && player.entity.person.toolBelt.exists then dest_inv = *player.entity.person.toolBelt.value;
-                            else if is_weapon(it.item.type) && player.entity.person.weaponBelt.exists then dest_inv = *player.entity.person.weaponBelt.value;
+                            if is_tool(it.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
+                            else if is_weapon(it.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
 
                             if dest_inv == null
                             {
-                                player.entity.person.held.value.position.value = it.position.value;
-                                player.entity.person.held.value.position.exists = true;
-                                it.position.exists = false;
-                                player.entity.person.held.value = it;
+                                if held.tag ==
+                                {
+                                    case .ITEM;
+                                        held.item.position.value = it.item.position.value;
+                                        held.item.position.exists = true;
+                                    case .CONTAINER;
+                                        held.container.position.value = it.item.position.value;
+                                        held.container.position.exists = true;
+                                    case .EQUIPMENT;
+                                        held.equipment.position.value = it.item.position.value;
+                                        held.equipment.position.exists = true;
+                                }
+                                it.item.position.exists = false;
+                                player.held.value = it;
                                 break;
                             }
                             else
                             {
                                 if dest_inv.contents.count < dest_inv.capacity
                                 {
-                                    array_add(*dest_inv.contents, it);
-                                    it.position.exists = false;
+                                    // array_add(*dest_inv.contents, it.item);
+                                    // @TODO: same problem as with equip, find the first valid slot
+                                    it.item.position.exists = false;
                                     break;
                                 }
                                 else
                                 {
-                                    player.entity.person.held.value.position.value = it.position.value;
-                                    player.entity.person.held.value.position.exists = true;
-                                    it.position.exists = false;
-                                    player.entity.person.held.value = it;
+                                    if held.tag ==
+                                    {
+                                        case .ITEM;
+                                            held.item.position.value = it.item.position.value;
+                                            held.item.position.exists = true;
+                                        case .CONTAINER;
+                                            held.container.position.value = it.item.position.value;
+                                            held.container.position.exists = true;
+                                        case .EQUIPMENT;
+                                            held.equipment.position.value = it.item.position.value;
+                                            held.equipment.position.exists = true;
+                                    }
+                                    it.item.position.exists = false;
+                                    player.held.value = it;
                                     break;
                                 }
                             }
                         }
 
                     case .CONTAINER;
-                        if !player.entity.person.held.exists
+                        if !player.held.exists
                         {
-                            it.position.exists = false;
+                            it.container.position.exists = false;
                             newHeld: = NewMaybe(it);
-                            player.entity.person.held = newHeld;
+                            player.held = newHeld;
                             break;
                         }
                         else
                         {
-                            found, index := array_find(containers, it);
+                            found, index := array_find(containers, it.container);
                             if found
                             {
-                                // @@@: this doesnt account for if the player has space in a belt for the held item, it just places it on the ground
-                                //      ugh, this feels so gross, maybe rework this whole thing
-                                player.entity.person.held.value.position.exists = true;
-                                player.entity.person.held.value.position.value = containers[index].position.value;
-                                containers[index].position.exists = false;
+                                held := player.held.value;
 
-                                temp := player.entity.person.held.value;
-                                player.entity.person.held.value = containers[index];
-                                if temp.tag ==
+                                if held.tag ==
                                 {
-                                    case .CONTAINER;
-                                        containers[index] = temp;
                                     case .ITEM;
-                                        items[index] = temp;
+                                        dest_inv: *Equipment = null;
+                                        if is_tool(held.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
+                                        else if is_weapon(held.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
+
+                                        if dest_inv == null
+                                        {
+                                            held.item.position.value = it.container.position.value;
+                                            held.item.position.exists = true;
+                                            it.container.position.exists = false;
+                                            player.held.value = it;
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            if dest_inv.contents.count < dest_inv.capacity
+                                            {
+                                                // array_add(*dest_inv.contents, held.item);
+                                                // @TODO: same problem as above
+                                                it.container.position.exists = false;
+                                                break;
+                                            }
+                                            else
+                                            {
+                                                held.item.position.value = it.container.position.value;
+                                                held.item.position.exists = true;
+                                                it.container.position.exists = false;
+                                                player.held.value = it;
+                                                break;
+                                            }
+                                        }
+                                    case .CONTAINER;
+                                        held.container.position.exists = true;
+                                        held.container.position.value = containers[index].position.value;
+                                    case .EQUIPMENT;
+                                        held.equipment.position.exists = true;
+                                        held.equipment.position.value = containers[index].position.value;
                                 }
+
+                                containers[index].position.exists = false;
                                 break;
                             }
                         }
@@ -236,15 +312,15 @@ game_loop :: inline ()
             using Game;
 
             // compile list of resources in range, sort by distance to player
-            resource_info :: struct { entity: *Entity; direction: Vector2; }
+            resource_info :: struct { resource: *Resource; direction: Vector2; }
             sorted_resources: [..] resource_info;
             for resources
             {
-                player_to_resource : Vector2 = it.position.value - player.entity.position.value;
+                player_to_resource : Vector2 = it.position.value - player.position.value;
                 if length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
                 {
                     info: resource_info;
-                    info.entity = resources[it_index];
+                    info.resource = resources[it_index];
                     info.direction = player_to_resource;
                     array_add(*sorted_resources, info);
                 }
@@ -257,13 +333,13 @@ game_loop :: inline ()
             resource_to_harvest: Maybe(resource_info);
             for sorted_resources
             {
-                if it.entity.resource.type ==
+                if it.resource.type ==
                 {
                     // trees require the lumber axe equipped
                     case .TREE;
-                        if player.entity.person.held.exists && player.entity.person.held.value.tag == .ITEM
+                        if player.held.exists && player.held.value.tag == .ITEM
                         {
-                            if player.entity.person.held.value.item.type == .LUMBER_AXE
+                            if player.held.value.item.type == .LUMBER_AXE
                             {
                                 resource_to_harvest.value = it;
                                 resource_to_harvest.exists = true;
@@ -280,9 +356,9 @@ game_loop :: inline ()
             // Drop by-product of harvest on the ground. Some resources like water will instead be loaded directly into an inventory
             if resource_to_harvest.exists
             {
-                by_product := NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.entity.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                by_product := NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                 array_add(*items, by_product);
-                swap_and_pop(*resources, *resource_to_harvest.value.entity); 
+                swap_and_pop(*resources, *resource_to_harvest.value.resource); 
             }
         }
         if Input.harvest then harvestResource();
@@ -295,7 +371,7 @@ game_loop :: inline ()
             shop: Maybe(*Shop);
             for s, s_index: shops
             {
-                player_grid_cell := world_to_grid(player.entity.position.value);
+                player_grid_cell := world_to_grid(player.position.value);
                 for s.area if it == player_grid_cell
                 {
                     shop.value = s;
@@ -307,10 +383,10 @@ game_loop :: inline ()
 
             // get the nearest deal to the player
             nearest_deal := shop.value.deals[0];
-            nearest_deal_dist := length(nearest_deal.ware.position.value - player.entity.position.value);
+            nearest_deal_dist := length(nearest_deal.ware.position.value - player.position.value);
             for shop.value.deals
             {
-                dist := length(it.ware.position.value - player.entity.position.value);
+                dist := length(it.ware.position.value - player.position.value);
                 if dist < nearest_deal_dist
                 {
                     nearest_deal = it;
@@ -324,7 +400,7 @@ game_loop :: inline ()
 
                 // cost := nearest_deal.price.amount;
                 // total_available := 0;
-                // //@@@: ugh now the concept of currency goes out the window
+                // //: ugh now the concept of currency goes out the window
                 // for nearby_containers { total_available += it.contents[nearest_shop.building.resource]; }
                 // if total_available >= cost // we can afford it
                 // {
@@ -349,10 +425,10 @@ game_loop :: inline ()
                 //     }
 
                 //     item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 20}});
-                //     if !player.entity.person.held.exists 
+                //     if !player.held.exists 
                 //     {
                 //         newHeld := NewMaybe(*item);
-                //         player.entity.person.held = newHeld;
+                //         player.held = newHeld;
                 //     }
                 //     else // drop the item nearby
                 //     {
@@ -369,10 +445,10 @@ game_loop :: inline ()
         {
             using Game;
             nearest_index := 0;
-            min_dist := length(npcs[0].position.value - player.entity.position.value);
+            min_dist := length(npcs[0].position.value - player.position.value);
             for npcs
             {
-                dist := length(it.position.value - player.entity.position.value);
+                dist := length(it.position.value - player.position.value);
                 if dist < min_dist
                 {
                     min_dist = dist;
@@ -382,8 +458,8 @@ game_loop :: inline ()
             nearest := npcs[nearest_index];
             if min_dist <= player.interactRange
             {
-                nearest.person.ai.value.isSpeaking = true;
-                nearest.person.ai.value.speakTimer = nearest.person.ai.value.speakDuration;
+                nearest.ai.value.isSpeaking = true;
+                nearest.ai.value.speakTimer = nearest.ai.value.speakDuration;
             }
         }
         if Input.trade then talkToNearestNPC();
@@ -392,79 +468,59 @@ game_loop :: inline ()
         {
             for npc: npcs
             {
-                if !npc.person.ai.value.hasGoal && npc.person.ai.value.goalResetTimer <= 0.0
+                if !npc.ai.value.hasGoal && npc.ai.value.goalResetTimer <= 0.0
                 {
                     x := random_get_within_range(npc.position.value.x - 200, npc.position.value.x + 200);
                     y := random_get_within_range(-npc.position.value.y - 200, npc.position.value.y + 200);
-                    // check_collision := true;
-                    // while check_collision
-                    // {
-                    //     collided := false;
-                    //     for bldg: Game.buildings
-                    //     {
-                    //         if x > bldg.position.value.x - bldg.collider.rect.x/2 &&
-                    //         x < bldg.position.value.x + bldg.collider.rect.x/2 &&
-                    //         y > bldg.position.value.y - bldg.collider.rect.y/2 && 
-                    //         y < bldg.position.value.y + bldg.collider.rect.y/2
-                    //         {
-                    //             // try again with new position
-                    //             x = random_get_within_range(npc.position.value.x - 200, npc.position.value.x + 200);
-                    //             y = random_get_within_range(-npc.position.value.y - 200, npc.position.value.y + 200);
-                    //             collided = true;
-                    //             break;
-                    //         }
-                    //     }
-                    //     if !collided then check_collision = false;
-                    // }
-                    npc.person.ai.value.goalPosition = xy(x, y);
-                    npc.person.ai.value.goalResetTimer = 0.0;
-                    npc.person.ai.value.goalResetDuration = 0.0;
-                    npc.person.ai.value.hasGoal = true;
+                    npc.ai.value.goalPosition = xy(x, y);
+                    npc.ai.value.goalResetTimer = 0.0;
+                    npc.ai.value.goalResetDuration = 0.0;
+                    npc.ai.value.hasGoal = true;
                 }
-                else if npc.person.ai.value.hasGoal
+                else if npc.ai.value.hasGoal
                 {
-                    direction := npc.person.ai.value.goalPosition - npc.position.value;
-                    npc.person.velocity = unit_vector(direction) * npc.person.speed;
-                    if length(npc.person.velocity) != 0 then npc.person.forward = unit_vector(npc.person.velocity);
+                    direction := npc.ai.value.goalPosition - npc.position.value;
+                    npc.velocity = unit_vector(direction) * npc.speed;
+                    if length(npc.velocity) != 0 then npc.forward = unit_vector(npc.velocity);
 
                     if length(direction) < 1.0
                     {
-                        npc.person.ai.value.hasGoal = false;
+                        npc.ai.value.hasGoal = false;
                         // goal reached, reset timer
-                        if npc.person.ai.value.goalResetDuration <= 0.0
+                        if npc.ai.value.goalResetDuration <= 0.0
                         {
-                            npc.person.ai.value.goalResetDuration = random_get_within_range(3.0, 7.5); 
-                            npc.person.ai.value.goalResetTimer = npc.person.ai.value.goalResetDuration;
+                            npc.ai.value.goalResetDuration = random_get_within_range(3.0, 7.5); 
+                            npc.ai.value.goalResetTimer = npc.ai.value.goalResetDuration;
                         }
                     }
                 }
                 else // goalResetTimer > 0.0
                 {
-                    npc.person.ai.value.goalResetTimer -= dt;
-                    npc.person.velocity = .{};
-                    npc.person.ai.value.hasGoal = false;
+                    npc.ai.value.goalResetTimer -= dt;
+                    npc.velocity = .{};
+                    npc.ai.value.hasGoal = false;
                 }
 
                 // interrupt goal and turn towards the player when they get close
-                npc_to_player := player.entity.position.value - npc.position.value;
+                npc_to_player := player.position.value - npc.position.value;
                 dist := length(npc_to_player);
                 if dist < 150
                 {
-                    npc.person.forward = unit_vector(npc_to_player);
-                    npc.person.velocity = .{};
+                    npc.forward = unit_vector(npc_to_player);
+                    npc.velocity = .{};
 
                     // only draw text when player is close enough
-                    if npc.person.ai.value.isSpeaking
+                    if npc.ai.value.isSpeaking
                     {
                         pos := npc.position.value + camera_vector;
-                        if npc.person.ai.value.speakTimer > 0.0
+                        if npc.ai.value.speakTimer > 0.0
                         {
-                            npc.person.ai.value.speakTimer -= dt;
+                            npc.ai.value.speakTimer -= dt;
                             DrawText("HI", xx (pos.x + 30), xx (pos.y - 10), 20, BLACK);
                         }
                     }
                 }
-                npc.position.value += npc.person.velocity;
+                npc.position.value += npc.velocity;
             }
         }
     }
@@ -489,117 +545,39 @@ game_loop :: inline ()
             }
         }
 
-        // draw resources
-        {
-            for resources
-            {
-                ss_resource := it.position.value * camera.zoom + camera_vector;
-                draw_entity(it, ss_resource);
-            }
-        }
-
-        // draw buildings
-        {
-            // for buildings
-            // {
-            //     drawpos := (it.position.value - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0)) * camera.zoom;
-            //     DrawRectangleV(drawpos + camera_vector, xy(xx it.collider.rect.x, xx it.collider.rect.y) * camera.zoom, BLACK);
-
-            //     if it.building.type ==
-            //     {
-            //         case .SHOP;
-            //             collider := Collider.{type = .RECT, rect = .{20, 20}};
-            //             pos := (it.position.value - xy(collider.rect.x/2.5, it.collider.rect.y/4)) * camera.zoom + camera_vector;
-                        
-            //     }
-            // }
-
-            // nearest, dist := get_closest_bldg_to_player();
-            // ss_bldg := nearest.position.value * camera.zoom + camera_vector;
-            // interact_range := compute_interact_range(nearest);
-            // if dist < interact_range
-            //     DrawCircleLines(xx ss_bldg.x, xx ss_bldg.y, interact_range * camera.zoom, BLACK);
-        }
-
-        // draw items in world
-        {
-            for items if it.position.exists
-            {
-                draw_entity(it, it.position.value * camera.zoom + camera_vector);
-            }
-
-            for containers if it.position.exists
-            {
-                pos := (it.position.value - xy(it.collider.rect.x/2.0, it.collider.rect.x/2.0)) * camera.zoom + camera_vector;
-                draw_entity(it, pos);
-            }
-
-            for equipment if it.position.exists
-            {
-                pos := (it.position.value - xy(it.collider.rect.x/2.0, it.collider.rect.y/2.0)) * camera.zoom + camera_vector;
-                draw_entity(it, pos);
-            }
-        }
-
-        // draw npcs
-        for npcs
-        {
-            ss_npc := it.position.value * camera.zoom + camera_vector;
-            DrawCircle(xx ss_npc.x, xx ss_npc.y, xx it.collider.radius * camera.zoom, it.person.color);
-            front := ss_npc + it.person.forward * cast(float) it.collider.radius * camera.zoom;
-            DrawLineEx(xx ss_npc, xx front, 2.0, WHITE);
-        }
-
-        // draw player
-        {
-            ss_player := player.entity.position.value * camera.zoom + camera_vector;
-            DrawCircle(xx ss_player.x, xx ss_player.y, xx player.entity.collider.radius * camera.zoom, player.entity.person.color);
-            front := ss_player + player.entity.person.forward * cast(float) player.entity.collider.radius * camera.zoom;
-            DrawLineEx(xx ss_player, xx front, 2.0, WHITE);
-        }
+        for resources { draw_resource(it); }
+        for items if it.position.exists { draw_item(it); }
+        for containers if it.position.exists { draw_container(it); }
+        for equipment if it.position.exists { draw_equipment(it); }
+        for npcs { draw_person(it); }
+        draw_person(player);
 
         // draw ui
         {
-            // draw pockets
-            // resource_names := enum_names(Resource_Type);
-            // DrawText(xx "Resources:", 20, 20, 20, BLACK);
-            // for r, r_index: enum_values_as_s64(Resource_Type)
-            // {
-            //     y_pos := 20 + 20 * (r_index + 1);
-            //     line := tprint("%: %", resource_names[r_index], player.entity.person.pockets.contents[r]);
-            //     DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
-            // }
-
             // draw held
             // @Cleanup
             xpos := 20.0;
             DrawText(xx "Held:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
-            if player.entity.person.held.exists 
+            if player.held.exists 
             {
-                if player.entity.person.held.value.tag ==
+                if player.held.value.tag ==
                 {
                     case .CONTAINER;
-                        if player.entity.person.held.value.container.type ==
+                        if player.held.value.container.type ==
                         {
                             case .BASKET;
-                                draw_entity(player.entity.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 65));
-                                // for r, r_index: player.entity.person.held.value.container.contents
-                                // {
-                                //     y_pos := (WINDOW_HEIGHT - 80) - 20 * (r_index + 2);
-                                //     line := tprint("%: %", resource_names[r_index], r);
-                                //     DrawText(to_c_string(line), 20, xx y_pos, 20, BLACK);
-                                // }
+                                draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 65), player.held.value.container.collider, 1.0, .BASKET);
                                 xpos += 80.0;
                             case .CHEST;
-                                draw_entity(player.entity.person.held.value, xy(xpos + 20.0, WINDOW_HEIGHT - 55));
+                                draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 55), player.held.value.container.collider, 1.0, .CHEST);
                                 xpos += 80.0;
                         }
                     case .ITEM;
-                        if player.entity.person.held.value.item.type ==
+                        if player.held.value.item.type ==
                         {
                             case;
-                                draw_entity(player.entity.person.held.value, xy(xpos + 30.0, WINDOW_HEIGHT - 50));
+                                draw_item_ui(xy(xpos + 30.0, WINDOW_HEIGHT - 50), player.held.value.item.collider, 1.0, player.held.value.item.type);
                                 xpos += 80.0;
                         }
                 }
@@ -607,68 +585,36 @@ game_loop :: inline ()
             // draw tool belt
             xpos = 90;
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
-            if player.entity.person.toolBelt.exists
+            if player.toolBelt.exists
             {
                 DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), GREEN); //draw ui representation
 
                 xpos = WINDOW_WIDTH/2 - 230;
-                for i: 0..player.entity.person.toolBelt.value.capacity - 1
+                for player.toolBelt.value.contents
                 {
-                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv boxes
-                    if i < player.entity.person.toolBelt.value.contents.count
+                    DrawRectangleLines(xx (xpos + it_index * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv boxes
+                    if it.exists
                     {
-                        item := player.entity.person.toolBelt.value.contents[i];
-                        draw_entity(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
+                        draw_item_ui(xy(xpos + it_index * 70 + 30, WINDOW_HEIGHT - 50), it.value.collider, 1.0, it.value.type); //draw inv items
                     }
                 }
             }
             // draw weapon belt
             xpos = 160;
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
-            if player.entity.person.weaponBelt.exists
+            if player.weaponBelt.exists
             {
                 DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), RED); //draw ui representation
                 xpos = WINDOW_WIDTH/2 + 30;
-                for i: 0..player.entity.person.weaponBelt.value.capacity - 1
+                for player.weaponBelt.value.contents
                 {
-                    DrawRectangleLines(xx (xpos + i * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv
-                    if i < player.entity.person.weaponBelt.value.contents.count
+                    DrawRectangleLines(xx (xpos + it_index * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv boxes
+                    if it.exists
                     {
-                        item := player.entity.person.weaponBelt.value.contents[i];
-                        draw_entity(item, xy(xpos + i * 70 + 30, WINDOW_HEIGHT - 50)); //draw inv
+                        draw_item_ui(xy(xpos + it_index * 70 + 30, WINDOW_HEIGHT - 50), it.value.collider, 1.0, it.value.type); //draw inv items
                     }
                 }
             }
-
-            // draw nearby inventory
-            // nearest_entity := get_nearest_holdable_in_range(player.interactRange);
-            // if nearest_entity.exists
-            // {
-            //     drawPos := nearest_entity.value.position.value * camera.zoom + camera_vector;
-            //     if nearest_entity.value.tag == .CONTAINER then drawPos += .{30, -110};
-            //     type: Any;
-            //     if nearest_entity.value.tag ==
-            //     {
-            //         case .CONTAINER;
-            //             type = nearest_entity.value.container.type;
-            //         case .ITEM;
-            //             type = nearest_entity.value.item.type;
-            //         case .EQUIPMENT;
-            //             type = nearest_entity.value.equipment.type;
-            //     }
-            //     DrawText(to_c_string(tprint("%", type)), xx drawPos.x, xx drawPos.y, 20, BLACK);
-
-                // if nearest_entity.value.tag == .CONTAINER
-                // {
-                //     drawPos += .{0, 20};
-                //     for r, r_index: nearest_entity.value.container.contents
-                //     {
-                //         line := tprint("%: %", resource_names[r_index], r);
-                //         DrawText(to_c_string(line), xx drawPos.x, xx drawPos.y, 20, BLACK);
-                //         drawPos.y += 20;
-                //     }
-                // }
-            // }
         }
 
         // debug
@@ -703,7 +649,7 @@ game_reset :: ()
 
     // init player
     noAI: Maybe(AI);
-    Game.player.entity = NewPerson(.{200, 200}, noAI);
+    Game.player.person = NewPerson(.{200, 200}, noAI);
 
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
@@ -717,30 +663,10 @@ game_reset :: ()
     {
         x := random_get_within_range(xx Game.grid.left(), xx Game.grid.right());
         y := random_get_within_range(xx Game.grid.top(), xx Game.grid.bottom());
-        // check_collision := true;
-        // while check_collision
-        // {
-        //     collided := false;
-        //     for Game.buildings
-        //     {
-        //         if x > it.position.value.x &&
-        //         x < it.position.value.x + it.collider.rect.x &&
-        //         y > it.position.value.y && 
-        //         y < it.position.value.y + it.collider.rect.y
-        //         {
-        //             // try again with new position
-        //             x = random_get_within_range(xx Game.grid.left(), xx Game.grid.right());
-        //             y = random_get_within_range(xx Game.grid.top(), xx Game.grid.bottom());
-        //             collided = true;
-        //             break;
-        //         }
-        //     }
-        //     if !collided then check_collision = false;
-        // }
         ai: AI;
         npcAI := NewMaybe(ai);
         npc := NewPerson(xy(x, y), npcAI);
-        npc.person.speed = 0.5;
+        npc.speed = 0.5;
         array_add(*Game.npcs, npc);
     }
 
@@ -767,23 +693,23 @@ game_reset :: ()
 
     // init items on ground
     {
-        pos := Game.player.entity.position.value + .{100, -100};
+        pos := Game.player.position.value + .{100, -100};
         collider := Collider.{type = .CIRCLE, radius = 10};
         lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.items, lumberaxe);
 
-        pos = Game.player.entity.position.value + .{200, -100};
+        pos = Game.player.position.value + .{200, -100};
         sword := NewItem(.SWORD, collider, pos);
         array_add(*Game.items, sword);
     }
     // init equipment on ground
     {
-        pos := Game.player.entity.position.value + .{0, -100};
+        pos := Game.player.position.value + .{0, -100};
         collider := Collider.{type = .RECT, rect = .{60, 15}};
         toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipment, toolbelt);
 
-        pos = Game.player.entity.position.value + .{0, -200};
+        pos = Game.player.position.value + .{0, -200};
         weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipment, weaponbelt);
     }
@@ -793,10 +719,10 @@ get_nearest_shop_to_player :: () -> *Shop, float
 {
     // using Game;
     // nearest_index := 0;
-    // min_dist := length(buildings[0].position.value - player.entity.position.value);
+    // min_dist := length(buildings[0].position.value - player.position.value);
     // for buildings
     // {
-    //     dist := length(it.position.value - player.entity.position.value);
+    //     dist := length(it.position.value - player.position.value);
     //     if dist < min_dist
     //     {
     //         min_dist = dist;
@@ -807,33 +733,55 @@ get_nearest_shop_to_player :: () -> *Shop, float
     return null, 0.0;
 }
 
-get_holdables_in_range :: (range: float) -> [..] *Entity
+get_holdables_in_range :: (range: float) -> [..] Holdable
 {
     using Game;
 
-    dist_info :: struct { entity: *Entity; dist: float; }
-    infoList: [..] dist_info;
+    dist_info :: struct { holdable: Holdable; dist: float; }
+    info_list: [..] dist_info;
 
-    Build_Info_List :: () #expand {
-        dist := length(Game.player.entity.position.value - `it.position.value);
-        if dist < `range
+    for containers if it.position.exists 
+    { 
+        dist := length(Game.player.position.value - it.position.value);
+        if dist < range
         {
             info: dist_info;
-            info.entity = `it;
+            info.holdable.container = it;
+            info.holdable.tag = .CONTAINER;
             info.dist = dist;
-            array_add(*`infoList, info);
+            array_add(*info_list, info);
+        }
+    }
+    for items if it.position.exists 
+    {
+        dist := length(Game.player.position.value - it.position.value);
+        if dist < range
+        {
+            info: dist_info;
+            info.holdable.item = it;
+            info.holdable.tag = .ITEM;
+            info.dist = dist;
+            array_add(*info_list, info);
+        }
+    }
+    for equipment if it.position.exists 
+    {
+        dist := length(Game.player.position.value - it.position.value);
+        if dist < range
+        {
+            info: dist_info;
+            info.holdable.equipment = it;
+            info.holdable.tag = .EQUIPMENT;
+            info.dist = dist;
+            array_add(*info_list, info);
         }
     }
 
-    for containers if it.position.exists Build_Info_List();
-    for items if it.position.exists Build_Info_List();
-    for equipment if it.position.exists Build_Info_List();
-
     less_than :: (a, b) => cast(s64) (a.dist - b.dist);
-    bubble_sort(infoList, less_than);
+    bubble_sort(info_list, less_than);
 
-    result: [..] *Entity;
-    for infoList array_add(*result, it.entity);
+    result: [..] Holdable;
+    for info_list array_add(*result, it.holdable);
     return result;
 }
 
@@ -841,19 +789,18 @@ get_nearby_containers :: () -> [..] *Container
 {
     using Game;
     result: [..] *Container;
-    array_add(*result, *player.entity.person.pockets);
 
-    if player.entity.person.held.exists && player.entity.person.held.value.tag == .CONTAINER
+    if player.held.exists && player.held.value.tag == .CONTAINER
     {
-        basket := player.entity.person.held.value.container;
+        basket := player.held.value.container;
         if basket.type == .BASKET
-            array_add(*result, *basket);
+            array_add(*result, basket);
     }
 
     for containers
     {
-        if length(player.entity.position.value - it.position.value) < 50.0
-            array_add(*result, *it.container);
+        if length(player.position.value - it.position.value) < 50.0
+            array_add(*result, it);
     }
     return result;
 }
@@ -869,7 +816,7 @@ Get_Nearest_To_Player :: (arr: [..] *Entity) #expand
 {
     for arr
     {
-        dist := length(Game.player.entity.position.value - it.position.value);
+        dist := length(Game.player.position.value - it.position.value);
         if dist < `min_dist
         {
             `min_dist = dist;
@@ -885,17 +832,15 @@ populate_resources :: ()
     {
         x := random_get_within_range(-1000, 1000);
         y := random_get_within_range(-1000, 1000);
-        type := random_get() % xx (enum_highest_value(Resource_Type) + 1);
+        type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
         quantity := max(random_get() % 20, 10);
-
+        req := ifx type == .TREE then NewMaybe(Item_Type.LUMBER_AXE) else Nothing(Item_Type)
         collider: Collider;
         collider.type = .CIRCLE;
         collider.radius = xx quantity;
-        r := NewEntityBase(xy(x, y), collider, .RESOURCE);
-        r.resource.type = xx type;
-        r.resource.quantity = xx quantity;
+        r := NewResource(type, collider, xy(x, y), xx quantity, req);
 
-        if r.resource.type == .TREE then r.texture.value = LoadTexture("./assets/textures/tree.png"); r.texture.exists = true;
+        if r.type == .TREE then r.texture.value = LoadTexture("./assets/textures/tree.png"); r.texture.exists = true;
 
 
         array_add(*Game.resources, r);

@@ -36,8 +36,8 @@ handle_input :: inline ()
             new_velocity.x = 1.0;
             new_forward += .{1, 0};
         }
-        if length(new_forward) != 0 then Game.player.entity.person.forward = new_forward;
-        Game.player.entity.person.velocity = unit_vector(new_velocity) * Game.player.entity.person.speed;
+        if length(new_forward) != 0 then Game.player.forward = unit_vector(new_forward);
+        Game.player.velocity = unit_vector(new_velocity) * Game.player.speed;
 
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
@@ -64,7 +64,7 @@ handle_input :: inline ()
             holdables := get_holdables_in_range(Game.player.interactRange);
             if holdables.count > 0
                 pickup = true;
-            else if Game.player.entity.person.held.exists
+            else if Game.player.held.exists
                 drop = true;
         }
 

@@ -21,19 +21,8 @@ Entity :: struct
 {
     position: Maybe(Vector2);
     collider: Collider;
-    tag: Entity_Type;
     id: u64;
-
     texture: Maybe(Texture2D);
-
-    union
-    {
-        #as resource: Resource;
-        #as item: Item;
-        #as container: Container;
-        #as equipment: Equipment;
-        #as person: Person;
-    }
 }
 
 Entity_Type :: enum
@@ -47,9 +36,10 @@ Entity_Type :: enum
 
 Resource :: struct 
 {
+    using #as entity: Entity;
     type: Resource_Type;
     quantity: int;
-    harvestRequirement: Item;
+    harvestRequirement: Maybe(Item_Type);
 }
 Resource_Type :: enum
 {
@@ -62,6 +52,7 @@ Resource_Type :: enum
 
 Item :: struct
 {
+    using #as entity: Entity;
     type: Item_Type;
 }
 Item_Type :: enum
@@ -92,8 +83,10 @@ is_weapon :: (type: Item_Type) -> bool
 
 Container :: struct
 {
+    using #as entity: Entity;
     type: Container_Type;
-    using #as inventory: Inventory;
+    capacity: int;
+    contents: [..] Holdable;
 }
 Container_Type :: enum
 {
@@ -103,8 +96,10 @@ Container_Type :: enum
 
 Equipment :: struct
 {
+    using #as entity: Entity;
     type: Equipment_Type;
-    using #as inventory: Inventory;
+    capacity: int;
+    contents: [] Maybe(*Item);
 }
 Equipment_Type :: enum
 {
@@ -112,45 +107,57 @@ Equipment_Type :: enum
     WEAPON_BELT;
 }
 
-// @Note: Inventory does not have an entity
-Inventory :: struct
+Holdable :: struct
 {
-    capacity: int;
-    contents: [..] *Entity;
+    tag: Entity_Type;
+    union
+    {
+        #as item: *Item;
+        #as container: *Container;
+        #as equipment: *Equipment;
+    }
 }
 
-NewEntityBase :: (pos: Vector2, collider: Collider, tag: Entity_Type, is_npc: bool = true) -> *Entity
+as_holdable :: (item: *Item) -> Holdable
 {
-    e := New(Entity);
+    h: Holdable;
+    h.item = item;
+    h.tag = .ITEM;
+    return h;
+}
+
+as_holdable :: (container: *Container) -> Holdable
+{
+    h: Holdable;
+    h.container = container;
+    h.tag = .CONTAINER;
+    return h;
+}
+
+as_holdable :: (equipment: *Equipment) -> Holdable
+{
+    h: Holdable;
+    h.equipment = equipment;
+    h.tag = .EQUIPMENT;
+    return h;
+}
+
+init_entity_data :: (pos: Vector2, collider: Collider) -> Entity
+{
+    e: Entity;
     e.position.value = pos;
     e.position.exists = true;
     e.collider = collider;
-    e.tag = tag;
     e.id = _Entity_ID;
     _Entity_ID += 1;
-    
-    array: *[..] *Entity;
-    if tag ==
-    {
-        case .CONTAINER;
-            array = *Game.containers;
-        case .ITEM;
-            array = *Game.items;
-        case .EQUIPMENT;
-            array = *Game.equipment;
-        case .RESOURCE;
-            array = *Game.resources;
-        case .PERSON;
-            array = *Game.npcs;
-    }
-    if is_npc then array_add(array, e);
-
     return e;
 }
 
-NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Entity
+NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Container
 {
-    e := NewEntityBase(pos, collider, .CONTAINER);
+    container := New(Container);
+    container.entity = init_entity_data(pos, collider);
+    container.type = type;
     cap: int;
     if type ==
     {
@@ -159,23 +166,24 @@ NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0
         case .CHEST;
             cap = 300;
     }
-    e.container.capacity = cap;
-    e.container.type = type;
-    return e;
+    container.capacity = cap;
+    return container;
 }
 
-NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Entity
+NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Item
 {
-    e := NewEntityBase(pos, collider, .ITEM);
-    e.item.type = type;
-    if type == .WOOD_LOG then e.texture.value = LoadTexture("./assets/textures/wood_log.png"); e.texture.exists = true;
-    return e;
+    item := New(Item);
+    item.entity = init_entity_data(pos, collider);
+    item.type = type;
+    if type == .WOOD_LOG then item.texture.value = LoadTexture("./assets/textures/wood_log.png"); item.texture.exists = true;
+    return item;
 }
 
-NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Entity
+NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Equipment
 {
-    e := NewEntityBase(pos, collider, .EQUIPMENT);
-    e.equipment.type = type;
+    equipment := New(Equipment);
+    equipment.entity = init_entity_data(pos, collider);
+    equipment.type = type;
     cap: int;
     if type ==
     {
@@ -184,77 +192,144 @@ NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0
         case .WEAPON_BELT;
             cap = 3;
     }
-    e.equipment.capacity = cap;
-    return e;
+    equipment.capacity = cap;
+    array_resize(*equipment.contents, equipment.capacity);
+    return equipment;
 }
 
-// @TODO: handle buildings and people
-draw_entity :: (e: Entity, pos: Vector2, scale: float = 1.0)
+NewResource :: (type: Resource_Type, collider: Collider, pos: Vector2, quantity: int, req: Maybe(Item_Type)) -> *Resource
 {
+    resource := New(Resource);
+    resource.entity = init_entity_data(pos, collider);
+    resource.type = type;
+    resource.quantity = quantity;
+    resource.harvestRequirement = req;
+    return resource;
+}
+
+draw_item :: (item: Item)
+{
+    if !item.position.exists return;
+
+    scale := 1.0;
     scale *= Game.camera.zoom;
-    if e.tag ==
+    pos := to_screen_space(item.position.value);
+    if item.type == 
     {
-        case .RESOURCE;
-            if e.texture.exists 
-            {
-                drawpos := pos;
-                drawpos.x -= (e.texture.value.width * scale) / 2;
-                drawpos.y -= (e.texture.value.height * scale) - (e.resource.quantity * scale);
-                DrawTextureEx(e.texture.value, xx drawpos, 0.0, scale, WHITE);
-                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (e.texture.value.width * scale), xx (e.texture.value.height * scale), PINK);
-                resource_color := get_resource_color(e.resource.type);
-                DrawCircleV(pos, xx e.resource.quantity * scale, resource_color);
-            }
-            else
-            {
-                resource_color := get_resource_color(e.resource.type);
-                DrawCircleV(pos, xx e.resource.quantity * scale, resource_color);
-            }
-        case .ITEM; if e.item.type ==
-        {
-            case .LUMBER_AXE;
-                DrawCircleV(pos, e.collider.radius * scale, GRAY);
-            case .HEWING_SAW;
-                DrawCircleV(pos, e.collider.radius * scale, DARKGRAY);
-            case .SWORD;
-                DrawCircleV(pos, e.collider.radius * scale, BLACK);
-            case .WOOD_LOG;
-                drawpos := pos;
-                drawpos.x -= (e.texture.value.width * scale) / 2;
-                drawpos.y -= (e.texture.value.height * scale) - (10 * scale);
-                DrawTextureEx(e.texture.value, xx drawpos, 0.0, scale, WHITE);
-                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (e.texture.value.width * scale), xx (e.texture.value.height * scale), PINK);
-                DrawCircleV(pos, e.collider.radius * scale, BROWN);
-        }
-        case .CONTAINER; if e.container.type ==
-        {
-            case .BASKET;
-                DrawRectangleV(pos, e.collider.rect * scale, BEIGE);
-                DrawCircleV(pos + xy(e.collider.rect.x/2.0, e.collider.rect.y), (e.collider.rect.x/2.0) * scale, BEIGE);
-            case .CHEST;
-                DrawRectangleV(pos, e.collider.rect * scale, DARKGREEN);
-                DrawCircleV(pos + xy(e.collider.rect.x/2.0, 0), (e.collider.rect.x/2.0) * scale, DARKGREEN);
-        }
-        case .EQUIPMENT; if e.equipment.type ==
-        {
-            case .TOOL_BELT;
-                DrawRectangleV(pos, e.collider.rect * scale, GREEN);
-            case .WEAPON_BELT;
-                DrawRectangleV(pos, e.collider.rect * scale, RED);
-        }
+        case .LUMBER_AXE;
+            DrawCircleV(pos, item.collider.radius * scale, GRAY);
+        case .HEWING_SAW;
+            DrawCircleV(pos, item.collider.radius * scale, DARKGRAY);
+        case .SWORD;
+            DrawCircleV(pos, item.collider.radius * scale, BLACK);
+        case .WOOD_LOG;
+            drawpos := pos;
+            drawpos.x -= (item.texture.value.width * scale) / 2;
+            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
+            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
+            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
+            DrawCircleV(pos, item.collider.radius * scale, BROWN);
     }
 }
 
-// @TODO: handle camera zoom 
-draw_ui_representation :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
+draw_item_ui :: (pos: Vector2, collider: Collider, scale: float, type: Item_Type)
 {
+    drawpos := pos;
+    if type == 
+    {
+        case .LUMBER_AXE;
+            DrawCircleV(drawpos, collider.radius * scale, GRAY);
+        case .HEWING_SAW;
+            DrawCircleV(drawpos, collider.radius * scale, DARKGRAY);
+        case .SWORD;
+            DrawCircleV(drawpos, collider.radius * scale, BLACK);
+        case .WOOD_LOG;
+            DrawCircleV(drawpos, collider.radius * scale, BROWN);
+    }
+}
+
+draw_container :: (container: Container)
+{
+    if !container.position.exists return;
+
+    scale := 1.0;
+    scale *= Game.camera.zoom;
+    pos := to_screen_space(container.position.value);
+    if container.type ==
+    {
+        case .BASKET;
+            DrawRectangleV(pos, container.collider.rect * scale, BEIGE);
+            DrawCircleV(pos + xy(container.collider.rect.x/2.0, container.collider.rect.y) * scale, (container.collider.rect.x/2.0) * scale, BEIGE);
+        case .CHEST;
+            DrawRectangleV(pos, container.collider.rect * scale, DARKGREEN);
+            DrawCircleV(pos + xy(container.collider.rect.x/2.0, 0) * scale, (container.collider.rect.x/2.0) * scale, DARKGREEN);
+    }
+}
+
+draw_container_ui :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
+{
+    drawpos := pos;
     if type ==
     {
         case .BASKET;
-            DrawRectangleV(pos, collider.rect * scale, BEIGE);
-            DrawCircleV(pos + xy(collider.rect.x/2.0 - 2, collider.rect.y - 2), (collider.rect.x/2.0) * scale, BEIGE);
+            DrawRectangleV(drawpos, collider.rect * scale, BEIGE);
+            DrawCircleV(drawpos + xy(collider.rect.x/2.0 - 2, collider.rect.y - 2), (collider.rect.x/2.0) * scale, BEIGE);
         case .CHEST;
-            DrawRectangleV(pos + .{0, 8}, collider.rect * scale, DARKGREEN);
-            DrawCircleV(pos + xy(collider.rect.x/2.0 - 2, 6), (collider.rect.x/2.0) * scale, DARKGREEN);
+            DrawRectangleV(drawpos + .{0, 8}, collider.rect * scale, DARKGREEN);
+            DrawCircleV(drawpos + xy(collider.rect.x/2.0 - 2, 6), (collider.rect.x/2.0) * scale, DARKGREEN);
+    }
+}
+
+draw_equipment :: (equipment: Equipment)
+{
+    if !equipment.position.exists return;
+
+    scale := 1.0;
+    scale *= Game.camera.zoom;
+    pos := to_screen_space(equipment.position.value);
+
+    if equipment.type ==
+    {
+        case .TOOL_BELT;
+            DrawRectangleV(pos, equipment.collider.rect * scale, GREEN);
+        case .WEAPON_BELT;
+            DrawRectangleV(pos, equipment.collider.rect * scale, RED);
+    }
+}
+
+draw_equipment_ui :: (pos: Vector2, collider: Collider, scale: float, type: Equipment_Type)
+{
+    drawpos := pos;
+
+    if type ==
+    {
+        case .TOOL_BELT;
+            DrawRectangleV(drawpos, collider.rect * scale, GREEN);
+        case .WEAPON_BELT;
+            DrawRectangleV(drawpos, collider.rect * scale, RED);
+    }
+}
+
+draw_resource :: (resource: Resource)
+{
+    if !resource.position.exists return;
+
+    scale := 1.0;
+    scale *= Game.camera.zoom;
+    pos := to_screen_space(resource.position.value);
+    if resource.texture.exists 
+    {
+        drawpos := pos;
+        drawpos.x -= (resource.texture.value.width * scale) / 2;
+        drawpos.y -= (resource.texture.value.height * scale) - (resource.quantity * scale);
+        DrawTextureEx(resource.texture.value, xx drawpos, 0.0, scale, WHITE);
+        DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (resource.texture.value.width * scale), xx (resource.texture.value.height * scale), PINK);
+        resource_color := get_resource_color(resource.type);
+        DrawCircleV(pos, xx resource.quantity * scale, resource_color);
+    }
+    else
+    {
+        resource_color := get_resource_color(resource.type);
+        DrawCircleV(pos, xx resource.quantity * scale, resource_color);
     }
 }

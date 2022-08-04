@@ -45,11 +45,11 @@ DebugCursor :: struct
 debug_player_info :: ()
 {
     camera_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
-    ss_player := Game.player.entity.position.value * Game.camera.zoom + camera_vector;
+    ss_player := Game.player.position.value * Game.camera.zoom + camera_vector;
     drawpos := ss_player + xy(30 * Game.camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", Game.player.entity.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    DrawText(to_c_string(tprint("pos: %", Game.player.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
-    DrawText(to_c_string(tprint("ID:  %", Game.player.entity.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    DrawText(to_c_string(tprint("ID:  %", Game.player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 
     DrawCircleLines(xx ss_player.x, xx ss_player.y, Game.player.interactRange, PINK);
 }
@@ -63,13 +63,13 @@ debug_entity_info :: (e: Entity)
     drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
-    DrawText(to_c_string(tprint("Ent_Type:  %", e.tag)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * Game.camera.zoom;
-    if e.tag ==
-    {
-        case .RESOURCE;
-            DrawText(to_c_string(tprint("Res_Type:  %", e.resource.type)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    }
+    // DrawText(to_c_string(tprint("Ent_Type:  %", e.tag)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    // drawpos.y += 20.0 * Game.camera.zoom;
+    // if e.tag ==
+    // {
+    //     case .RESOURCE;
+    //         DrawText(to_c_string(tprint("Res_Type:  %", e.resource.type)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    // }
 }
 
 debug_console :: (dt: float)
@@ -144,18 +144,15 @@ debug_is_command_valid :: (cmd: string)
     {
         if begins_with(cmd, "SPAWN")
         {
-            pos := Game.player.entity.position.value + Game.player.entity.person.forward * 50;
+            pos := Game.player.position.value + Game.player.person.forward * 50;
             collider: Collider;
-
-            entity: *Entity;
-            array: *[..] *Entity;
 
             // Containers
             if cmd_array[1] == "BASKET" || cmd_array[1] == "CHEST"
             {
                 collider = Collider.{type = .RECT, rect = .{20, 30}};
-                entity = NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
-                array = *Game.containers;
+                container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
+                array_add(*Game.containers, container);
             }
 
             // Items
@@ -166,8 +163,8 @@ debug_is_command_valid :: (cmd: string)
                 if cmd_array[1] == "HAMMER" then cmd_array[1] = "CARPENTERS_HAMMER";
                 
                 collider = Collider.{type = .CIRCLE, radius = 10};
-                entity = NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
-                array = *Game.items;
+                item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
+                array_add(*Game.items, item);
             }
 
             // Equipment
@@ -177,22 +174,20 @@ debug_is_command_valid :: (cmd: string)
                 if cmd_array[1] == "WEAPONBELT" then cmd_array[1] = "WEAPON_BELT";
 
                 collider = Collider.{type = .RECT, rect = .{60, 15}};
-                entity = NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
-                array = *Game.equipment;
+                equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
+                array_add(*Game.equipment, equipment);
             }
-
-            array_add(array, entity);
         }
     }
 
 
     if cmd == "TP"
     {
-        Game.player.entity.position.value = .{-1000, -1000};
+        Game.player.position.value = .{-1000, -1000};
     }
     if cmd == "GOTTAGOFAST"
     {
-        Game.player.entity.person.speed = 50;
+        Game.player.person.speed = 50;
     }
     if cmd == "REPOP RESOURCES"
     {
