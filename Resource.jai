@@ -61,6 +61,7 @@ Item_Type :: enum
     CARPENTERS_HAMMER;
     LUMBER_AXE;
     HEWING_SAW;
+    PICK_AXE;
     // weapons
     SWORD;
     WHIP;
@@ -74,7 +75,7 @@ Item_Type :: enum
 
 is_tool :: (type: Item_Type) -> bool
 {
-    return type == .CARPENTERS_HAMMER || type == .LUMBER_AXE || type == .HEWING_SAW;
+    return type == .CARPENTERS_HAMMER || type == .LUMBER_AXE || type == .HEWING_SAW || type == .PICK_AXE;
 }
 is_weapon :: (type: Item_Type) -> bool
 {
@@ -238,6 +239,8 @@ draw_item :: (item: Item)
             DrawCircleV(pos, item.collider.radius * scale, GRAY);
         case .HEWING_SAW;
             DrawCircleV(pos, item.collider.radius * scale, DARKGRAY);
+        case .PICK_AXE;
+            DrawCircleV(pos, item.collider.radius * scale, BLACK); // here this should just use the item's texture
         case .SWORD;
             DrawCircleV(pos, item.collider.radius * scale, BLACK);
         case .WOOD_LOG;
@@ -280,6 +283,8 @@ draw_item_ui :: (pos: Vector2, collider: Collider, scale: float, type: Item_Type
             DrawCircleV(drawpos, collider.radius * scale, GRAY);
         case .HEWING_SAW;
             DrawCircleV(drawpos, collider.radius * scale, DARKGRAY);
+        case .PICK_AXE;
+            DrawCircleV(drawpos, collider.radius * scale, BLACK);
         case .SWORD;
             DrawCircleV(drawpos, collider.radius * scale, BLACK);
         case .WOOD_LOG;

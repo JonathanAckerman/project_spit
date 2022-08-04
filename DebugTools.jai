@@ -16,6 +16,7 @@ Debug: struct
         "SPAWN CHEST",
         "SPAWN BUCKET",
         "SPAWN AXE",
+        "SPAWN PICK",
         "SPAWN SAW",
         "SPAWN HAMMER",
         "SPAWN SWORD",
@@ -139,7 +140,6 @@ debug_console :: (dt: float)
 
 debug_is_command_valid :: (cmd: string)
 {
-    // @TEMP: for now just match a string, later maybe have lexical parsing
     cmd_array := split(cmd, " ");
     if cmd_array.count > 0
     {
@@ -157,9 +157,10 @@ debug_is_command_valid :: (cmd: string)
             }
 
             // Items
-            if cmd_array[1] == "AXE" || cmd_array[1] == "SAW" || cmd_array[1] == "HAMMER" || cmd_array[1] == "SWORD" || cmd_array[1] == "WHIP"
+            if cmd_array[1] == "AXE" || cmd_array[1] == "SAW" || cmd_array[1] == "HAMMER" || cmd_array[1] == "SWORD" || cmd_array[1] == "WHIP" || cmd_array[1] == "PICK"
             {
                 if cmd_array[1] == "AXE" then cmd_array[1] = "LUMBER_AXE";
+                if cmd_array[1] == "PICK" then cmd_array[1] = "PICK_AXE";
                 if cmd_array[1] == "SAW" then cmd_array[1] = "HEWING_SAW";
                 if cmd_array[1] == "HAMMER" then cmd_array[1] = "CARPENTERS_HAMMER";
                 

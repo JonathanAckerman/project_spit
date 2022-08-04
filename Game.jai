@@ -378,6 +378,14 @@ game_loop :: inline ()
             resource_to_harvest: Maybe(resource_info);
             for sorted_resources
             {
+                if it.resource.harvestRequirement.exists
+                {
+                    if !player.held.exists || player.held.value.item.type != it.resource.harvestRequirement.value
+                    {
+                        continue;
+                    }
+                }
+
                 if it.resource.type ==
                 {
                     // trees require the lumber axe equipped
@@ -905,7 +913,19 @@ populate_resources :: ()
         y := random_get_within_range(0, 2000);
         type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
         quantity := max(random_get() % 20, 10);
-        req := ifx type == .TREE then NewMaybe(Item_Type.LUMBER_AXE) else Nothing(Item_Type)
+        req: Maybe(Item_Type);
+        if type == 
+        {
+            case .TREE;
+                req = NewMaybe(Item_Type.LUMBER_AXE);
+            case .BUSH;
+                req = NewMaybe(Item_Type.SWORD); // Maybe make property flags on items like "sharp" or "bladed"
+            case .IRON_VEIN; 
+                #through;
+            case .COPPER_VEIN;
+                req = NewMaybe(Item_Type.PICK_AXE);
+
+        }
         collider: Collider;
         collider.type = .CIRCLE;
         collider.radius = xx quantity;
