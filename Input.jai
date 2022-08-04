@@ -74,63 +74,6 @@ handle_input :: inline ()
         else if IsKeyPressed(xx KeyboardKey.FOUR) then equipSlot = 3;
         else if IsKeyPressed(xx KeyboardKey.FIVE) then equipSlot = 4;
         else if IsKeyPressed(xx KeyboardKey.SIX) then equipSlot = 5;
-
-        // shifting resources around
-        // {
-        //     key_to_resource_index :: (key: KeyboardKey) -> int
-        //     {
-        //         if key >= 49 && key <= 53
-        //             return xx key - 49;
-        //         else return -1;
-        //     }
-        //     resource_index := key_to_resource_index(xx GetKeyPressed());
-        //     if resource_index != -1 // if we got an input for shifting resources
-        //     {
-        //         container: Maybe(*Container);
-        //         if !Game.player.entity.person.held.exists
-        //         {
-        //             // look for nearest container
-        //             nearest := get_nearest_holdable_in_range(50);
-        //             if nearest.exists && nearest.value.tag == .CONTAINER
-        //             {
-        //                 container.value = *nearest.value.container;
-        //                 container.exists = true;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             if Game.player.entity.person.held.value.tag == .CONTAINER && Game.player.entity.person.held.value.container.type == .BASKET
-        //             {
-        //                 container.value = *Game.player.entity.person.held.value.container;
-        //                 container.exists = true;
-        //             }
-        //         }
-
-        //         if container.exists
-        //         {
-        //             if IsKeyDown(xx KeyboardKey.LEFT_SHIFT)
-        //             {
-        //                 // shift out of pockets
-        //                 container_weight := 0;
-        //                 for container.value.contents { container_weight += it; } 
-        //                 if Game.player.entity.person.pockets.contents[resource_index] > 0 && container_weight < container.value.capacity
-        //                 {
-        //                     container.value.contents[resource_index] += 1;    
-        //                     Game.player.entity.person.pockets.contents[resource_index] -= 1;
-        //                 }
-        //             }
-        //             else
-        //             {
-        //                 // shift into pockets
-        //                 if container.value.contents[resource_index] > 0 && Game.player.entity.person.pockets.contents[resource_index] < 10
-        //                 {
-        //                     container.value.contents[resource_index] -= 1;
-        //                     Game.player.entity.person.pockets.contents[resource_index] += 1;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
     else // debug on
     {
