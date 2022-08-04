@@ -358,7 +358,7 @@ game_loop :: inline ()
             using Game;
 
             // compile list of resources in range, sort by distance to player
-            resource_info :: struct { resource: *Resource; direction: Vector2; }
+            resource_info :: struct { resource: *Resource; direction: Vector2; index: int; }
             sorted_resources: [..] resource_info;
             for resources
             {
@@ -368,6 +368,7 @@ game_loop :: inline ()
                     info: resource_info;
                     info.resource = resources[it_index];
                     info.direction = player_to_resource;
+                    info.index = it_index;
                     array_add(*sorted_resources, info);
                 }
             }
@@ -392,6 +393,16 @@ game_loop :: inline ()
                                 break;
                             }
                         }
+                    case .WATER;
+                        if player.held.exists && player.held.value.tag == .CONTAINER
+                        {
+                            if player.held.value.container.type == .BUCKET // this should be can_carry_water(), or a flag, or smth.
+                            {
+                                resource_to_harvest.value = it;
+                                resource_to_harvest.exists = true;
+                                break;
+                            }
+                        }
                     case;
                         resource_to_harvest.value = it;
                         resource_to_harvest.exists = true;
@@ -402,9 +413,23 @@ game_loop :: inline ()
             // Drop by-product of harvest on the ground. Some resources like water will instead be loaded directly into an inventory
             if resource_to_harvest.exists
             {
-                by_product := NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                by_product: *Item = null;
+                if resource_to_harvest.value.resource.type ==
+                {
+                    case .COPPER_VEIN;
+                        by_product = NewItem(.COPPER_NUGGET, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                    case .IRON_VEIN;
+                        by_product = NewItem(.IRON_NUGGET, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                    case .WATER;
+                        by_product = NewItem(.WATER, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                    case .TREE;
+                        by_product = NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                    case .BUSH;
+                        by_product = NewItem(.FIBER, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                }
+
                 array_add(*items, by_product);
-                swap_and_pop(*resources, *resource_to_harvest.value.resource); 
+                array_unordered_remove_by_index(*resources, resource_to_harvest.value.index);
             }
         }
         if Input.harvest then harvestResource();
@@ -876,8 +901,8 @@ populate_resources :: ()
 {
     for i: 1..20
     {
-        x := random_get_within_range(-1000, 1000);
-        y := random_get_within_range(-1000, 1000);
+        x := random_get_within_range(0, 2000);
+        y := random_get_within_range(0, 2000);
         type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
         quantity := max(random_get() % 20, 10);
         req := ifx type == .TREE then NewMaybe(Item_Type.LUMBER_AXE) else Nothing(Item_Type)
@@ -885,10 +910,6 @@ populate_resources :: ()
         collider.type = .CIRCLE;
         collider.radius = xx quantity;
         r := NewResource(type, collider, xy(x, y), xx quantity, req);
-
-        if r.type == .TREE then r.texture.value = LoadTexture("./assets/textures/tree.png"); r.texture.exists = true;
-
-
         array_add(*Game.resources, r);
     }
 }

@@ -67,7 +67,7 @@ Item_Type :: enum
     // byproducts
     COPPER_NUGGET;
     IRON_NUGGET;
-    WATER;
+    WATER; // this might work differently
     WOOD_LOG;
     FIBER;
 }
@@ -92,6 +92,7 @@ Container_Type :: enum
 {
     BASKET;
     CHEST;
+    BUCKET;
 }
 
 Equipment :: struct
@@ -204,6 +205,23 @@ NewResource :: (type: Resource_Type, collider: Collider, pos: Vector2, quantity:
     resource.type = type;
     resource.quantity = quantity;
     resource.harvestRequirement = req;
+
+    if resource.type == 
+    {
+        case .COPPER_VEIN;
+            resource.texture.value = LoadTexture("./assets/textures/copper_vein.png"); 
+            resource.texture.exists = true;
+        case .IRON_VEIN;
+            resource.texture.value = LoadTexture("./assets/textures/iron_vein.png"); 
+            resource.texture.exists = true;
+        case .BUSH;
+            resource.texture.value = LoadTexture("./assets/textures/bush.png"); 
+            resource.texture.exists = true;
+        case .TREE;
+            resource.texture.value = LoadTexture("./assets/textures/tree.png"); 
+            resource.texture.exists = true;
+    }
+
     return resource;
 }
 
@@ -229,6 +247,27 @@ draw_item :: (item: Item)
             DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
             DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
             DrawCircleV(pos, item.collider.radius * scale, BROWN);
+        case .COPPER_NUGGET;
+            drawpos := pos;
+            drawpos.x -= (item.texture.value.width * scale) / 2;
+            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
+            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
+            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
+            DrawCircleV(pos, item.collider.radius * scale, YELLOW);
+        case .IRON_NUGGET;
+            drawpos := pos;
+            drawpos.x -= (item.texture.value.width * scale) / 2;
+            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
+            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
+            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
+            DrawCircleV(pos, item.collider.radius * scale, RED);
+        case .FIBER;
+            drawpos := pos;
+            drawpos.x -= (item.texture.value.width * scale) / 2;
+            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
+            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
+            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
+            DrawCircleV(pos, item.collider.radius * scale, BEIGE);
     }
 }
 
