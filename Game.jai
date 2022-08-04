@@ -202,11 +202,9 @@ game_loop :: inline ()
                         else
                         {
                             held := player.held.value;
-
                             dest_inv: *Equipment = null;
                             if is_tool(it.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
                             else if is_weapon(it.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
-
                             if dest_inv == null // item on ground has no place to go but held
                             {
                                 if held.tag ==
@@ -301,40 +299,39 @@ game_loop :: inline ()
                             if found
                             {
                                 held := player.held.value;
-
                                 if held.tag ==
                                 {
                                     case .ITEM;
-                                        dest_inv: *Equipment = null;
-                                        if is_tool(held.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
-                                        else if is_weapon(held.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
+                                        sheath_inv : *Equipment = null;
+                                        if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
+                                        else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
 
-                                        if dest_inv == null
+                                        if sheath_inv != null
                                         {
-                                            held.item.position.value = it.container.position.value;
-                                            held.item.position.exists = true;
-                                            it.container.position.exists = false;
-                                            player.held.value = it;
-                                            break;
-                                        }
-                                        else
-                                        {
-                                            if dest_inv.contents.count < dest_inv.capacity
+                                            has_sheathed := false;
+                                            for sheath_inv.contents // look for the first available slot
                                             {
-                                                // array_add(*dest_inv.contents, held.item);
-                                                // @TODO: same problem as above
-                                                it.container.position.exists = false;
-                                                break;
+                                                if !it.exists
+                                                {
+                                                    sheath_inv.contents[it_index].value = held.item;
+                                                    sheath_inv.contents[it_index].exists = true;
+                                                    has_sheathed = true;
+                                                    break;
+                                                }
                                             }
-                                            else
+
+                                            if !has_sheathed
                                             {
                                                 held.item.position.value = it.container.position.value;
                                                 held.item.position.exists = true;
-                                                it.container.position.exists = false;
-                                                player.held.value = it;
-                                                break;
                                             }
                                         }
+                                        else // swap with item on ground
+                                        {
+                                            held.item.position.value = it.item.position.value;
+                                            held.item.position.exists = true;
+                                        }
+
                                     case .CONTAINER;
                                         held.container.position.exists = true;
                                         held.container.position.value = containers[index].position.value;
@@ -343,7 +340,8 @@ game_loop :: inline ()
                                         held.equipment.position.value = containers[index].position.value;
                                 }
 
-                                containers[index].position.exists = false;
+                                it.container.position.exists = false;
+                                player.held.value = it;
                                 break;
                             }
                         }
