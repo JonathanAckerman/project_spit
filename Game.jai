@@ -624,7 +624,6 @@ game_loop :: inline ()
         // draw ui
         {
             // draw held
-            // @Cleanup
             xpos := 20.0;
             DrawText(xx "Held:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
             DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
@@ -637,6 +636,9 @@ game_loop :: inline ()
                         {
                             case .BASKET;
                                 draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 65), player.held.value.container.collider, 1.0, .BASKET);
+                                xpos += 80.0;
+                            case .BUCKET;
+                                draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 65), player.held.value.container.collider, 1.0, .BUCKET);
                                 xpos += 80.0;
                             case .CHEST;
                                 draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 55), player.held.value.container.collider, 1.0, .CHEST);

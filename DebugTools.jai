@@ -14,6 +14,7 @@ Debug: struct
     commandList: [] string = .[
         "SPAWN BASKET",
         "SPAWN CHEST",
+        "SPAWN BUCKET",
         "SPAWN AXE",
         "SPAWN SAW",
         "SPAWN HAMMER",
@@ -148,7 +149,7 @@ debug_is_command_valid :: (cmd: string)
             collider: Collider;
 
             // Containers
-            if cmd_array[1] == "BASKET" || cmd_array[1] == "CHEST"
+            if cmd_array[1] == "BASKET" || cmd_array[1] == "CHEST" || cmd_array[1] == "BUCKET"
             {
                 collider = Collider.{type = .RECT, rect = .{20, 30}};
                 container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);

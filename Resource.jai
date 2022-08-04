@@ -302,6 +302,9 @@ draw_container :: (container: Container)
         case .CHEST;
             DrawRectangleV(pos, container.collider.rect * scale, DARKGREEN);
             DrawCircleV(pos + xy(container.collider.rect.x/2.0, 0) * scale, (container.collider.rect.x/2.0) * scale, DARKGREEN);
+        case .BUCKET;
+            DrawRectangleV(pos, container.collider.rect * scale, LIGHTGRAY);
+            DrawCircleV(pos + xy(container.collider.rect.x/2.0, container.collider.rect.y) * scale, (container.collider.rect.x/2.0) * scale, LIGHTGRAY);
     }
 }
 
@@ -312,10 +315,13 @@ draw_container_ui :: (pos: Vector2, collider: Collider, scale: float, type: Cont
     {
         case .BASKET;
             DrawRectangleV(drawpos, collider.rect * scale, BEIGE);
-            DrawCircleV(drawpos + xy(collider.rect.x/2.0 - 2, collider.rect.y - 2), (collider.rect.x/2.0) * scale, BEIGE);
+            DrawCircleV(drawpos + xy(collider.rect.x/2.0, collider.rect.y - 2), (collider.rect.x/2.0) * scale, BEIGE);
+        case .BUCKET;
+            DrawRectangleV(drawpos, collider.rect * scale, LIGHTGRAY);
+            DrawCircleV(drawpos + xy(collider.rect.x/2.0, collider.rect.y - 2), (collider.rect.x/2.0) * scale, LIGHTGRAY);
         case .CHEST;
-            DrawRectangleV(drawpos + .{0, 8}, collider.rect * scale, DARKGREEN);
-            DrawCircleV(drawpos + xy(collider.rect.x/2.0 - 2, 6), (collider.rect.x/2.0) * scale, DARKGREEN);
+            DrawRectangleV(drawpos + .{0, -8}, collider.rect * scale, DARKGREEN);
+            DrawCircleV(drawpos + xy(collider.rect.x/2.0, -6), (collider.rect.x/2.0) * scale, DARKGREEN);
     }
 }
 
