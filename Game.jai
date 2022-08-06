@@ -605,9 +605,8 @@ game_loop :: inline ()
     // Draw
     {
         BeginDrawing();
-        BeginDrawing();
         ClearBackground(WHITE);
-        
+
         // draw grid
         for i: 0..19
         {
@@ -633,8 +632,9 @@ game_loop :: inline ()
         {
             // draw held
             xpos := 20.0;
-            DrawText(xx "Held:", 20, WINDOW_HEIGHT - 100, 20, BLACK);
-            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK);
+            ypos := WINDOW_HEIGHT - 80;
+            DrawText(xx "Held:", 20, xx (ypos - 20), 20, BLACK);
+            DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK);
             if player.held.exists 
             {
                 if player.held.value.tag ==
@@ -643,54 +643,54 @@ game_loop :: inline ()
                         if player.held.value.container.type ==
                         {
                             case .BASKET;
-                                draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 65), player.held.value.container.collider, 1.0, .BASKET);
+                                draw_container_ui(xy(xpos + 20.0, ypos + 15.0), player.held.value.container.collider, 1.0, .BASKET);
                                 xpos += 80.0;
                             case .BUCKET;
-                                draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 65), player.held.value.container.collider, 1.0, .BUCKET);
+                                draw_container_ui(xy(xpos + 20.0, ypos + 15.0), player.held.value.container.collider, 1.0, .BUCKET);
                                 xpos += 80.0;
                             case .CHEST;
-                                draw_container_ui(xy(xpos + 20.0, WINDOW_HEIGHT - 55), player.held.value.container.collider, 1.0, .CHEST);
+                                draw_container_ui(xy(xpos + 20.0, ypos + 25.0), player.held.value.container.collider, 1.0, .CHEST);
                                 xpos += 80.0;
                         }
                     case .ITEM;
                         if player.held.value.item.type ==
                         {
                             case;
-                                draw_item_ui(xy(xpos + 30.0, WINDOW_HEIGHT - 50), player.held.value.item.collider, 1.0, player.held.value.item.type);
+                                draw_item_ui(xy(xx xpos, xx ypos), player.held.value.item.collider, 0.3, player.held.value.item.type);
                                 xpos += 80.0;
                         }
                 }
             }
             // draw tool belt
             xpos = 90;
-            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
+            DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.toolBelt.exists
             {
-                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), GREEN); //draw ui representation
+                DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), GREEN); //draw ui representation
 
                 xpos = WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
                 {
-                    DrawRectangleLines(xx (xpos + it_index * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv boxes
+                    DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_item_ui(xy(xpos + it_index * 70 + 30, WINDOW_HEIGHT - 50), it.value.collider, 1.0, it.value.type); //draw inv items
+                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), it.value.collider, 0.3, it.value.type); //draw inv items
                     }
                 }
             }
             // draw weapon belt
             xpos = 160;
-            DrawRectangleLines(xx xpos, WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw item slot
+            DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.weaponBelt.exists
             {
-                DrawRectangleV(xy(xpos + 10, WINDOW_HEIGHT - 80 + 35), xy(40, 10), RED); //draw ui representation
+                DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), RED); //draw ui representation
                 xpos = WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
-                    DrawRectangleLines(xx (xpos + it_index * 70), WINDOW_HEIGHT - 80, 60, 60, BLACK); //draw inv boxes
+                    DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_item_ui(xy(xpos + it_index * 70 + 30, WINDOW_HEIGHT - 50), it.value.collider, 1.0, it.value.type); //draw inv items
+                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), it.value.collider, 0.3, it.value.type); //draw inv items
                     }
                 }
             }

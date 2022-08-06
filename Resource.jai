@@ -22,7 +22,7 @@ Entity :: struct
     position: Maybe(Vector2);
     collider: Collider;
     id: u64;
-    texture: Maybe(Texture2D);
+    texture: Maybe(*Texture2D);
 }
 
 Entity_Type :: enum
@@ -177,7 +177,21 @@ NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Ite
     item := New(Item);
     item.entity = init_entity_data(pos, collider);
     item.type = type;
-    if type == .WOOD_LOG then item.texture.value = LoadTexture("./assets/textures/wood_log.png"); item.texture.exists = true;
+    if type == 
+    {
+        case .WOOD_LOG;
+            item.texture.value = table_find_pointer(*Textures.table, "wood_log");
+        case .SWORD;
+            item.texture.value = table_find_pointer(*Textures.table, "sword");
+        case .LUMBER_AXE;
+            item.texture.value = table_find_pointer(*Textures.table, "lumber_axe");
+        case .PICK_AXE;
+            item.texture.value = table_find_pointer(*Textures.table, "pick_axe");
+        case .HEWING_SAW;
+            item.texture.value = table_find_pointer(*Textures.table, "hewing_saw");
+    }
+    if item.texture.value == null then item.texture.value = *ERROR_TEXTURE;
+    item.texture.exists = true;
     return item;
 }
 
@@ -206,23 +220,19 @@ NewResource :: (type: Resource_Type, collider: Collider, pos: Vector2, quantity:
     resource.type = type;
     resource.quantity = quantity;
     resource.harvestRequirement = req;
-
     if resource.type == 
     {
         case .COPPER_VEIN;
-            resource.texture.value = LoadTexture("./assets/textures/copper_vein.png"); 
-            resource.texture.exists = true;
+            resource.texture.value = table_find_pointer(*Textures.table, "copper_vein");
         case .IRON_VEIN;
-            resource.texture.value = LoadTexture("./assets/textures/iron_vein.png"); 
-            resource.texture.exists = true;
+            resource.texture.value = table_find_pointer(*Textures.table, "iron_vein");
         case .BUSH;
-            resource.texture.value = LoadTexture("./assets/textures/bush.png"); 
-            resource.texture.exists = true;
+            resource.texture.value = table_find_pointer(*Textures.table, "bush");
         case .TREE;
-            resource.texture.value = LoadTexture("./assets/textures/tree.png"); 
-            resource.texture.exists = true;
+            resource.texture.value = table_find_pointer(*Textures.table, "tree");
     }
-
+    if resource.texture.value == null then resource.texture.value = *ERROR_TEXTURE;
+    resource.texture.exists = true;
     return resource;
 }
 
@@ -230,66 +240,43 @@ draw_item :: (item: Item)
 {
     if !item.position.exists return;
 
-    scale := 1.0;
+    scale := 0.5; // should all textures be drawn at 1.0 scale with correct texture sizes?
     scale *= Game.camera.zoom;
     pos := to_screen_space(item.position.value);
-    if item.type == 
+    drawpos := pos;
+    drawpos.x -= (item.texture.value.width * scale) / 2;
+    drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
+    DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
+    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
+}
+
+get_item_texture :: (type: Item_Type) -> Maybe(*Texture2D)
+{
+    texture: Maybe(*Texture2D);
+    if type == 
     {
-        case .LUMBER_AXE;
-            DrawCircleV(pos, item.collider.radius * scale, GRAY);
-        case .HEWING_SAW;
-            DrawCircleV(pos, item.collider.radius * scale, DARKGRAY);
-        case .PICK_AXE;
-            DrawCircleV(pos, item.collider.radius * scale, BLACK); // here this should just use the item's texture
-        case .SWORD;
-            DrawCircleV(pos, item.collider.radius * scale, BLACK);
         case .WOOD_LOG;
-            drawpos := pos;
-            drawpos.x -= (item.texture.value.width * scale) / 2;
-            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
-            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
-            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
-            DrawCircleV(pos, item.collider.radius * scale, BROWN);
-        case .COPPER_NUGGET;
-            drawpos := pos;
-            drawpos.x -= (item.texture.value.width * scale) / 2;
-            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
-            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
-            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
-            DrawCircleV(pos, item.collider.radius * scale, YELLOW);
-        case .IRON_NUGGET;
-            drawpos := pos;
-            drawpos.x -= (item.texture.value.width * scale) / 2;
-            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
-            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
-            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
-            DrawCircleV(pos, item.collider.radius * scale, RED);
-        case .FIBER;
-            drawpos := pos;
-            drawpos.x -= (item.texture.value.width * scale) / 2;
-            drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
-            DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
-            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
-            DrawCircleV(pos, item.collider.radius * scale, BEIGE);
+            texture.value = table_find_pointer(*Textures.table, "wood_log");
+        case .SWORD;
+            texture.value = table_find_pointer(*Textures.table, "sword");
+        case .LUMBER_AXE;
+            texture.value = table_find_pointer(*Textures.table, "lumber_axe");
+        case .PICK_AXE;
+            texture.value = table_find_pointer(*Textures.table, "pick_axe");
+        case .HEWING_SAW;
+            texture.value = table_find_pointer(*Textures.table, "hewing_saw");
     }
+    if texture.value == null then texture.value = *ERROR_TEXTURE;
+    texture.exists = true;
+    return texture;
 }
 
 draw_item_ui :: (pos: Vector2, collider: Collider, scale: float, type: Item_Type)
 {
     drawpos := pos;
-    if type == 
-    {
-        case .LUMBER_AXE;
-            DrawCircleV(drawpos, collider.radius * scale, GRAY);
-        case .HEWING_SAW;
-            DrawCircleV(drawpos, collider.radius * scale, DARKGRAY);
-        case .PICK_AXE;
-            DrawCircleV(drawpos, collider.radius * scale, BLACK);
-        case .SWORD;
-            DrawCircleV(drawpos, collider.radius * scale, BLACK);
-        case .WOOD_LOG;
-            DrawCircleV(drawpos, collider.radius * scale, BROWN);
-    }
+    texture := get_item_texture(type);
+    DrawTextureEx(texture.value, xx drawpos, 0.0, scale, WHITE);
+    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (texture.value.width * scale), xx (texture.value.height * scale), PINK);
 }
 
 draw_container :: (container: Container)

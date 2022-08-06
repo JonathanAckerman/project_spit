@@ -5,6 +5,7 @@ WINDOW_CENTER :: Vector2.{WINDOW_WIDTH/2, WINDOW_HEIGHT/2};
 main :: () {
     window_title := to_c_string("project_spit");
     InitWindow(xx WINDOW_WIDTH, xx WINDOW_HEIGHT, window_title);
+    load_all_textures();
     SetTargetFPS(60);
     Debug.font = LoadFont("./assets/fonts/cour.ttf");
 
@@ -27,6 +28,7 @@ main :: () {
 #load "Maybe.jai";
 #load "Grid.jai";
 #load "Utils.jai";
+#load "TextureLoader.jai";
 
 #import "Raylib-Jai";
 #import "Basic";
@@ -34,3 +36,5 @@ main :: () {
 #import "Random";
 #import "Sort";
 #import "String";
+#import "File_Utilities";
+#import "Hash_Table";
