@@ -37,4 +37,6 @@ main :: () {
 #import "Sort";
 #import "String";
 #import "File_Utilities";
+#import "stb_image";
+#import "stb_image_write";
 #import "Hash_Table";
