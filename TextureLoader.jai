@@ -57,7 +57,6 @@ generate_textures_struct :: ()
         }
     }
     result := builder_to_string(*builder);
-    print("%\n", result);
 }
 
 Textures: struct

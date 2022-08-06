@@ -9,6 +9,8 @@ main :: () {
     SetTargetFPS(60);
     Debug.font = LoadFont("./assets/fonts/cour.ttf");
 
+    test_file_read();
+
     Game.resetting = true;
     while Game.resetting {
         game_reset();

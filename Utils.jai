@@ -15,67 +15,66 @@ swap_and_pop :: (array_pointer: *[..] $T, object_pointer: *T)
     array.count -= 1;
 }
 
-trim_textures_whitespace :: ()
-{
-    // visit_files(TEXTURES_PATH, true, null, trim, true, true);
+// trim_textures_whitespace :: ()
+// {
+//     // visit_files(TEXTURES_PATH, true, null, trim, true, true);
 
-    trim :: (info: *File_Visit_Info, data: void)
-    {
-        if !info.is_directory
-        {
-            file, open_success :=  file_open(info.full_name, for_writing=true, keep_existing_content=true);
-            if !open_success {
-                print("Could not open file % for writing.\n", info.full_name);
-                return;
-            }
+//     trim :: (info: *File_Visit_Info, data: void)
+//     {
+//         if !info.is_directory
+//         {
+//             file, open_success :=  file_open(info.full_name, for_writing=true, keep_existing_content=true);
+//             if !open_success {
+//                 print("Could not open file % for writing.\n", info.full_name);
+//                 return;
+//             }
 
-            data, read_success := read_entire_file(file);
-            if !read_success
-            {
-                print("Could not read file % data.\n", info.full_name); 
-                return;
-            }
+//             data, read_success := read_entire_file(file);
+//             if !read_success
+//             {
+//                 print("Could not read file % data.\n", info.full_name); 
+//                 return;
+//             }
 
-            for cast([] u8) data
-            {
-                print("%", it);
-            }
+//             for cast([] u8) data
+//             {
+//                 print("%", it);
+//             }
 
-            // first_nonwhite_row: s64;
-            // {
-            //     // figure out the first nonwhite row
-            //     first_nonwhite_row = 0;
-            // }
-            // last_nonwhite_row: s64;
-            // {
-            //     // figure out the last nonwhite row
-            // }
-            // first_nonwhite_col: s64;
-            // {
-            //     // figure out the first nonwhite row
-            //     first_nonwhite_row = 0;
-            // }
-            // last_nonwhite_col: s64;
-            // {
-            //     // figure out the last nonwhite row
-            // }
+//             // first_nonwhite_row: s64;
+//             // {
+//             //     // figure out the first nonwhite row
+//             //     first_nonwhite_row = 0;
+//             // }
+//             // last_nonwhite_row: s64;
+//             // {
+//             //     // figure out the last nonwhite row
+//             // }
+//             // first_nonwhite_col: s64;
+//             // {
+//             //     // figure out the first nonwhite row
+//             //     first_nonwhite_row = 0;
+//             // }
+//             // last_nonwhite_col: s64;
+//             // {
+//             //     // figure out the last nonwhite row
+//             // }
 
-            // data: *void;
+//             // data: *void;
 
-            // for first_nonwhite_col..last_nonwhite_col
+//             // for first_nonwhite_col..last_nonwhite_col
 
-            // success = file_write(*file, data);
-            // if !success {
-            //     print("Could not write to file %.\n", info.full_name);
-            //     return;
-            // }
+//             // success = file_write(*file, data);
+//             // if !success {
+//             //     print("Could not write to file %.\n", info.full_name);
+//             //     return;
+//             // }
             
-            file_close(*file);
-        }
-    }
-}
+//             file_close(*file);
+//         }
+//     }
+// }
 
-#run test_file_read();
 test_file_read :: ()
 {
     filename := to_c_string(tprint("%/%", TEXTURES_PATH, "Items/fiber.png"));
@@ -198,7 +197,7 @@ test_file_read :: ()
         pic_iter += size_of(u8);
     }
 
-    stbi_write_png(to_c_string("fiber_test.png"), new_width, new_height, channels, data);
+    stbi_write_png(to_c_string("fiber_test.png"), xx new_width, xx new_height, channels, data, xx new_width);
 
     stbi_image_free(data);
 }
