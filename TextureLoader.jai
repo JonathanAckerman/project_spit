@@ -76,3 +76,8 @@ load_all_textures :: ()
         table_add(*Textures.table, key, LoadTexture(to_c_string(value)));
     }
 }
+
+#import "Basic";            // to_c_string()
+#import "Hash_Table";       // Table
+#import "Raylib-Jai";       // Texture2D
+#import "File_Utilities";   // File_Visit_Info
