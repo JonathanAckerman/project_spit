@@ -600,6 +600,10 @@ game_loop :: inline ()
                 npc.position.value += npc.velocity;
             }
         }
+
+        Textures.outlineSize += GetMouseWheelMove();
+        if (Textures.outlineSize < 1.0) Textures.outlineSize = 1.0;
+        SetShaderValue(Textures.outlineShader, Textures.outlineSizeLoc, *Textures.outlineSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_FLOAT);
     }
 
     // Draw
@@ -621,7 +625,16 @@ game_loop :: inline ()
             }
         }
 
-        for resources { draw_resource(it); }
+        BeginShaderMode(Textures.outlineShader);
+        for resources { 
+            textureSize : [2] float;
+            textureSize[0] = xx it.texture.value.width; 
+            textureSize[1] = xx it.texture.value.height;
+            textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
+            SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+            draw_resource(it); 
+        }
+        EndShaderMode();
         for items if it.position.exists { draw_item(it); }
         for containers if it.position.exists { draw_container(it); }
         for equipment if it.position.exists { draw_equipment(it); }
