@@ -25,6 +25,7 @@ Debug: struct
         "SPAWN WEAPONBELT",
         "TP",
         "GOTTAGOFAST",
+        "SPEED",
         "REPOP RESOURCES",
         "RESET",
         "DEBUG INFO 0",
@@ -179,6 +180,11 @@ debug_is_command_valid :: (cmd: string)
                 equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
                 array_add(*Game.equipment, equipment);
             }
+        }
+
+        if begins_with(cmd, "SPEED")
+        {
+            Game.player.speed = string_to_float(cmd_array[1]);
         }
     }
 
