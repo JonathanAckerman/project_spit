@@ -441,94 +441,96 @@ game_loop :: inline ()
         }
         if Input.harvest then harvestResource();
 
-        // buyFromShop :: ()
-        // {
-        //     using Game;
+        buyFromShop :: ()
+        {
+            using Game;
 
-        //     // check if the player is in a shop area
-        //     shop: Maybe(*Shop);
-        //     for s, s_index: shops
-        //     {
-        //         player_grid_cell := world_to_grid(player.position.value);
-        //         for s.area if it == player_grid_cell
-        //         {
-        //             shop.value = s;
-        //             shop.exists = true;
-        //         }
-        //     }
+            // check if the player is in a shop area
+            shop: Maybe(*Shop);
+            for s, s_index: shops
+            {
+                player_grid_cell := world_to_grid(player.position.value);
+                for s.area if it == player_grid_cell
+                {
+                    shop.value = s;
+                    shop.exists = true;
+                }
+            }
 
-        //     if !shop.exists || shop.value.deals.count == 0 then return;
+            if !shop.exists || shop.value.deals.count == 0 then return;
 
-        //     // get the nearest deal to the player
-        //     nearest_deal := shop.value.deals[0];
-        //     pos: Vector2;
-        //     if nearest_deal.ware_tag ==
-        //     {
-        //         case .ITEM;
-        //             ware := cast(*Item) nearest_deal.ware.value_pointer;
-        //             pos = ware.position.value;
-        //         case .CONTAINER;
-        //             ware := cast(*Container) nearest_deal.ware.value_pointer;
-        //             pos = ware.position.value;
-        //         case .EQUIPMENT;
-        //             ware := cast(*Equipment) nearest_deal.ware.value_pointer;
-        //             pos = ware.position.value;
-        //     }
-        //     nearest_deal_dist := length(pos - player.position.value);
-        //     for shop.value.deals
-        //     {
-        //         dist := length(it.ware.position.value - player.position.value);
-        //         if dist < nearest_deal_dist
-        //         {
-        //             nearest_deal = it;
-        //             nearest_deal_dist = dist;
-        //         }
-        //     }
+            // get the nearest deal to the player
+            get_pos :: inline (deal: Deal) -> Vector2 
+            {
+                if deal.ware_tag ==
+                {
+                    case .ITEM;
+                        return (cast(*Item) deal.ware.value_pointer).position.value;
+                    case .CONTAINER;
+                        return (cast(*Container) deal.ware.value_pointer).position.value;
+                    case .EQUIPMENT;
+                        return (cast(*Equipment) deal.ware.value_pointer).position.value;
+                }
+                return .{0, 0};
+            }
+            nearest_deal := shop.value.deals[0];
+            nearest_deal_dist := length(get_pos(nearest_deal) - player.position.value);
+            for shop.value.deals
+            {
+                dist := length(get_pos(it) - player.position.value);
+                if dist < nearest_deal_dist
+                {
+                    nearest_deal = it;
+                    nearest_deal_dist = dist;
+                }
+            }
 
-            // if nearest_deal_dist < player.interactRange
-            // {
-            //     //either the player is holding the payment (or part of payment)
-            //     //or the payment must be "inside" the shop
-            //         // maybe rather than having this array of grid cells, I could just make it a rect collider, that way the payment (center point) doesnt have to be inside a cell, its just a normal collision
+            if nearest_deal_dist < player.interactRange
+            {
+                //either the player is holding the payment (or part of payment)
+                //or the payment must be "inside" the shop
+                    // maybe rather than having this array of grid cells, I could just make it a rect collider, that way the payment (center point) doesnt have to be inside a cell, its just a normal collision
                 
-            //     amount := nearest_deal.price.amount;
-            //     price_entity_tag := nearest_deal.price.tag;
-            //     price_entity_type: Any;
-            //     if price_entity_tag == 
-            //     {
-            //         case .ITEM;
-            //             nearest_deal.price.item;
-            //         case .CONTAINER;
-            //             nearest_deal.price.container;
-            //         case .EQUIPMENT;
-            //             nearest_deal.price.equipment;
-            //     }
+                price_amount := nearest_deal.price.amount;
+                price_tag    := nearest_deal.price.tag;
+                price_type   : Any;
+                if price_entity_tag == 
+                {
+                    case .ITEM;
+                        price_type = nearest_deal.price.item;
+                    case .CONTAINER;
+                        price_type = nearest_deal.price.container;
+                    case .EQUIPMENT;
+                        price_type = nearest_deal.price.equipment;
+                }
 
-        //         // build a "wallet" for the player
-        //         payment_buffer : [..] Any;
-        //         if player.held.exists
-        //         {
-        //             // holding some of the payment
-        //             if player.held.value.tag == price_entity_tag
-        //             {
-                        
-        //             }
-        //             // holding a basket...
-        //             if player.held.value.tag == .CONTAINER && player.held.value.container.type == .BASKET
-        //             {
-        //                 // ...which could contain some of the payment
-        //                 basket := player.held.value.container;
+                // build a "wallet" for the player
+                payment_buffer : [..] Any;
+                if player.held.exists
+                {
+                    // holding some of the payment
+                    if player.held.value.tag == price_tag
+                    {
+                        // switch based on the tag
+                            // if the type == type
+                                // add to wallet
+                    }
+                    // holding a basket...
+                    if player.held.value.tag == .CONTAINER && player.held.value.container.type == .BASKET
+                    {
+                        // ...which could contain some of the payment
+                        basket := player.held.value.container;
 
 
-        //             }
-        //         }
-        //             // what they are holding
-        //                 // if it's a basket then anything inside
-        //             // any items inside the shop
-        //             // any items in containers inside the shop
-        //     }
-        // }
-        // if Input.trade then buyFromShop();
+                    }
+                }
+                    // what they are holding
+                    //     if it's a basket then anything inside
+                    // any items inside the shop
+                    // any items in containers inside the shop
+            }
+        }
+        if Input.trade then buyFromShop();
 
         talkToNearestNPC :: ()
         {
@@ -805,7 +807,8 @@ game_reset :: ()
         price := Price.{amount = 10, entityStandIn = .{tag = .ITEM, item = .FIBER}};
         basket_deal: Deal;
         basket_deal.price = price;
-        basket_deal.ware = ware;
+        basket_deal.ware.type = type_info(*Container);
+        basket_deal.ware.value_pointer = ware;
         basket_deal.ware_tag = .CONTAINER;
 
         deals: [1] Deal;
