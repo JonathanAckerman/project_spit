@@ -46,6 +46,7 @@ game_loop :: inline ()
 
         if player.position.exists then player.position.value += player.velocity;
         player.velocity = .{};
+        update_current_chunk();
 
         camera.position = player.position.value;
         camera_vector = WINDOW_CENTER - camera.position * camera.zoom;
@@ -440,83 +441,94 @@ game_loop :: inline ()
         }
         if Input.harvest then harvestResource();
 
-        buyFromShop :: ()
-        {
-            using Game;
+        // buyFromShop :: ()
+        // {
+        //     using Game;
 
-            // check if the player is in a shop area
-            shop: Maybe(*Shop);
-            for s, s_index: shops
-            {
-                player_grid_cell := world_to_grid(player.position.value);
-                for s.area if it == player_grid_cell
-                {
-                    shop.value = s;
-                    shop.exists = true;
-                }
-            }
+        //     // check if the player is in a shop area
+        //     shop: Maybe(*Shop);
+        //     for s, s_index: shops
+        //     {
+        //         player_grid_cell := world_to_grid(player.position.value);
+        //         for s.area if it == player_grid_cell
+        //         {
+        //             shop.value = s;
+        //             shop.exists = true;
+        //         }
+        //     }
 
-            if !shop.exists || shop.value.deals.count == 0 then return;
+        //     if !shop.exists || shop.value.deals.count == 0 then return;
 
-            // get the nearest deal to the player
-            nearest_deal := shop.value.deals[0];
-            nearest_deal_dist := length(nearest_deal.ware.position.value - player.position.value);
-            for shop.value.deals
-            {
-                dist := length(it.ware.position.value - player.position.value);
-                if dist < nearest_deal_dist
-                {
-                    nearest_deal = it;
-                    nearest_deal_dist = dist;
-                }
-            }
+        //     // get the nearest deal to the player
+        //     nearest_deal := shop.value.deals[0];
+        //     pos: Vector2;
+        //     if nearest_deal.ware_tag ==
+        //     {
+        //         case .ITEM;
+        //             ware := cast(*Item) nearest_deal.ware.value_pointer;
+        //             pos = ware.position.value;
+        //         case .CONTAINER;
+        //             ware := cast(*Container) nearest_deal.ware.value_pointer;
+        //             pos = ware.position.value;
+        //         case .EQUIPMENT;
+        //             ware := cast(*Equipment) nearest_deal.ware.value_pointer;
+        //             pos = ware.position.value;
+        //     }
+        //     nearest_deal_dist := length(pos - player.position.value);
+        //     for shop.value.deals
+        //     {
+        //         dist := length(it.ware.position.value - player.position.value);
+        //         if dist < nearest_deal_dist
+        //         {
+        //             nearest_deal = it;
+        //             nearest_deal_dist = dist;
+        //         }
+        //     }
 
-            if nearest_deal_dist < player.interactRange
-            {
-                // nearby_containers := get_nearby_containers();
+            // if nearest_deal_dist < player.interactRange
+            // {
+            //     //either the player is holding the payment (or part of payment)
+            //     //or the payment must be "inside" the shop
+            //         // maybe rather than having this array of grid cells, I could just make it a rect collider, that way the payment (center point) doesnt have to be inside a cell, its just a normal collision
+                
+            //     amount := nearest_deal.price.amount;
+            //     price_entity_tag := nearest_deal.price.tag;
+            //     price_entity_type: Any;
+            //     if price_entity_tag == 
+            //     {
+            //         case .ITEM;
+            //             nearest_deal.price.item;
+            //         case .CONTAINER;
+            //             nearest_deal.price.container;
+            //         case .EQUIPMENT;
+            //             nearest_deal.price.equipment;
+            //     }
 
-                // cost := nearest_deal.price.amount;
-                // total_available := 0;
-                // //: ugh now the concept of currency goes out the window
-                // for nearby_containers { total_available += it.contents[nearest_shop.building.resource]; }
-                // if total_available >= cost // we can afford it
-                // {
-                //     // pay the cost
-                //     paid := 0;
-                //     for nearby_containers
-                //     {
-                //         if paid < cost
-                //         {
-                //             containerAmount := *it.contents[nearest_shop.building.resource];
-                //             if <<containerAmount >= cost - paid
-                //             {
-                //                 <<containerAmount -= cost - paid;
-                //                 break;
-                //             }
-                //             else
-                //             {
-                //                 paid += <<containerAmount;
-                //                 <<containerAmount = 0;
-                //             }
-                //         }
-                //     }
+        //         // build a "wallet" for the player
+        //         payment_buffer : [..] Any;
+        //         if player.held.exists
+        //         {
+        //             // holding some of the payment
+        //             if player.held.value.tag == price_entity_tag
+        //             {
+                        
+        //             }
+        //             // holding a basket...
+        //             if player.held.value.tag == .CONTAINER && player.held.value.container.type == .BASKET
+        //             {
+        //                 // ...which could contain some of the payment
+        //                 basket := player.held.value.container;
 
-                //     item := NewContainer(nearest_shop.building.itemType, Collider.{type = .RECT, rect = .{20, 20}});
-                //     if !player.held.exists 
-                //     {
-                //         newHeld := NewMaybe(*item);
-                //         player.held = newHeld;
-                //     }
-                //     else // drop the item nearby
-                //     {
-                //         // @TODO: make size (world or ui) a lookup rather than state on the object
-                //         item.position.value = nearest_shop.position.value + .{0, -100};
-                //         array_add(*items, item);
-                //     }
-                // }
-            }
-        }
-        if Input.trade then buyFromShop();
+
+        //             }
+        //         }
+        //             // what they are holding
+        //                 // if it's a basket then anything inside
+        //             // any items inside the shop
+        //             // any items in containers inside the shop
+        //     }
+        // }
+        // if Input.trade then buyFromShop();
 
         talkToNearestNPC :: ()
         {
@@ -612,15 +624,11 @@ game_loop :: inline ()
         ClearBackground(WHITE);
 
         // draw grid
-        for i: 0..19
+        for row: grid.chunks[grid.currentChunk].cells
         {
-            for j: 0..19
+            for cell: row
             {
-                gc: GridCell;
-                gc.x = j;
-                gc.y = i;
-                grid.cells[i][j] = gc;
-                drawpos := grid_to_world(i, j) * camera.zoom + camera_vector;
+                drawpos := grid_to_world(cell.x, cell.y) * camera.zoom + camera_vector;
                 DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
             }
         }
@@ -635,6 +643,7 @@ game_loop :: inline ()
             draw_resource(it); 
         }
         EndShaderMode();
+        for shops { draw_shop(it); }
         for items if it.position.exists { draw_item(it); }
         for containers if it.position.exists { draw_container(it); }
         for equipment if it.position.exists { draw_equipment(it); }
@@ -739,6 +748,22 @@ game_reset :: ()
     Game = .{};
     Input = .{};
 
+    // init grid
+    for chunk_index: 0..(Game.grid.gridWidth * Game.grid.gridWidth) - 1
+    {
+        chunk := *Game.grid.chunks[chunk_index];
+        for cell_y: 0..Game.grid.chunkWidth - 1
+        {
+            for cell_x: 0..Game.grid.chunkWidth - 1
+            {
+                x := (chunk_index % Game.grid.gridWidth) * Game.grid.chunkWidth + cell_x;
+                y := (chunk_index / Game.grid.gridWidth) * Game.grid.chunkWidth + cell_y;
+                chunk.cells[cell_y][cell_x].x = x;
+                chunk.cells[cell_y][cell_x].y = y;
+            }
+        }
+    }
+
     // init player
     noAI: Maybe(AI);
     Game.player.person = NewPerson(.{200, 200}, noAI);
@@ -751,13 +776,15 @@ game_reset :: ()
     populate_resources();
 
     // init npcs
+    chunk := Game.grid.chunks[Game.grid.currentChunk];
     for 1..7
     {
-        x := random_get_within_range(xx Game.grid.left(), xx Game.grid.right());
-        y := random_get_within_range(xx Game.grid.top(), xx Game.grid.bottom());
+        x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
+        y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
+        pos := grid_to_world(cast(int) x, cast(int) y);
         ai: AI;
         npcAI := NewMaybe(ai);
-        npc := NewPerson(xy(x, y), npcAI);
+        npc := NewPerson(xy(pos.x, pos.y), npcAI);
         npc.speed = 0.5;
         array_add(*Game.npcs, npc);
     }
@@ -766,21 +793,26 @@ game_reset :: ()
     {
         area := GridCell.[
             .{0, 0}, .{1, 0}, .{2, 0},
-            .{1, 0}, .{1, 1}, .{1, 2},
+            .{0, 1}, .{1, 1}, .{2, 1},
         ];
 
-        pos := grid_to_world(area[0], true);
-        collider := Collider.{type = .RECT, rect = .{20, 20}};
-        ware := NewContainer(.BASKET, collider, pos);
+        basket_pos := grid_to_world(area[0], shouldGetCenter = true);
+        basket_collider := Collider.{type = .RECT, rect = .{20, 20}};
+        basket_pos += xy(-basket_collider.rect.x/2, -basket_collider.rect.y/2);
+        owner := Game.npcs[0];
+        ware := NewContainer(.BASKET, basket_collider, basket_pos, owner);
+        array_add(*Game.containers, ware);
         price := Price.{amount = 10, entityStandIn = .{tag = .ITEM, item = .FIBER}};
         basket_deal: Deal;
         basket_deal.price = price;
         basket_deal.ware = ware;
+        basket_deal.ware_tag = .CONTAINER;
 
         deals: [1] Deal;
         deals[0] = basket_deal;
 
-        basket_shop := NewShop(area, deals, Game.npcs[0]);
+        basket_shop := NewShop(area, deals, owner);
+        array_add(*Game.shops, basket_shop);
     }
 
     // init items on ground
@@ -832,7 +864,7 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
     dist_info :: struct { holdable: Holdable; dist: float; }
     info_list: [..] dist_info;
 
-    for containers if it.position.exists 
+    for containers if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
     { 
         dist := length(Game.player.position.value - it.position.value);
         if dist < range
@@ -844,7 +876,7 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
             array_add(*info_list, info);
         }
     }
-    for items if it.position.exists 
+    for items if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
     {
         dist := length(Game.player.position.value - it.position.value);
         if dist < range
@@ -856,7 +888,7 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
             array_add(*info_list, info);
         }
     }
-    for equipment if it.position.exists 
+    for equipment if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
     {
         dist := length(Game.player.position.value - it.position.value);
         if dist < range

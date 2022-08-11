@@ -1,14 +1,15 @@
 Shop :: struct
 {
     owner: *Entity;
-    area: [] GridCell;
-    deals: [] Deal;
+    area: [..] GridCell;
+    deals: [..] Deal;
 }
 
 Deal :: struct
 {
     price: Price;
-    ware: Entity;
+    ware: Any;
+    ware_tag: Entity_Type;
 }
 
 Price :: struct
@@ -30,10 +31,19 @@ Price :: struct
 NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> *Shop
 {
     shop := New(Shop);
-    shop.area = area;
-    shop.deals = deals;
+    for area array_add(*shop.area, it);
+    for deals array_add(*shop.deals, it);
     shop.owner = owner;
     return shop;
+}
+
+draw_shop :: (shop : *Shop)
+{
+    for shop.area
+    {
+        ss_cell := to_screen_space(grid_to_world(it.x, it.y) + .{5, 5});
+        DrawRectangleV(ss_cell, .{90.0, 90.0} * Game.camera.zoom, .{0, 0, 0, 50});
+    }
 }
 
 Person :: struct

@@ -7,6 +7,7 @@ main :: () {
     InitWindow(xx WINDOW_WIDTH, xx WINDOW_HEIGHT, window_title);
     SetTargetFPS(60);
     Debug.font = LoadFont("./assets/fonts/cour.ttf");
+    SetTraceLogLevel(xx TraceLogLevel.LOG_NONE);
     load_all_textures();
 
     Game.resetting = true;

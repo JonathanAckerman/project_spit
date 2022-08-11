@@ -23,6 +23,7 @@ Entity :: struct
     collider: Collider;
     id: u64;
     texture: Maybe(*Texture2D);
+    owner: Maybe(*Person);
 }
 
 Entity_Type :: enum
@@ -144,21 +145,23 @@ as_holdable :: (equipment: *Equipment) -> Holdable
     return h;
 }
 
-init_entity_data :: (pos: Vector2, collider: Collider) -> Entity
+init_entity_data :: (pos: Vector2, collider: Collider, owner: *Person = null) -> Entity
 {
     e: Entity;
     e.position.value = pos;
     e.position.exists = true;
     e.collider = collider;
+    if owner != null then e.owner = NewMaybe(owner);
+    else e.owner = Nothing(*Person);
     e.id = _Entity_ID;
     _Entity_ID += 1;
     return e;
 }
 
-NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Container
+NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Container
 {
     container := New(Container);
-    container.entity = init_entity_data(pos, collider);
+    container.entity = init_entity_data(pos, collider, owner);
     container.type = type;
     cap: int;
     if type ==
@@ -172,10 +175,10 @@ NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0
     return container;
 }
 
-NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Item
+NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Item
 {
     item := New(Item);
-    item.entity = init_entity_data(pos, collider);
+    item.entity = init_entity_data(pos, collider, owner);
     item.type = type;
     if type == 
     {
@@ -195,10 +198,10 @@ NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Ite
     return item;
 }
 
-NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}) -> *Equipment
+NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Equipment
 {
     equipment := New(Equipment);
-    equipment.entity = init_entity_data(pos, collider);
+    equipment.entity = init_entity_data(pos, collider, owner);
     equipment.type = type;
     cap: int;
     if type ==
@@ -362,6 +365,7 @@ draw_resource :: (resource: Resource)
         DrawTextureEx(resource.texture.value, xx drawpos, 0.0, scale, WHITE);
         DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (resource.texture.value.width * scale), xx (resource.texture.value.height * scale), PINK);
         resource_color := get_resource_color(resource.type);
+        EndShaderMode();
         DrawCircleV(pos, xx resource.quantity * scale, resource_color);
     }
     else
