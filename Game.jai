@@ -952,29 +952,34 @@ Get_Nearest_To_Player :: (arr: [..] *Entity) #expand
 
 populate_resources :: ()
 {
-    for i: 1..20
+    for chunk: Game.grid.chunks
     {
-        x := random_get_within_range(0, 2000);
-        y := random_get_within_range(0, 2000);
-        type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
-        quantity := max(random_get() % 20, 10);
-        req: Maybe(Item_Type);
-        if type == 
+        resources_per_chunk :: 20;
+        for 0..resources_per_chunk
         {
-            case .TREE;
-                req = NewMaybe(Item_Type.LUMBER_AXE);
-            case .BUSH;
-                req = NewMaybe(Item_Type.SWORD); // Maybe make property flags on items like "sharp" or "bladed"
-            case .IRON_VEIN; 
-                #through;
-            case .COPPER_VEIN;
-                req = NewMaybe(Item_Type.PICK_AXE);
+            x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
+            y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
+            pos := grid_to_world(cast(int) x, cast(int) y);
+            type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
+            quantity := max(random_get() % 20, 10);
+            req: Maybe(Item_Type);
+            if type == 
+            {
+                case .TREE;
+                    req = NewMaybe(Item_Type.LUMBER_AXE);
+                case .BUSH;
+                    req = NewMaybe(Item_Type.SWORD); // Maybe make property flags on items like "sharp" or "bladed"
+                case .IRON_VEIN; 
+                    #through;
+                case .COPPER_VEIN;
+                    req = NewMaybe(Item_Type.PICK_AXE);
 
+            }
+            collider: Collider;
+            collider.type = .CIRCLE;
+            collider.radius = xx quantity;
+            r := NewResource(type, collider, xy(pos.x, pos.y), xx quantity, req);
+            array_add(*Game.resources, r);
         }
-        collider: Collider;
-        collider.type = .CIRCLE;
-        collider.radius = xx quantity;
-        r := NewResource(type, collider, xy(x, y), xx quantity, req);
-        array_add(*Game.resources, r);
     }
 }

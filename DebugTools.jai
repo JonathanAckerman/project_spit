@@ -26,6 +26,7 @@ Debug: struct
         "TP",
         "GOTTAGOFAST",
         "SPEED",
+        "PRINT PLAYER",
         "REPOP RESOURCES",
         "RESET",
         "DEBUG INFO 0",
@@ -185,6 +186,11 @@ debug_is_command_valid :: (cmd: string)
         if begins_with(cmd, "SPEED")
         {
             Game.player.speed = string_to_float(cmd_array[1]);
+        }
+
+        if begins_with(cmd, "PRINT")
+        {
+            if cmd_array[1] == "PLAYER" then print("%\n", Game.player);
         }
     }
 
