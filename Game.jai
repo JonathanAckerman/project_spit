@@ -494,7 +494,7 @@ game_loop :: inline ()
                 price_amount := nearest_deal.price.amount;
                 price_tag    := nearest_deal.price.tag;
                 price_type   : Any;
-                if price_entity_tag == 
+                if price_tag == 
                 {
                     case .ITEM;
                         price_type = nearest_deal.price.item;
@@ -631,6 +631,15 @@ game_loop :: inline ()
             for cell: row
             {
                 drawpos := grid_to_world(cell.x, cell.y) * camera.zoom + camera_vector;
+                size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
+                if cell.type == {
+                    case .BEDROCK;
+                        DrawRectangleV(drawpos, size, DARKGRAY);
+                    case .DIRT;
+                        DrawRectangleV(drawpos, size, BROWN);
+                    case .WATER;
+                        DrawRectangleV(drawpos, size, BLUE);
+                }
                 DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
             }
         }
@@ -762,6 +771,16 @@ game_reset :: ()
                 y := (chunk_index / Game.grid.gridWidth) * Game.grid.chunkWidth + cell_y;
                 chunk.cells[cell_y][cell_x].x = x;
                 chunk.cells[cell_y][cell_x].y = y;
+
+                type: Cell_Type;
+                if cell_y >= 10 then type = .WATER;
+                if cell_y < 10 
+                {
+                    type = .DIRT;
+                    if cell_x >= 10 then type = .BEDROCK;
+                }
+                
+                chunk.cells[cell_y][cell_x].type = type;
             }
         }
     }
@@ -794,8 +813,8 @@ game_reset :: ()
     // init shops
     {
         area := GridCell.[
-            .{0, 0}, .{1, 0}, .{2, 0},
-            .{0, 1}, .{1, 1}, .{2, 1},
+            .{0, 0, .AIR}, .{1, 0, .AIR}, .{2, 0, .AIR},
+            .{0, 1, .AIR}, .{1, 1, .AIR}, .{2, 1, .AIR},
         ];
 
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);

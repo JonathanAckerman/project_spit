@@ -22,6 +22,15 @@ GridCell :: struct
 {
     x: int;
     y: int;
+    type: Cell_Type;
+}
+
+Cell_Type :: enum
+{
+    BEDROCK;
+    DIRT;
+    WATER;
+    AIR;
 }
 
 operator == :: (a: GridCell, b: GridCell) -> bool
