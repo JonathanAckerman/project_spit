@@ -635,14 +635,13 @@ game_loop :: inline ()
                 size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
                 drawpos_offset_from_size := size - size * size_modifier;
                 size *= size_modifier;
-                drawpos += drawpos_offset_from_size / 2;
                 if cell.type == {
                     case .BEDROCK;
-                        DrawRectangleV(drawpos, size, DARKGRAY);
+                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, DARKGRAY);
                     case .DIRT;
-                        DrawRectangleV(drawpos, size, BROWN);
+                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, BROWN);
                     case .WATER;
-                        DrawRectangleV(drawpos, size, BLUE);
+                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, BLUE);
                 }
                 DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
                 drawn_flags[offset_from_layer] = true;
