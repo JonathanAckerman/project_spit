@@ -48,10 +48,10 @@ DebugCursor :: struct
 
 debug_player_info :: ()
 {
-    camera_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
-    ss_player := Game.player.position.value * Game.camera.zoom + camera_vector;
+    camera_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
+    ss_player := Game.player.position.value.xy * Game.camera.zoom + camera_vector;
     drawpos := ss_player + xy(30 * Game.camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", Game.player.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    DrawText(to_c_string(tprint("pos: %", Game.player.position.value.xy)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", Game.player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 
@@ -60,8 +60,8 @@ debug_player_info :: ()
 
 debug_entity_info :: (e: Entity)
 {
-    camera_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
-    ss_entity := e.position.value * Game.camera.zoom + camera_vector;
+    camera_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
+    ss_entity := e.position.value.xy * Game.camera.zoom + camera_vector;
     drawpos := ss_entity + xy(30 * Game.camera.zoom, 0);
     DrawText(to_c_string(tprint("pos: %", e.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
@@ -197,7 +197,7 @@ debug_is_command_valid :: (cmd: string)
 
     if cmd == "TP"
     {
-        Game.player.position.value = .{-1000, -1000};
+        Game.player.position.value.xy = .{-1000, -1000};
     }
     if cmd == "GOTTAGOFAST"
     {

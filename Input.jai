@@ -14,27 +14,27 @@ handle_input :: inline ()
     if !Debug.isActive
     {
         // movement
-        new_velocity: Vector2;
-        new_forward: Vector2;
+        new_velocity: Vector3;
+        new_forward: Vector3;
         if IsKeyDown(xx KeyboardKey.W) 
         {
             new_velocity.y = -1.0;
-            new_forward += .{0, -1};
+            new_forward += .{0, -1, 0};
         }
         if IsKeyDown(xx KeyboardKey.A) 
         {
             new_velocity.x = -1.0;
-            new_forward += .{-1, 0};
+            new_forward += .{-1, 0, 0};
         }
         if IsKeyDown(xx KeyboardKey.S) 
         {
             new_velocity.y = 1.0;
-            new_forward += .{0, 1};
+            new_forward += .{0, 1, 0};
         }
         if IsKeyDown(xx KeyboardKey.D) 
         {
             new_velocity.x = 1.0;
-            new_forward += .{1, 0};
+            new_forward += .{1, 0, 0};
         }
         if length(new_forward) != 0 then Game.player.forward = unit_vector(new_forward);
         Game.player.velocity = unit_vector(new_velocity) * Game.player.speed;
@@ -74,6 +74,15 @@ handle_input :: inline ()
         else if IsKeyPressed(xx KeyboardKey.FOUR) then equipSlot = 3;
         else if IsKeyPressed(xx KeyboardKey.FIVE) then equipSlot = 4;
         else if IsKeyPressed(xx KeyboardKey.SIX) then equipSlot = 5;
+
+        if IsKeyPressed(xx KeyboardKey.EQUAL)
+        {
+            if Game.camera.position.z < Game.grid.worldHeight - 1 then Game.camera.position.z += 1;
+        }
+        if IsKeyPressed(xx KeyboardKey.MINUS)
+        {
+            if Game.camera.position.z > 0 then Game.camera.position.z -= 1;
+        }
     }
     else // debug on
     {

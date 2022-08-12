@@ -1,6 +1,7 @@
 Grid :: struct
 {
     gridWidth :: 3;
+    worldHeight :: 5;
     chunkWidth :: 20;
     cellSize :: 100;
 
@@ -15,13 +16,14 @@ GridChunk :: struct
     right  :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].x; };
     bottom :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].y; };
 
-    cells: [Game.grid.chunkWidth * Game.grid.chunkWidth] GridCell;
+    cells: [Game.grid.chunkWidth * Game.grid.chunkWidth * Game.grid.worldHeight] GridCell;
 }
 
 GridCell :: struct
 {
     x: int;
     y: int;
+    z: int;
     type: Cell_Type;
 }
 
@@ -35,7 +37,7 @@ Cell_Type :: enum
 
 operator == :: (a: GridCell, b: GridCell) -> bool
 {
-    return a.x == b.x && a.y == b.y;
+    return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
 update_current_chunk :: ()
@@ -56,34 +58,44 @@ update_current_chunk :: ()
     if pos.y > bottom && grid.currentChunk < grid.gridWidth * (grid.gridWidth - 1) then grid.currentChunk += grid.gridWidth;
 }
 
-grid_to_world :: (x: int, y: int, shouldGetCenter: bool = false) -> Vector2
+grid_to_world :: (x: int, y: int, z: int, shouldGetCenter: bool = false) -> Vector3
 {
-    world: Vector2;
+    world: Vector3;
     if !shouldGetCenter
-        world = xy(xx x, xx y) * Game.grid.cellSize;
+        world = xyz(xx x, xx y, xx z) * Game.grid.cellSize;
     else
     {
         world.x = x * Game.grid.cellSize + Game.grid.cellSize / 2.0;
         world.y = y * Game.grid.cellSize + Game.grid.cellSize / 2.0;
+        world.z = z * Game.grid.cellSize + Game.grid.cellSize / 2.0;
     }
     return world;
 }
 
-grid_to_world :: (g: GridCell, shouldGetCenter: bool = false) -> Vector2
+grid_to_world :: (g: GridCell, shouldGetCenter: bool = false) -> Vector3
 {
-    return grid_to_world(g.x, g.y, shouldGetCenter);
+    return grid_to_world(g.x, g.y, g.z, shouldGetCenter);
 }
 
-world_to_grid :: (p: Vector2) -> GridCell
+world_to_grid :: (p: Vector3) -> GridCell
 {
     g: GridCell;
     g.x = cast(int) round(p.x);
     g.y = cast(int) round(p.y);
+    g.z = cast(int) round(p.z);
     // get coordinates of top-left corner of grid cell
     g.x -= g.x % 100;
     g.y -= g.y % 100;
+    g.z -= g.z % 100;
     // normalize grid coords
     g.x /= 100;
     g.y /= 100;
+    g.z /= 100;
     return g;
+}
+
+to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0) -> Vector2
+{
+    to_ss_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
+    return (pos + offset) * scale * Game.camera.zoom + to_ss_vector;
 }

@@ -41,7 +41,7 @@ draw_shop :: (shop : *Shop)
 {
     for shop.area
     {
-        ss_cell := to_screen_space(grid_to_world(it.x, it.y) + .{5, 5});
+        ss_cell := to_screen_space(grid_to_world(it).xy + .{5, 5});
         DrawRectangleV(ss_cell, .{90.0, 90.0} * Game.camera.zoom, .{0, 0, 0, 50});
     }
 }
@@ -51,9 +51,9 @@ Person :: struct
     using #as entity: Entity;
     color: Color = BLACK;
 
-    forward: Vector2 = .{1, 0};
+    forward: Vector3 = .{1, 0, 0};
     speed: float = 6.0;
-    velocity: Vector2;
+    velocity: Vector3;
 
     held: Maybe(Holdable); // to cast between them I need held to be a *Holdable since you cant cast to structs, otherwise I have to construct a new Holdable everytime I want to hold a new item/container/equipment/etc.
     toolBelt: Maybe(*Equipment);
@@ -61,13 +61,13 @@ Person :: struct
     ai: Maybe(AI);
 }
 
-NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Person
+NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
 {
     person := New(Person);
     collider := Collider.{type = .CIRCLE, radius = 20.0};
     person.entity = init_entity_data(pos, collider);
     person.color = ifx ai.exists then BROWN else BLACK;
-    person.forward = .{0, -1};
+    person.forward = .{0, -1, 0};
     person.speed = 6.0;
     person.ai = ai;
     return person;
@@ -75,9 +75,9 @@ NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Person
 
 draw_person :: (person: Person)
 {
-    ss_person := to_screen_space(person.position.value);
+    ss_person := to_screen_space(person.position.value.xy);
     DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom, person.color);
-    front := ss_person + person.forward * cast(float) person.collider.radius * Game.camera.zoom;
+    front := ss_person + person.forward.xy * cast(float) person.collider.radius * Game.camera.zoom;
     DrawLineEx(xx ss_person, xx front, 2.0, WHITE);
 }
 
@@ -111,7 +111,7 @@ AI :: struct
     speakDuration := 4.0;
     speakTimer := 0.0;
     
-    goalPosition: Vector2;
+    goalPosition: Vector3;
     hasGoal := false;
     goalResetTimer: float;
     goalResetDuration: float;

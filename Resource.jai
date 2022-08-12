@@ -19,7 +19,7 @@ _Entity_ID: u64 = 0;
 
 Entity :: struct
 {
-    position: Maybe(Vector2);
+    position: Maybe(Vector3);
     collider: Collider;
     id: u64;
     texture: Maybe(*Texture2D);
@@ -145,7 +145,7 @@ as_holdable :: (equipment: *Equipment) -> Holdable
     return h;
 }
 
-init_entity_data :: (pos: Vector2, collider: Collider, owner: *Person = null) -> Entity
+init_entity_data :: (pos: Vector3, collider: Collider, owner: *Person = null) -> Entity
 {
     e: Entity;
     e.position.value = pos;
@@ -158,7 +158,7 @@ init_entity_data :: (pos: Vector2, collider: Collider, owner: *Person = null) ->
     return e;
 }
 
-NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Container
+NewContainer :: (type: Container_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Container
 {
     container := New(Container);
     container.entity = init_entity_data(pos, collider, owner);
@@ -175,7 +175,7 @@ NewContainer :: (type: Container_Type, collider: Collider, pos: Vector2 = .{0, 0
     return container;
 }
 
-NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Item
+NewItem :: (type: Item_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Item
 {
     item := New(Item);
     item.entity = init_entity_data(pos, collider, owner);
@@ -198,7 +198,7 @@ NewItem :: (type: Item_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: 
     return item;
 }
 
-NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Equipment
+NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Equipment
 {
     equipment := New(Equipment);
     equipment.entity = init_entity_data(pos, collider, owner);
@@ -216,7 +216,7 @@ NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector2 = .{0, 0
     return equipment;
 }
 
-NewResource :: (type: Resource_Type, collider: Collider, pos: Vector2, quantity: int, req: Maybe(Item_Type)) -> *Resource
+NewResource :: (type: Resource_Type, collider: Collider, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
 {
     resource := New(Resource);
     resource.entity = init_entity_data(pos, collider);
@@ -245,7 +245,7 @@ draw_item :: (item: Item)
 
     scale := 0.5; // should all textures be drawn at 1.0 scale with correct texture sizes?
     scale *= Game.camera.zoom;
-    pos := to_screen_space(item.position.value);
+    pos := to_screen_space(item.position.value.xy);
     drawpos := pos;
     drawpos.x -= (item.texture.value.width * scale) / 2;
     drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
@@ -288,7 +288,7 @@ draw_container :: (container: Container)
 
     scale := 1.0;
     scale *= Game.camera.zoom;
-    pos := to_screen_space(container.position.value);
+    pos := to_screen_space(container.position.value.xy);
     if container.type ==
     {
         case .BASKET;
@@ -326,7 +326,7 @@ draw_equipment :: (equipment: Equipment)
 
     scale := 1.0;
     scale *= Game.camera.zoom;
-    pos := to_screen_space(equipment.position.value);
+    pos := to_screen_space(equipment.position.value.xy);
 
     if equipment.type ==
     {
@@ -356,7 +356,7 @@ draw_resource :: (resource: Resource)
 
     scale := 1.0;
     scale *= Game.camera.zoom;
-    pos := to_screen_space(resource.position.value);
+    pos := to_screen_space(resource.position.value.xy);
     if resource.texture.exists 
     {
         drawpos := pos;
