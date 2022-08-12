@@ -10,12 +10,12 @@ Grid :: struct
 
 GridChunk :: struct
 {
-    left :: inline (chunk: GridChunk) -> int {return chunk.cells[0][0].x; };
-    right :: inline (chunk: GridChunk) -> int {return chunk.cells[0][Game.grid.chunkWidth - 1].x; };
-    top :: inline (chunk: GridChunk) -> int {return chunk.cells[0][0].y; };
-    bottom :: inline (chunk: GridChunk) -> int {return chunk.cells[Game.grid.chunkWidth - 1][0].y; };
+    left   :: inline (chunk: GridChunk) -> int {return chunk.cells[0].x; };
+    top    :: inline (chunk: GridChunk) -> int {return chunk.cells[0].y; };
+    right  :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].x; };
+    bottom :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].y; };
 
-    cells: [Game.grid.chunkWidth][Game.grid.chunkWidth] GridCell;
+    cells: [Game.grid.chunkWidth * Game.grid.chunkWidth] GridCell;
 }
 
 GridCell :: struct

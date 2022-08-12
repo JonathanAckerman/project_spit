@@ -626,22 +626,19 @@ game_loop :: inline ()
         ClearBackground(WHITE);
 
         // draw grid
-        for row: grid.chunks[grid.currentChunk].cells
+        for cell: grid.chunks[grid.currentChunk].cells
         {
-            for cell: row
-            {
-                drawpos := grid_to_world(cell.x, cell.y) * camera.zoom + camera_vector;
-                size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-                if cell.type == {
-                    case .BEDROCK;
-                        DrawRectangleV(drawpos, size, DARKGRAY);
-                    case .DIRT;
-                        DrawRectangleV(drawpos, size, BROWN);
-                    case .WATER;
-                        DrawRectangleV(drawpos, size, BLUE);
-                }
-                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
+            drawpos := grid_to_world(cell.x, cell.y) * camera.zoom + camera_vector;
+            size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
+            if cell.type == {
+                case .BEDROCK;
+                    DrawRectangleV(drawpos, size, DARKGRAY);
+                case .DIRT;
+                    DrawRectangleV(drawpos, size, BROWN);
+                case .WATER;
+                    DrawRectangleV(drawpos, size, BLUE);
             }
+            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
         }
 
         BeginShaderMode(Textures.outlineShader);
@@ -763,24 +760,23 @@ game_reset :: ()
     for chunk_index: 0..(Game.grid.gridWidth * Game.grid.gridWidth) - 1
     {
         chunk := *Game.grid.chunks[chunk_index];
-        for cell_y: 0..Game.grid.chunkWidth - 1
+        for i: 0..Game.grid.chunkWidth - 1
         {
-            for cell_x: 0..Game.grid.chunkWidth - 1
+            for j: 0..Game.grid.chunkWidth - 1
             {
-                x := (chunk_index % Game.grid.gridWidth) * Game.grid.chunkWidth + cell_x;
-                y := (chunk_index / Game.grid.gridWidth) * Game.grid.chunkWidth + cell_y;
-                chunk.cells[cell_y][cell_x].x = x;
-                chunk.cells[cell_y][cell_x].y = y;
+                x := (chunk_index % Game.grid.gridWidth) * Game.grid.chunkWidth + j;
+                y := (chunk_index / Game.grid.gridWidth) * Game.grid.chunkWidth + i;
+                cell := *chunk.cells[i * Game.grid.chunkWidth + j];
+                cell.x = x;
+                cell.y = y;
 
                 type: Cell_Type;
-                if cell_y >= 10 then type = .WATER;
-                if cell_y < 10 
-                {
+                if i >= 10 then type = .WATER;
+                if i < 10 {
                     type = .DIRT;
-                    if cell_x >= 10 then type = .BEDROCK;
+                    if j >= 10 then type = .BEDROCK;
                 }
-                
-                chunk.cells[cell_y][cell_x].type = type;
+                cell.type = type;
             }
         }
     }
