@@ -620,21 +620,38 @@ game_loop :: inline ()
         ClearBackground(WHITE);
 
         // draw grid
-        for cell: grid.chunks[grid.currentChunk].cells if cell.z == xx camera.position.z
+        layer_index := cast(int) camera.position.z * grid.chunkWidth * grid.chunkWidth;
+        cells_below_camera := array_view(grid.chunks[grid.currentChunk].cells, layer_index);
+        drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
+        for cell: cells_below_camera
         {
-            // print("%\n", cell);
-            drawpos := grid_to_world(cell.x, cell.y, 0).xy * camera.zoom + camera_vector;
-            size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-            if cell.type == {
-                case .BEDROCK;
-                    DrawRectangleV(drawpos, size, DARKGRAY);
-                case .DIRT;
-                    DrawRectangleV(drawpos, size, BROWN);
-                case .WATER;
-                    DrawRectangleV(drawpos, size, BLUE);
+            if cell.type == .AIR continue;
+
+            offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
+            if !drawn_flags[offset_from_layer]
+            {
+                drawpos := grid_to_world(cell.x, cell.y, 0).xy * camera.zoom + camera_vector;
+                size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
+                size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
+                drawpos_offset_from_size := size - size * size_modifier;
+                size *= size_modifier;
+                drawpos += drawpos_offset_from_size / 2;
+                if cell.type == {
+                    case .BEDROCK;
+                        DrawRectangleV(drawpos, size, DARKGRAY);
+                    case .DIRT;
+                        DrawRectangleV(drawpos, size, BROWN);
+                    case .WATER;
+                        DrawRectangleV(drawpos, size, BLUE);
+                }
+                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
+                drawn_flags[offset_from_layer] = true;
             }
-            DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
         }
+
+        // for cell: grid.chunks[grid.currentChunk].cells if cell.z == xx camera.position.z
+        // {
+        // }
 
         BeginShaderMode(Textures.outlineShader);
         for resources { 
@@ -772,7 +789,7 @@ game_reset :: ()
                     cell.z = layer;
 
                     type: Cell_Type;
-                    if layer == 0
+                    if layer == Game.grid.worldHeight - 1
                     {
                         if i >= 10 then type = .WATER;
                         if i < 10 {
