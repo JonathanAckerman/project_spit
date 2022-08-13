@@ -243,14 +243,17 @@ draw_item :: (item: Item)
 {
     if !item.position.exists return;
 
-    scale := 0.5; // should all textures be drawn at 1.0 scale with correct texture sizes?
-    scale *= Game.camera.zoom;
-    pos := to_screen_space(item.position.value.xy);
-    drawpos := pos;
-    drawpos.x -= (item.texture.value.width * scale) / 2;
-    drawpos.y -= (item.texture.value.height * scale) - (10 * scale);
-    DrawTextureEx(item.texture.value, xx drawpos, 0.0, scale, WHITE);
-    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (item.texture.value.width * scale), xx (item.texture.value.height * scale), PINK);
+    layer_size_modifier := 1.0 - (item.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    base_size := xy(xx item.texture.value.width, xx item.texture.value.height) * 0.5;
+    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+    center_pos := to_screen_space(item.position.value.xy);
+    drawpos := center_pos - modified_size / 2;
+    tint := Color.{255, 255, 255, 255};
+    tint.r = xx (tint.r * layer_size_modifier);
+    tint.g = xx (tint.g * layer_size_modifier);
+    tint.b = xx (tint.b * layer_size_modifier);
+    DrawTextureEx(item.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
+    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
 }
 
 get_item_texture :: (type: Item_Type) -> Maybe(*Texture2D)
@@ -354,23 +357,26 @@ draw_resource :: (resource: Resource)
 {
     if !resource.position.exists return;
 
-    scale := 1.0;
-    scale *= Game.camera.zoom;
-    pos := to_screen_space(resource.position.value.xy);
+    layer_size_modifier := 1.0 - (resource.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    base_size := xy(xx resource.texture.value.width, xx resource.texture.value.height) * 0.5;
+    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+    center_pos := to_screen_space(resource.position.value.xy);
     if resource.texture.exists 
     {
-        drawpos := pos;
-        drawpos.x -= (resource.texture.value.width * scale) / 2;
-        drawpos.y -= (resource.texture.value.height * scale) - (resource.quantity * scale);
-        DrawTextureEx(resource.texture.value, xx drawpos, 0.0, scale, WHITE);
-        DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (resource.texture.value.width * scale), xx (resource.texture.value.height * scale), PINK);
+        drawpos := center_pos - modified_size / 2;
+        tint := Color.{255, 255, 255, 255};
+        tint.r = xx (tint.r * layer_size_modifier);
+        tint.g = xx (tint.g * layer_size_modifier);
+        tint.b = xx (tint.b * layer_size_modifier);
+        DrawTextureEx(resource.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
+        DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
         resource_color := get_resource_color(resource.type);
         EndShaderMode();
-        DrawCircleV(pos, xx resource.quantity * scale, resource_color);
+        DrawCircleV(center_pos, xx resource.quantity * Game.camera.zoom * layer_size_modifier, resource_color);
     }
     else
     {
         resource_color := get_resource_color(resource.type);
-        DrawCircleV(pos, xx resource.quantity * scale, resource_color);
+        DrawCircleV(center_pos, xx resource.quantity * Game.camera.zoom * layer_size_modifier, resource_color);
     }
 }

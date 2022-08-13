@@ -42,7 +42,11 @@ draw_shop :: (shop : *Shop)
     for shop.area
     {
         ss_cell := to_screen_space(grid_to_world(it).xy + .{5, 5});
-        DrawRectangleV(ss_cell, .{90.0, 90.0} * Game.camera.zoom, .{0, 0, 0, 50});
+        size := xy(90, 90) * Game.camera.zoom;
+        size_modifier := 1.0 - (it.z - cast(int) Game.camera.position.z) * 0.1;
+        drawpos_offset_from_size := size - size * size_modifier;
+        ss_cell += drawpos_offset_from_size / 2;
+        DrawRectangleV(ss_cell, size * size_modifier, LIGHTGRAY);
     }
 }
 

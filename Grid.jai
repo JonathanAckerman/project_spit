@@ -62,12 +62,15 @@ grid_to_world :: (x: int, y: int, z: int, shouldGetCenter: bool = false) -> Vect
 {
     world: Vector3;
     if !shouldGetCenter
+    {
         world = xyz(xx x, xx y, xx z) * Game.grid.cellSize;
+        world.z = xx z;
+    }
     else
     {
         world.x = x * Game.grid.cellSize + Game.grid.cellSize / 2.0;
         world.y = y * Game.grid.cellSize + Game.grid.cellSize / 2.0;
-        world.z = z * Game.grid.cellSize + Game.grid.cellSize / 2.0;
+        world.z = xx z;
     }
     return world;
 }

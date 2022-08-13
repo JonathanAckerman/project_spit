@@ -635,22 +635,25 @@ game_loop :: inline ()
                 size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
                 drawpos_offset_from_size := size - size * size_modifier;
                 size *= size_modifier;
+                tint :: (c: Color, modifier: float) -> Color { 
+                    color: Color = c;
+                    color.r = xx (color.r * modifier);
+                    color.g = xx (color.g * modifier);
+                    color.b = xx (color.b * modifier);
+                    return color;
+                }
                 if cell.type == {
                     case .BEDROCK;
-                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, DARKGRAY);
+                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(DARKGRAY, size_modifier));
                     case .DIRT;
-                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, BROWN);
+                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BROWN, size_modifier));
                     case .WATER;
-                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, BLUE);
+                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
                 }
                 DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
                 drawn_flags[offset_from_layer] = true;
             }
         }
-
-        // for cell: grid.chunks[grid.currentChunk].cells if cell.z == xx camera.position.z
-        // {
-        // }
 
         BeginShaderMode(Textures.outlineShader);
         for resources { 
@@ -659,7 +662,7 @@ game_loop :: inline ()
             textureSize[1] = xx it.texture.value.height;
             textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
             SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-            draw_resource(it); 
+            draw_resource(it);
         }
         EndShaderMode();
         for shops { draw_shop(it); }
@@ -834,8 +837,8 @@ game_reset :: ()
     // init shops
     {
         area := GridCell.[
-            .{0, 0, 0, .AIR}, .{1, 0, 0, .AIR}, .{2, 0, 0, .AIR},
-            .{0, 1, 0, .AIR}, .{1, 1, 0, .AIR}, .{2, 1, 0, .AIR},
+            .{0, 0, 4, .AIR}, .{1, 0, 4, .AIR}, .{2, 0, 4, .AIR},
+            .{0, 1, 4, .AIR}, .{1, 1, 4, .AIR}, .{2, 1, 4, .AIR},
         ];
 
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
@@ -860,23 +863,23 @@ game_reset :: ()
 
     // init items on ground
     {
-        pos := Game.player.position.value + .{100, -100, 0};
+        pos := Game.player.position.value + .{100, -100, 4};
         collider := Collider.{type = .CIRCLE, radius = 10};
         lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.items, lumberaxe);
 
-        pos = Game.player.position.value + .{200, -100, 0};
+        pos = Game.player.position.value + .{200, -100, 4};
         sword := NewItem(.SWORD, collider, pos);
         array_add(*Game.items, sword);
     }
     // init equipment on ground
     {
-        pos := Game.player.position.value + .{0, -100, 0};
+        pos := Game.player.position.value + .{0, -100, 4};
         collider := Collider.{type = .RECT, rect = .{60, 15}};
         toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipment, toolbelt);
 
-        pos = Game.player.position.value + .{0, -200, 0};
+        pos = Game.player.position.value + .{0, -200, 4};
         weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipment, weaponbelt);
     }
@@ -1002,7 +1005,7 @@ populate_resources :: ()
         {
             x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
             y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-            pos := grid_to_world(cast(int) x, cast(int) y, 0);
+            pos := grid_to_world(cast(int) x, cast(int) y, 4);
             type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
             quantity := max(random_get() % 20, 10);
             req: Maybe(Item_Type);
