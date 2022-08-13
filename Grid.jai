@@ -58,6 +58,18 @@ update_current_chunk :: ()
     if pos.y > bottom && grid.currentChunk < grid.gridWidth * (grid.gridWidth - 1) then grid.currentChunk += grid.gridWidth;
 }
 
+is_in_current_chunk :: (world: Vector3) -> bool
+{
+    grid := world_to_grid(world);
+    current_chunk := Game.grid.chunks[Game.grid.currentChunk];
+    if grid.x > GridChunk.left(current_chunk) && grid.x < GridChunk.right(current_chunk) &&
+       grid.y > GridChunk.top(current_chunk) && grid.y < GridChunk.bottom(current_chunk)
+    {
+        return true;
+    }
+    return false;
+}
+
 grid_to_world :: (x: int, y: int, z: int, shouldGetCenter: bool = false) -> Vector3
 {
     world: Vector3;

@@ -656,20 +656,25 @@ game_loop :: inline ()
         }
 
         BeginShaderMode(Textures.outlineShader);
-        for resources { 
-            textureSize : [2] float;
-            textureSize[0] = xx it.texture.value.width; 
-            textureSize[1] = xx it.texture.value.height;
-            textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
-            SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-            draw_resource(it);
+        for resources 
+            if it.position.exists && is_in_current_chunk(it.position.value) { 
+                textureSize : [2] float;
+                textureSize[0] = xx it.texture.value.width; 
+                textureSize[1] = xx it.texture.value.height;
+                textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
+                SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+                draw_resource(it);
         }
         EndShaderMode();
         for shops { draw_shop(it); }
-        for items if it.position.exists { draw_item(it); }
-        for containers if it.position.exists { draw_container(it); }
-        for equipment if it.position.exists { draw_equipment(it); }
-        for npcs { draw_person(it); }
+        for items
+            if it.position.exists && is_in_current_chunk(it.position.value) { draw_item(it); }
+        for containers 
+            if it.position.exists && is_in_current_chunk(it.position.value) { draw_container(it); }
+        for equipment 
+            if it.position.exists && is_in_current_chunk(it.position.value) { draw_equipment(it); }
+        for npcs 
+            if it.position.exists && is_in_current_chunk(it.position.value) { draw_person(it); }
         draw_person(player);
 
         // draw ui
