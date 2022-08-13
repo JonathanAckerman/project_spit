@@ -621,37 +621,42 @@ game_loop :: inline ()
 
         // draw grid
         layer_index := cast(int) camera.position.z * grid.chunkWidth * grid.chunkWidth;
-        cells_below_camera := array_view(grid.chunks[grid.currentChunk].cells, layer_index);
-        drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
-        for cell: cells_below_camera
+        chunks_to_draw: [..] *GridChunk;
+        array_add(*chunks_to_draw, *grid.chunks[grid.currentChunk]);
+        for chunk: chunks_to_draw
         {
-            if cell.type == .AIR continue;
-
-            offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
-            if !drawn_flags[offset_from_layer]
+            cells_below_camera := array_view(chunk.cells, layer_index);
+            drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
+            for cell: cells_below_camera
             {
-                drawpos := grid_to_world(cell.x, cell.y, 0).xy * camera.zoom + camera_vector;
-                size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-                size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
-                drawpos_offset_from_size := size - size * size_modifier;
-                size *= size_modifier;
-                tint :: (c: Color, modifier: float) -> Color { 
-                    color: Color = c;
-                    color.r = xx (color.r * modifier);
-                    color.g = xx (color.g * modifier);
-                    color.b = xx (color.b * modifier);
-                    return color;
+                if cell.type == .AIR continue;
+
+                offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
+                if !drawn_flags[offset_from_layer]
+                {
+                    drawpos := grid_to_world(cell.x, cell.y, 0).xy * camera.zoom + camera_vector;
+                    size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
+                    size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
+                    drawpos_offset_from_size := size - size * size_modifier;
+                    size *= size_modifier;
+                    tint :: (c: Color, modifier: float) -> Color { 
+                        color: Color = c;
+                        color.r = xx (color.r * modifier);
+                        color.g = xx (color.g * modifier);
+                        color.b = xx (color.b * modifier);
+                        return color;
+                    }
+                    if cell.type == {
+                        case .BEDROCK;
+                            DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(DARKGRAY, size_modifier));
+                        case .DIRT;
+                            DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BROWN, size_modifier));
+                        case .WATER;
+                            DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
+                    }
+                    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
+                    drawn_flags[offset_from_layer] = true;
                 }
-                if cell.type == {
-                    case .BEDROCK;
-                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(DARKGRAY, size_modifier));
-                    case .DIRT;
-                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BROWN, size_modifier));
-                    case .WATER;
-                        DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
-                }
-                DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
-                drawn_flags[offset_from_layer] = true;
             }
         }
 
@@ -675,7 +680,10 @@ game_loop :: inline ()
             if it.position.exists && is_in_current_chunk(it.position.value) { draw_equipment(it); }
         for npcs 
             if it.position.exists && is_in_current_chunk(it.position.value) { draw_person(it); }
-        draw_person(player);
+        if is_in_current_chunk(player.position.value)
+        {
+            draw_person(player);
+        }
 
         // draw ui
         {
@@ -795,20 +803,9 @@ game_reset :: ()
                     cell.y = y;
                     cell.z = layer;
 
-                    type: Cell_Type;
-                    if layer == Game.grid.worldHeight - 1
-                    {
-                        if i >= 10 then type = .WATER;
-                        if i < 10 {
-                            type = .DIRT;
-                            if j >= 10 then type = .BEDROCK;
-                        }
-                    }
-                    else
-                    {
-                        type = cast(Cell_Type)(random_get() % xx (enum_highest_value(Cell_Type) + 1));
-                    }
-                    cell.type = type;
+                    if layer == Game.grid.worldHeight - 1 then cell.type = .BEDROCK;
+                    else if layer == Game.grid.worldHeight - 2 then cell.type = .DIRT;
+                    else cell.type = cast(Cell_Type)(random_get() % xx (enum_highest_value(Cell_Type) + 1));
                 }
             }
         }

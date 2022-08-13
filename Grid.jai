@@ -1,6 +1,6 @@
 Grid :: struct
 {
-    gridWidth :: 3;
+    gridWidth :: 5;
     worldHeight :: 5;
     chunkWidth :: 20;
     cellSize :: 100;
@@ -62,8 +62,8 @@ is_in_current_chunk :: (world: Vector3) -> bool
 {
     grid := world_to_grid(world);
     current_chunk := Game.grid.chunks[Game.grid.currentChunk];
-    if grid.x > GridChunk.left(current_chunk) && grid.x < GridChunk.right(current_chunk) &&
-       grid.y > GridChunk.top(current_chunk) && grid.y < GridChunk.bottom(current_chunk)
+    if grid.x >= GridChunk.left(current_chunk) && grid.x <= GridChunk.right(current_chunk) &&
+       grid.y >= GridChunk.top(current_chunk) && grid.y <= GridChunk.bottom(current_chunk)
     {
         return true;
     }
