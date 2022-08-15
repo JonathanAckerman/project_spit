@@ -29,10 +29,10 @@ GridCell :: struct
 
 Cell_Type :: enum
 {
+    AIR;
     BEDROCK;
     DIRT;
     WATER;
-    AIR;
 }
 
 operator == :: (a: GridCell, b: GridCell) -> bool

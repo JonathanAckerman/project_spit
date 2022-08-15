@@ -80,8 +80,9 @@ NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
 draw_person :: (person: Person)
 {
     ss_person := to_screen_space(person.position.value.xy);
-    DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom, person.color);
-    front := ss_person + person.forward.xy * cast(float) person.collider.radius * Game.camera.zoom;
+    size_modifier := 1.0 - (person.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom * size_modifier, person.color);
+    front := ss_person + person.forward.xy * cast(float) person.collider.radius * Game.camera.zoom * size_modifier;
     DrawLineEx(xx ss_person, xx front, 2.0, WHITE);
 }
 

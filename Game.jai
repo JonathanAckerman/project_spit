@@ -557,7 +557,7 @@ game_loop :: inline ()
                 {
                     x := random_get_within_range(npc.position.value.x - 200, npc.position.value.x + 200);
                     y := random_get_within_range(-npc.position.value.y - 200, npc.position.value.y + 200);
-                    npc.ai.value.goalPosition = xyz(x, y, 0);
+                    npc.ai.value.goalPosition = xyz(x, y, 3);
                     npc.ai.value.goalResetTimer = 0.0;
                     npc.ai.value.goalResetDuration = 0.0;
                     npc.ai.value.hasGoal = true;
@@ -662,7 +662,7 @@ game_loop :: inline ()
 
         BeginShaderMode(Textures.outlineShader);
         for resources 
-            if it.position.exists && is_in_current_chunk(it.position.value) { 
+            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { 
                 textureSize : [2] float;
                 textureSize[0] = xx it.texture.value.width; 
                 textureSize[1] = xx it.texture.value.height;
@@ -671,16 +671,16 @@ game_loop :: inline ()
                 draw_resource(it);
         }
         EndShaderMode();
-        for shops { draw_shop(it); }
+        for shops if is_in_current_chunk(xyz(xx it.area[0].x, xx it.area[0].y, xx it.area[0].z)) && xx it.area[0].z >= camera.position.z { draw_shop(it); }
         for items
-            if it.position.exists && is_in_current_chunk(it.position.value) { draw_item(it); }
+            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_item(it); }
         for containers 
-            if it.position.exists && is_in_current_chunk(it.position.value) { draw_container(it); }
+            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_container(it); }
         for equipment 
-            if it.position.exists && is_in_current_chunk(it.position.value) { draw_equipment(it); }
+            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_equipment(it); }
         for npcs 
-            if it.position.exists && is_in_current_chunk(it.position.value) { draw_person(it); }
-        if is_in_current_chunk(player.position.value)
+            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_person(it); }
+        if is_in_current_chunk(player.position.value) && player.position.value.z >= camera.position.z
         {
             draw_person(player);
         }
@@ -804,8 +804,13 @@ game_reset :: ()
                     cell.z = layer;
 
                     if layer == Game.grid.worldHeight - 1 then cell.type = .BEDROCK;
-                    else if layer == Game.grid.worldHeight - 2 then cell.type = .DIRT;
-                    else cell.type = cast(Cell_Type)(random_get() % xx (enum_highest_value(Cell_Type) + 1));
+                    else if layer == Game.grid.worldHeight - 2
+                    {
+                        if (x == 4 && y >= 15) || (x == 16 && y <= 15) || (y == 15 && x <= 15 && x > 4)
+                            cell.type = .WATER;
+                        // else if 
+                        else cell.type = .DIRT;
+                    }
                 }
             }
         }
@@ -813,7 +818,7 @@ game_reset :: ()
 
     // init player
     noAI: Maybe(AI);
-    Game.player.person = NewPerson(.{200, 200, 0}, noAI);
+    Game.player.person = NewPerson(.{200, 200, 3}, noAI);
 
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
@@ -828,7 +833,7 @@ game_reset :: ()
     {
         x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
         y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-        pos := grid_to_world(cast(int) x, cast(int) y, 0);
+        pos := grid_to_world(cast(int) x, cast(int) y, 3);
         ai: AI;
         npcAI := NewMaybe(ai);
         npc := NewPerson(pos, npcAI);
@@ -839,8 +844,8 @@ game_reset :: ()
     // init shops
     {
         area := GridCell.[
-            .{0, 0, 4, .AIR}, .{1, 0, 4, .AIR}, .{2, 0, 4, .AIR},
-            .{0, 1, 4, .AIR}, .{1, 1, 4, .AIR}, .{2, 1, 4, .AIR},
+            .{0, 0, 3, .AIR}, .{1, 0, 3, .AIR}, .{2, 0, 3, .AIR},
+            .{0, 1, 3, .AIR}, .{1, 1, 3, .AIR}, .{2, 1, 3, .AIR},
         ];
 
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
@@ -865,23 +870,23 @@ game_reset :: ()
 
     // init items on ground
     {
-        pos := Game.player.position.value + .{100, -100, 4};
+        pos := Game.player.position.value + .{100, -100, 0};
         collider := Collider.{type = .CIRCLE, radius = 10};
         lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.items, lumberaxe);
 
-        pos = Game.player.position.value + .{200, -100, 4};
+        pos = Game.player.position.value + .{200, -100, 0};
         sword := NewItem(.SWORD, collider, pos);
         array_add(*Game.items, sword);
     }
     // init equipment on ground
     {
-        pos := Game.player.position.value + .{0, -100, 4};
+        pos := Game.player.position.value + .{0, -100, 0};
         collider := Collider.{type = .RECT, rect = .{60, 15}};
         toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipment, toolbelt);
 
-        pos = Game.player.position.value + .{0, -200, 4};
+        pos = Game.player.position.value + .{0, -200, 0};
         weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*Game.equipment, weaponbelt);
     }
@@ -1007,7 +1012,7 @@ populate_resources :: ()
         {
             x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
             y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-            pos := grid_to_world(cast(int) x, cast(int) y, 4);
+            pos := grid_to_world(cast(int) x, cast(int) y, 3);
             type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
             quantity := max(random_get() % 20, 10);
             req: Maybe(Item_Type);
