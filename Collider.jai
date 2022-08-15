@@ -25,4 +25,8 @@ handle_collision :: ()
     if player.position.value.y < grid_to_world(Grid.top(grid)) then player.position.value.y = grid_to_world(Grid.top(grid));
     if player.position.value.x > grid_to_world(Grid.right(grid)) then player.position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if player.position.value.y > grid_to_world(Grid.bottom(grid)) then player.position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
+
+    // for every entity
+        // for every other entity
+            // check collision
 }

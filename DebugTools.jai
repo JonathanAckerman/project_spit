@@ -50,7 +50,7 @@ debug_player_info :: ()
 {
     ss_player := to_screen_space(Game.player.position.value.xy);
     drawpos := ss_player + xy(30 * Game.camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", Game.player.position.value.xy)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    DrawText(to_c_string(tprint("pos: %", Game.player.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", Game.player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 

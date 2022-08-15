@@ -37,6 +37,26 @@ game_loop :: inline ()
         handle_collision();
         player.velocity = .{};
 
+        handle_physics :: (dt: float)
+        {
+            using Game;
+            player_punch := get_grid_punch(world_to_grid(player.position.value));
+
+            above_bedrock := player.position.value.z < grid.worldHeight - 1;
+            if above_bedrock
+            {
+                no_terrain_below := player_punch[cast(int)player.position.value.z + 1].type == .AIR;
+                if no_terrain_below then player.position.value.z += dt;
+                else 
+                {
+                    player_cell := world_to_grid(player.position.value);
+                    if player.position.value.z < cast(float) player_cell.z then player.position.value.z += dt;
+                    else player.position.value.z = cast(float) player_cell.z;
+                }
+            }
+        }
+        handle_physics(dt);
+
         update_current_chunk();
 
         camera.position.xy = player.position.value.xy;
@@ -539,8 +559,13 @@ game_loop :: inline ()
             {
                 if !npc.ai.value.hasGoal && npc.ai.value.goalResetTimer <= 0.0
                 {
-                    x := random_get_within_range(npc.position.value.x - 200, npc.position.value.x + 200);
-                    y := random_get_within_range(-npc.position.value.y - 200, npc.position.value.y + 200);
+                    left_bound   := cast(float) Grid.left(grid) * grid.cellSize;
+                    top_bound    := cast(float) Grid.top(grid) * grid.cellSize;
+                    right_bound  := cast(float) Grid.right(grid) * grid.cellSize;
+                    bottom_bound := cast(float) Grid.bottom(grid) * grid.cellSize;
+
+                    x := random_get_within_range(left_bound, right_bound);
+                    y := random_get_within_range(top_bound, bottom_bound);
                     npc.ai.value.goalPosition = xyz(x, y, 3);
                     npc.ai.value.goalResetTimer = 0.0;
                     npc.ai.value.goalResetDuration = 0.0;
@@ -609,7 +634,9 @@ game_loop :: inline ()
                 {
                     drawpos := to_screen_space(grid_to_world(cell.x, cell.y, 0).xy);
                     size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-                    size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
+                    camera_dist_to_cell := (cell.z - cast(int) camera.position.z) - 1;
+                    if camera_dist_to_cell < 0 then camera_dist_to_cell = 0;
+                    size_modifier := 1.0 - camera_dist_to_cell * 0.1;
                     drawpos_offset_from_size := size - size * size_modifier;
                     size *= size_modifier;
                     tint :: (c: Color, modifier: float) -> Color { 
@@ -726,16 +753,17 @@ game_loop :: inline ()
             }
 
             // draw npc dialog
-            for npc: npcs
+            for npc: npcs if npc.ai.value.isSpeaking
             {
+                npc.ai.value.speakTimer -= dt;
+                
                 npc_to_player := player.position.value - npc.position.value;
                 dist := length(npc_to_player);
-                if dist < 150 && npc.ai.value.isSpeaking
+                if dist < 150 
                 {
                     pos := to_screen_space(npc.position.value.xy, .{30, -10});
                     if npc.ai.value.speakTimer > 0.0
                     {
-                        npc.ai.value.speakTimer -= dt;
                         DrawText("HI", xx pos.x, xx pos.y, 20, BLACK);
                     }
                 }
@@ -808,7 +836,7 @@ game_reset :: ()
 
     // init player
     noAI: Maybe(AI);
-    Game.player.person = NewPerson(.{200, 200, 3}, noAI);
+    Game.player.person = NewPerson(.{200, 200, 2}, noAI);
 
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
@@ -823,7 +851,7 @@ game_reset :: ()
     {
         x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
         y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-        pos := grid_to_world(cast(int) x, cast(int) y, 3);
+        pos := grid_to_world(cast(int) x, cast(int) y, 2);
         ai: AI;
         npcAI := NewMaybe(ai);
         npc := NewPerson(pos, npcAI);
@@ -834,8 +862,8 @@ game_reset :: ()
     // init shops
     {
         area := GridCell.[
-            .{0, 0, 3, .AIR}, .{1, 0, 3, .AIR}, .{2, 0, 3, .AIR},
-            .{0, 1, 3, .AIR}, .{1, 1, 3, .AIR}, .{2, 1, 3, .AIR},
+            .{0, 0, 2, .AIR}, .{1, 0, 2, .AIR}, .{2, 0, 2, .AIR},
+            .{0, 1, 2, .AIR}, .{1, 1, 2, .AIR}, .{2, 1, 2, .AIR},
         ];
 
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
@@ -1002,7 +1030,7 @@ populate_resources :: ()
         {
             x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
             y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-            pos := grid_to_world(cast(int) x, cast(int) y, 3);
+            pos := grid_to_world(cast(int) x, cast(int) y, 2);
             type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
             quantity := max(random_get() % 20, 10);
             req: Maybe(Item_Type);

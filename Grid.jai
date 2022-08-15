@@ -107,19 +107,25 @@ grid_to_world :: (c: int, shouldGetCenter: bool = false) -> float
 
 world_to_grid :: (p: Vector3) -> GridCell
 {
-    g: GridCell;
-    g.x = cast(int) round(p.x);
-    g.y = cast(int) round(p.y);
-    g.z = cast(int) round(p.z);
+    x := cast(int) round(p.x);
+    y := cast(int) round(p.y);
+    z := cast(int) round(p.z);
     // get coordinates of top-left corner of grid cell
-    g.x -= g.x % 100;
-    g.y -= g.y % 100;
-    g.z -= g.z % 100;
+    x -= x % 100;
+    y -= y % 100;
     // normalize grid coords
-    g.x /= 100;
-    g.y /= 100;
-    g.z /= 100;
-    return g;
+    x /= 100;
+    y /= 100;
+    
+    chunk_x := x / Game.grid.chunkWidth;
+    chunk_y := y / Game.grid.chunkWidth;
+    chunk_index := chunk_y * Game.grid.gridWidth + chunk_x;
+
+    layer := z * Game.grid.chunkWidth * Game.grid.chunkWidth;
+    row := (y % Game.grid.chunkWidth) * Game.grid.chunkWidth;
+    col := x % Game.grid.chunkWidth;
+
+    return Game.grid.chunks[chunk_index].cells[layer + row + col];
 }
 
 to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0) -> Vector2
@@ -131,10 +137,15 @@ to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0)
 get_cell :: (x: int, y: int, z: int) -> GridCell
 {
     using Game;
+
+    chunk_x := x / grid.chunkWidth;
+    chunk_y := y / grid.chunkWidth;
+    chunk_index := chunk_y * grid.gridWidth + chunk_x;
+
     layer := z * grid.chunkWidth * grid.chunkWidth;
-    row := y * grid.chunkWidth;
-    col := x;
-    return grid.chunks[grid.currentChunk].cells[layer + row + col];
+    row := (y % grid.chunkWidth) * grid.chunkWidth;
+    col := x % grid.chunkWidth;
+    return grid.chunks[chunk_index].cells[layer + row + col];
 }
 
 get_grid_punch :: (x: int, y: int) -> [..] GridCell
