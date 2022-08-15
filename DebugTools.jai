@@ -190,13 +190,18 @@ debug_is_command_valid :: (cmd: string)
         {
             if cmd_array[1] == "PLAYER" then print("%\n", Game.player);
         }
+
+        if begins_with(cmd, "TP")
+        {
+            for cmd_array
+            {
+                if it_index == 0 continue; // skip "TP" string
+                Game.player.position.value.component[it_index - 1] = string_to_float(it);
+            }
+        }
     }
 
 
-    if cmd == "TP"
-    {
-        Game.player.position.value.xy = .{-1000, -1000};
-    }
     if cmd == "GOTTAGOFAST"
     {
         Game.player.person.speed = 50;
