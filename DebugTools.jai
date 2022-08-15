@@ -48,8 +48,7 @@ DebugCursor :: struct
 
 debug_player_info :: ()
 {
-    camera_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
-    ss_player := Game.player.position.value.xy * Game.camera.zoom + camera_vector;
+    ss_player := to_screen_space(Game.player.position.value.xy);
     drawpos := ss_player + xy(30 * Game.camera.zoom, 0);
     DrawText(to_c_string(tprint("pos: %", Game.player.position.value.xy)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
@@ -60,8 +59,7 @@ debug_player_info :: ()
 
 debug_entity_info :: (e: Entity)
 {
-    camera_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
-    ss_entity := e.position.value.xy * Game.camera.zoom + camera_vector;
+    ss_entity := to_screen_space(e.position.value.xy);
     drawpos := ss_entity + xy(30 * Game.camera.zoom, 0);
     DrawText(to_c_string(tprint("pos: %", e.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;

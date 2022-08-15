@@ -30,7 +30,7 @@ game_loop :: inline ()
     // Input
     handle_input();
 
-    camera_vector: Vector2;
+    npc_text_to_draw: [..] string;
     // Simulate
     {
         // collision
@@ -43,7 +43,6 @@ game_loop :: inline ()
         update_current_chunk();
 
         camera.position.xy = player.position.value.xy;
-        camera_vector = WINDOW_CENTER - camera.position.xy * camera.zoom;
 
         equipItem :: ()
         {
@@ -394,16 +393,6 @@ game_loop :: inline ()
                                 break;
                             }
                         }
-                    case .WATER;
-                        if player.held.exists && player.held.value.tag == .CONTAINER
-                        {
-                            if player.held.value.container.type == .BUCKET // this should be can_carry_water(), or a flag, or smth.
-                            {
-                                resource_to_harvest.value = it;
-                                resource_to_harvest.exists = true;
-                                break;
-                            }
-                        }
                     case;
                         resource_to_harvest.value = it;
                         resource_to_harvest.exists = true;
@@ -421,8 +410,6 @@ game_loop :: inline ()
                         by_product = NewItem(.COPPER_NUGGET, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                     case .IRON_VEIN;
                         by_product = NewItem(.IRON_NUGGET, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
-                    case .WATER;
-                        by_product = NewItem(.WATER, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                     case .TREE;
                         by_product = NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                     case .BUSH;
@@ -593,17 +580,6 @@ game_loop :: inline ()
                 {
                     npc.forward = unit_vector(npc_to_player);
                     npc.velocity = .{};
-
-                    // only draw text when player is close enough
-                    if npc.ai.value.isSpeaking
-                    {
-                        pos := to_screen_space(npc.position.value.xy, .{30, -10});
-                        if npc.ai.value.speakTimer > 0.0
-                        {
-                            npc.ai.value.speakTimer -= dt;
-                            DrawText("HI", xx pos.x, xx pos.y, 20, BLACK);
-                        }
-                    }
                 }
                 npc.position.value += npc.velocity;
             }
@@ -634,7 +610,7 @@ game_loop :: inline ()
                 offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
                 if !drawn_flags[offset_from_layer]
                 {
-                    drawpos := grid_to_world(cell.x, cell.y, 0).xy * camera.zoom + camera_vector;
+                    drawpos := to_screen_space(grid_to_world(cell.x, cell.y, 0).xy);
                     size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
                     size_modifier := 1.0 - (cell.z - cast(int) camera.position.z) * 0.1;
                     drawpos_offset_from_size := size - size * size_modifier;
@@ -751,6 +727,22 @@ game_loop :: inline ()
                     }
                 }
             }
+
+            // draw npc dialog
+            for npc: npcs
+            {
+                npc_to_player := player.position.value - npc.position.value;
+                dist := length(npc_to_player);
+                if dist < 150 && npc.ai.value.isSpeaking
+                {
+                    pos := to_screen_space(npc.position.value.xy, .{30, -10});
+                    if npc.ai.value.speakTimer > 0.0
+                    {
+                        npc.ai.value.speakTimer -= dt;
+                        DrawText("HI", xx pos.x, xx pos.y, 20, BLACK);
+                    }
+                }
+            }
         }
 
         // debug
@@ -804,7 +796,8 @@ game_reset :: ()
                     cell.z = layer;
 
                     if layer == Game.grid.worldHeight - 1 then cell.type = .BEDROCK;
-                    else if layer == Game.grid.worldHeight - 2
+                    else if layer == Game.grid.worldHeight - 2 then cell.type = .DIRT;
+                    else if layer == Game.grid.worldHeight - 3
                     {
                         if (x == 4 && y >= 15) || (x == 16 && y <= 15) || (y == 15 && x <= 15 && x > 4)
                             cell.type = .WATER;

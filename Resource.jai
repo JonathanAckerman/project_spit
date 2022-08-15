@@ -6,8 +6,6 @@ get_resource_color :: (r: Resource_Type) -> Color
             return GREEN;
         case .IRON_VEIN;
             return RED;
-        case .WATER;
-            return BLUE;
         case .TREE;
             return DARKGREEN;
         case .BUSH;
@@ -46,7 +44,6 @@ Resource_Type :: enum
 {
     COPPER_VEIN;
     IRON_VEIN;
-    WATER;
     TREE;
     BUSH;
 }

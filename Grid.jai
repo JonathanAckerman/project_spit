@@ -1,7 +1,7 @@
 Grid :: struct
 {
     gridWidth :: 5;
-    worldHeight :: 5;
+    worldHeight :: 6;
     chunkWidth :: 20;
     cellSize :: 100;
 
@@ -113,4 +113,30 @@ to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0)
 {
     to_ss_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
     return (pos + offset) * scale * Game.camera.zoom + to_ss_vector;
+}
+
+get_cell :: (x: int, y: int, z: int) -> GridCell
+{
+    using Game;
+    layer := z * grid.chunkWidth * grid.chunkWidth;
+    row := y * grid.chunkWidth;
+    col := x;
+    return grid.chunks[grid.currentChunk].cells[layer + row + col];
+}
+
+get_grid_punch :: (x: int, y: int) -> [..] GridCell
+{
+    using Game;
+    result: [..] GridCell;
+    for z: 0..grid.worldHeight - 1
+    {
+        cell := get_cell(x, y, z);
+        array_add(*result, cell);
+    }
+    return result;
+}
+
+get_grid_punch :: (gc: GridCell) -> [..] GridCell
+{
+    return get_grid_punch(gc.x, gc.y);
 }

@@ -53,7 +53,6 @@ draw_shop :: (shop : *Shop)
 Person :: struct
 {
     using #as entity: Entity;
-    color: Color = BLACK;
 
     forward: Vector3 = .{1, 0, 0};
     speed: float = 6.0;
@@ -70,7 +69,6 @@ NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
     person := New(Person);
     collider := Collider.{type = .CIRCLE, radius = 20.0};
     person.entity = init_entity_data(pos, collider);
-    person.color = ifx ai.exists then BROWN else BLACK;
     person.forward = .{0, -1, 0};
     person.speed = 6.0;
     person.ai = ai;
@@ -81,7 +79,8 @@ draw_person :: (person: Person)
 {
     ss_person := to_screen_space(person.position.value.xy);
     size_modifier := 1.0 - (person.position.value.z - cast(int) Game.camera.position.z) * 0.1;
-    DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom * size_modifier, person.color);
+    color := ifx person.ai.exists then ORANGE else BLACK;
+    DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom * size_modifier, color);
     front := ss_person + person.forward.xy * cast(float) person.collider.radius * Game.camera.zoom * size_modifier;
     DrawLineEx(xx ss_person, xx front, 2.0, WHITE);
 }
