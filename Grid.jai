@@ -7,14 +7,19 @@ Grid :: struct
 
     currentChunk := 0;
     chunks: [gridWidth * gridWidth] GridChunk;
+
+    left   :: inline (grid: Grid) -> int {return grid.chunks[0].cells[0].x; };
+    top    :: inline (grid: Grid) -> int {return grid.chunks[0].cells[0].y; };
+    right  :: inline (grid: Grid) -> int {return grid.chunks[grid.gridWidth * grid.gridWidth - 1].cells[(grid.chunkWidth * grid.chunkWidth) - 1].x + 1; };
+    bottom :: inline (grid: Grid) -> int {return grid.chunks[grid.gridWidth * grid.gridWidth - 1].cells[(grid.chunkWidth * grid.chunkWidth) - 1].y + 1; };
 }
 
 GridChunk :: struct
 {
     left   :: inline (chunk: GridChunk) -> int {return chunk.cells[0].x; };
     top    :: inline (chunk: GridChunk) -> int {return chunk.cells[0].y; };
-    right  :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].x; };
-    bottom :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].y; };
+    right  :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].x + 1; };
+    bottom :: inline (chunk: GridChunk) -> int {return chunk.cells[(Game.grid.chunkWidth * Game.grid.chunkWidth) - 1].y + 1; };
 
     cells: [Game.grid.chunkWidth * Game.grid.chunkWidth * Game.grid.worldHeight] GridCell;
 }
@@ -53,17 +58,17 @@ update_current_chunk :: ()
     bottom  := GridChunk.bottom(current);
 
     if pos.x < left && grid.currentChunk % grid.gridWidth != 0 then grid.currentChunk -= 1;
-    if pos.x > right && (grid.currentChunk + 1) % grid.gridWidth != 0 then grid.currentChunk += 1;
+    if pos.x >= right && (grid.currentChunk + 1) % grid.gridWidth != 0 then grid.currentChunk += 1;
     if pos.y < top && grid.currentChunk >= grid.gridWidth then grid.currentChunk -= grid.gridWidth;
-    if pos.y > bottom && grid.currentChunk < grid.gridWidth * (grid.gridWidth - 1) then grid.currentChunk += grid.gridWidth;
+    if pos.y >= bottom && grid.currentChunk < grid.gridWidth * (grid.gridWidth - 1) then grid.currentChunk += grid.gridWidth;
 }
 
 is_in_current_chunk :: (world: Vector3) -> bool
 {
-    grid := world_to_grid(world);
+    coord := world_to_grid(world);
     current_chunk := Game.grid.chunks[Game.grid.currentChunk];
-    if grid.x >= GridChunk.left(current_chunk) && grid.x <= GridChunk.right(current_chunk) &&
-       grid.y >= GridChunk.top(current_chunk) && grid.y <= GridChunk.bottom(current_chunk)
+    if coord.x >= GridChunk.left(current_chunk) && coord.x < GridChunk.right(current_chunk) &&
+       coord.y >= GridChunk.top(current_chunk) && coord.y < GridChunk.bottom(current_chunk)
     {
         return true;
     }
@@ -73,15 +78,15 @@ is_in_current_chunk :: (world: Vector3) -> bool
 grid_to_world :: (x: int, y: int, z: int, shouldGetCenter: bool = false) -> Vector3
 {
     world: Vector3;
-    if !shouldGetCenter
+    if shouldGetCenter
     {
-        world = xyz(xx x, xx y, xx z) * Game.grid.cellSize;
+        world.x = x * Game.grid.cellSize + Game.grid.cellSize / 2.0;
+        world.y = y * Game.grid.cellSize + Game.grid.cellSize / 2.0;
         world.z = xx z;
     }
     else
     {
-        world.x = x * Game.grid.cellSize + Game.grid.cellSize / 2.0;
-        world.y = y * Game.grid.cellSize + Game.grid.cellSize / 2.0;
+        world = xyz(xx x, xx y, xx z) * Game.grid.cellSize;
         world.z = xx z;
     }
     return world;
@@ -90,6 +95,14 @@ grid_to_world :: (x: int, y: int, z: int, shouldGetCenter: bool = false) -> Vect
 grid_to_world :: (g: GridCell, shouldGetCenter: bool = false) -> Vector3
 {
     return grid_to_world(g.x, g.y, g.z, shouldGetCenter);
+}
+
+grid_to_world :: (c: int, shouldGetCenter: bool = false) -> float
+{
+    if shouldGetCenter
+        return cast(float)(c * Game.grid.cellSize + Game.grid.cellSize / 2.0);
+    else
+        return cast(float)(c * Game.grid.cellSize);
 }
 
 world_to_grid :: (p: Vector3) -> GridCell

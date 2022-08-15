@@ -91,24 +91,6 @@ Player :: struct
     using #as person: Person;
 }
 
-Collider :: struct
-{
-    type: Collider_Type;
-
-    union
-    {
-        rect: Vector2;
-        radius: float;
-    }
-
-}
-
-Collider_Type :: enum
-{
-    RECT;
-    CIRCLE;
-}
-
 AI :: struct
 {
     isSpeaking := false; // make this a state enum?

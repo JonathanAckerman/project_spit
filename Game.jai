@@ -33,13 +33,10 @@ game_loop :: inline ()
     npc_text_to_draw: [..] string;
     // Simulate
     {
-        // collision
-        {
-            
-        }
-
         if player.position.exists then player.position.value += player.velocity;
+        handle_collision();
         player.velocity = .{};
+
         update_current_chunk();
 
         camera.position.xy = player.position.value.xy;
