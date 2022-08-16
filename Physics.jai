@@ -3,16 +3,10 @@ handle_physics :: (dt: float)
     using Game;
     
     apply_gravity(*player.person.entity, dt);
-
-    for npc: npcs
-    {
-        apply_gravity(*npc.entity, dt);
-    }
-
-    for item: items
-    {
-        apply_gravity(*item.entity, dt);
-    }
+    for npcs { apply_gravity(*it.entity, dt); }
+    for items { apply_gravity(*it.entity, dt); }
+    for equipment { apply_gravity(*it.entity, dt); }
+    for containers { apply_gravity(*it.entity, dt); }
 }
 
 apply_gravity :: (entity: *Entity, dt: float)
