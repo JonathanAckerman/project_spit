@@ -53,10 +53,7 @@ draw_shop :: (shop : *Shop)
 Person :: struct
 {
     using #as entity: Entity;
-
-    forward: Vector3 = .{1, 0, 0};
     speed: float = 6.0;
-    velocity: Vector3;
 
     held: Maybe(Holdable); // to cast between them I need held to be a *Holdable since you cant cast to structs, otherwise I have to construct a new Holdable everytime I want to hold a new item/container/equipment/etc.
     toolBelt: Maybe(*Equipment);
@@ -69,8 +66,6 @@ NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
     person := New(Person);
     collider := Collider.{type = .CIRCLE, radius = 20.0};
     person.entity = init_entity_data(pos, collider);
-    person.forward = .{0, -1, 0};
-    person.speed = 6.0;
     person.ai = ai;
     return person;
 }

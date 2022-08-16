@@ -37,24 +37,6 @@ game_loop :: inline ()
         handle_collision();
         player.velocity = .{};
 
-        handle_physics :: (dt: float)
-        {
-            using Game;
-            player_punch := get_grid_punch(world_to_grid(player.position.value));
-
-            above_bedrock := player.position.value.z < grid.worldHeight - 1;
-            if above_bedrock
-            {
-                no_terrain_below := player_punch[cast(int)player.position.value.z + 1].type == .AIR;
-                if no_terrain_below then player.position.value.z += dt;
-                else 
-                {
-                    player_cell := world_to_grid(player.position.value);
-                    if player.position.value.z < cast(float) player_cell.z then player.position.value.z += dt;
-                    else player.position.value.z = cast(float) player_cell.z;
-                }
-            }
-        }
         handle_physics(dt);
 
         update_current_chunk();

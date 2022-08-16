@@ -18,6 +18,9 @@ _Entity_ID: u64 = 0;
 Entity :: struct
 {
     position: Maybe(Vector3);
+    velocity: Vector3;
+    forward: Vector3 = .{0, -1, 0};
+
     collider: Collider;
     id: u64;
     texture: Maybe(*Texture2D);

@@ -24,6 +24,7 @@ main :: () {
 #load "Game.jai";
 #load "Input.jai";
 #load "Collider.jai";
+#load "Physics.jai";
 #load "Resource.jai";
 #load "Trader.jai";
 #load "DebugTools.jai";
