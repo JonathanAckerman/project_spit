@@ -55,7 +55,7 @@ Person :: struct
     using #as entity: Entity;
     speed: float = 6.0;
 
-    held: Maybe(Holdable); // to cast between them I need held to be a *Holdable since you cant cast to structs, otherwise I have to construct a new Holdable everytime I want to hold a new item/container/equipment/etc.
+    held: Maybe(Holdable);
     toolBelt: Maybe(*Equipment);
     weaponBelt: Maybe(*Equipment);
     ai: Maybe(AI);

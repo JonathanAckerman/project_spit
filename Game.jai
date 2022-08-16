@@ -167,7 +167,7 @@ game_loop :: inline ()
                         if it.equipment.type ==
                         {
                             case .TOOL_BELT;
-                                if !player.toolBelt.exists // @Temporary: Eventually swap between belts if the player is already wearing one?
+                                if !player.toolBelt.exists // @TODO: Eventually swap between belts if the player is already wearing one?
                                 {
                                     it.equipment.position.exists = false;
                                     m := NewMaybe(it.equipment);
