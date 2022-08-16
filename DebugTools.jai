@@ -146,12 +146,12 @@ debug_is_command_valid :: (cmd: string)
         if begins_with(cmd, "SPAWN")
         {
             pos := Game.player.position.value + Game.player.person.forward * 50;
-            collider: Collider;
+            collider: *Collider;
 
             // Containers
             if cmd_array[1] == "BASKET" || cmd_array[1] == "CHEST" || cmd_array[1] == "BUCKET"
             {
-                collider = Collider.{type = .RECT, rect = .{20, 30}};
+                collider = NewCollider(.{20, 30});
                 container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
                 array_add(*Game.containers, container);
             }
@@ -164,7 +164,7 @@ debug_is_command_valid :: (cmd: string)
                 if cmd_array[1] == "SAW" then cmd_array[1] = "HEWING_SAW";
                 if cmd_array[1] == "HAMMER" then cmd_array[1] = "CARPENTERS_HAMMER";
                 
-                collider = Collider.{type = .CIRCLE, radius = 10};
+                collider = NewCollider(10);
                 item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
                 array_add(*Game.items, item);
             }
@@ -175,7 +175,7 @@ debug_is_command_valid :: (cmd: string)
                 if cmd_array[1] == "TOOLBELT" then cmd_array[1] = "TOOL_BELT";
                 if cmd_array[1] == "WEAPONBELT" then cmd_array[1] = "WEAPON_BELT";
 
-                collider = Collider.{type = .RECT, rect = .{60, 15}};
+                collider = NewCollider(.{60, 15});
                 equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
                 array_add(*Game.equipment, equipment);
             }

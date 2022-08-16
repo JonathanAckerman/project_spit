@@ -34,7 +34,7 @@ game_loop :: inline ()
     // Simulate
     {
         if player.position.exists then player.position.value += player.velocity;
-        handle_collision();
+        handle_collision(*player.entity);
         player.velocity = .{};
 
         handle_physics(dt);
@@ -406,13 +406,13 @@ game_loop :: inline ()
                 if resource_to_harvest.value.resource.type ==
                 {
                     case .COPPER_VEIN;
-                        by_product = NewItem(.COPPER_NUGGET, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.COPPER_NUGGET, NewCollider(10.0), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                     case .IRON_VEIN;
-                        by_product = NewItem(.IRON_NUGGET, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.IRON_NUGGET, NewCollider(10.0), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                     case .TREE;
-                        by_product = NewItem(.WOOD_LOG, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.WOOD_LOG, NewCollider(.{10, 10}), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                     case .BUSH;
-                        by_product = NewItem(.FIBER, Collider.{type = .CIRCLE, radius = 10}, resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.FIBER, NewCollider(10.0), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
                 }
 
                 array_add(*items, by_product);
@@ -853,7 +853,7 @@ game_reset :: ()
         ];
 
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
-        basket_collider := Collider.{type = .RECT, rect = .{20, 20}};
+        basket_collider := NewCollider(.{20, 20});
         basket_pos += xyz(-basket_collider.rect.x/2, -basket_collider.rect.y/2, 0);
         owner := Game.npcs[0];
         ware := NewContainer(.BASKET, basket_collider, basket_pos, owner);
@@ -875,7 +875,7 @@ game_reset :: ()
     // init items on ground
     {
         pos := Game.player.position.value + .{100, -100, 0};
-        collider := Collider.{type = .CIRCLE, radius = 10};
+        collider := NewCollider(10.0);
         lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*Game.items, lumberaxe);
 
@@ -886,7 +886,7 @@ game_reset :: ()
     // init equipment on ground
     {
         pos := Game.player.position.value + .{0, -100, 0};
-        collider := Collider.{type = .RECT, rect = .{60, 15}};
+        collider := NewCollider(.{60, 15});
         toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*Game.equipment, toolbelt);
 
@@ -1032,9 +1032,7 @@ populate_resources :: ()
                     req = NewMaybe(Item_Type.PICK_AXE);
 
             }
-            collider: Collider;
-            collider.type = .CIRCLE;
-            collider.radius = xx quantity;
+            collider := NewCollider(cast(float) quantity);
             r := NewResource(type, collider, pos, xx quantity, req);
             array_add(*Game.resources, r);
         }

@@ -64,8 +64,8 @@ Person :: struct
 NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
 {
     person := New(Person);
-    collider := Collider.{type = .CIRCLE, radius = 20.0};
-    person.entity = init_entity_data(pos, collider);
+    collider := NewCollider(20.0);
+    person.entity = init_entity_data(pos, collider, null, 1);
     person.ai = ai;
     return person;
 }

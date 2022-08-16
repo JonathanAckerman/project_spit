@@ -22,6 +22,7 @@ main :: () {
 }
 
 #load "Game.jai";
+#load "Entity.jai";
 #load "Input.jai";
 #load "Collider.jai";
 #load "Physics.jai";

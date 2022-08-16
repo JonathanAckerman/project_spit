@@ -13,29 +13,6 @@ get_resource_color :: (r: Resource_Type) -> Color
     }
 }
 
-_Entity_ID: u64 = 0;
-
-Entity :: struct
-{
-    position: Maybe(Vector3);
-    velocity: Vector3;
-    forward: Vector3 = .{0, -1, 0};
-
-    collider: Collider;
-    id: u64;
-    texture: Maybe(*Texture2D);
-    owner: Maybe(*Person);
-}
-
-Entity_Type :: enum
-{
-    RESOURCE;
-    ITEM;
-    CONTAINER;
-    EQUIPMENT;
-    PERSON;
-}
-
 Resource :: struct 
 {
     using #as entity: Entity;
@@ -145,23 +122,11 @@ as_holdable :: (equipment: *Equipment) -> Holdable
     return h;
 }
 
-init_entity_data :: (pos: Vector3, collider: Collider, owner: *Person = null) -> Entity
-{
-    e: Entity;
-    e.position.value = pos;
-    e.position.exists = true;
-    e.collider = collider;
-    if owner != null then e.owner = NewMaybe(owner);
-    else e.owner = Nothing(*Person);
-    e.id = _Entity_ID;
-    _Entity_ID += 1;
-    return e;
-}
-
-NewContainer :: (type: Container_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Container
+NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Container
 {
     container := New(Container);
-    container.entity = init_entity_data(pos, collider, owner);
+    mass := ifx type == .CHEST then 1 else 0;
+    container.entity = init_entity_data(pos, collider, owner, mass);
     container.type = type;
     cap: int;
     if type ==
@@ -175,10 +140,11 @@ NewContainer :: (type: Container_Type, collider: Collider, pos: Vector3 = .{0, 0
     return container;
 }
 
-NewItem :: (type: Item_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Item
+NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Item
 {
     item := New(Item);
-    item.entity = init_entity_data(pos, collider, owner);
+    mass := ifx type == .WOOD_LOG then 1 else 0;
+    item.entity = init_entity_data(pos, collider, owner, mass);
     item.type = type;
     if type == 
     {
@@ -198,7 +164,7 @@ NewItem :: (type: Item_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owne
     return item;
 }
 
-NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Equipment
+NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Equipment
 {
     equipment := New(Equipment);
     equipment.entity = init_entity_data(pos, collider, owner);
@@ -216,10 +182,11 @@ NewEquipment :: (type: Equipment_Type, collider: Collider, pos: Vector3 = .{0, 0
     return equipment;
 }
 
-NewResource :: (type: Resource_Type, collider: Collider, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
+NewResource :: (type: Resource_Type, collider: *Collider, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
 {
     resource := New(Resource);
-    resource.entity = init_entity_data(pos, collider);
+    mass := ifx type == .BUSH then 0 else 999;
+    resource.entity = init_entity_data(pos, collider, null, mass);
     resource.type = type;
     resource.quantity = quantity;
     resource.harvestRequirement = req;
