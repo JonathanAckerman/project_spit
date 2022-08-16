@@ -48,11 +48,11 @@ handle_collision :: (using entity: *Entity)
 
     if !rigidBody.exists return;
 
-    for resources   if it.rigidBody.exists check_and_resolve();
-    for items       if it.rigidBody.exists check_and_resolve();
-    for containers  if it.rigidBody.exists check_and_resolve();
-    for equipment   if it.rigidBody.exists check_and_resolve();
-    for npcs        if it.rigidBody.exists check_and_resolve();
+    for resources   if it.position.exists && it.rigidBody.exists check_and_resolve();
+    for items       if it.position.exists && it.rigidBody.exists check_and_resolve();
+    for containers  if it.position.exists && it.rigidBody.exists check_and_resolve();
+    for equipment   if it.position.exists && it.rigidBody.exists check_and_resolve();
+    for npcs        if it.position.exists && it.rigidBody.exists check_and_resolve();
 
     check_and_resolve :: () #expand
     {
