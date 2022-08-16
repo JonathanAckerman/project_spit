@@ -105,8 +105,9 @@ grid_to_world :: (c: int, shouldGetCenter: bool = false) -> float
         return cast(float)(c * Game.grid.cellSize);
 }
 
-world_to_grid :: (p: Vector3) -> GridCell
+world_to_grid :: (p: Vector3) -> *GridCell
 {
+    using Game;
     x := cast(int) round(p.x);
     y := cast(int) round(p.y);
     z := cast(int) round(p.z);
@@ -117,15 +118,15 @@ world_to_grid :: (p: Vector3) -> GridCell
     x /= 100;
     y /= 100;
     
-    chunk_x := x / Game.grid.chunkWidth;
-    chunk_y := y / Game.grid.chunkWidth;
-    chunk_index := chunk_y * Game.grid.gridWidth + chunk_x;
+    chunk_x := x / grid.chunkWidth;
+    chunk_y := y / grid.chunkWidth;
+    chunk_index := chunk_y * grid.gridWidth + chunk_x;
 
-    layer := z * Game.grid.chunkWidth * Game.grid.chunkWidth;
-    row := (y % Game.grid.chunkWidth) * Game.grid.chunkWidth;
-    col := x % Game.grid.chunkWidth;
+    layer := z * grid.chunkWidth * grid.chunkWidth;
+    row := (y % grid.chunkWidth) * grid.chunkWidth;
+    col := x % grid.chunkWidth;
 
-    return Game.grid.chunks[chunk_index].cells[layer + row + col];
+    return *Game.grid.chunks[chunk_index].cells[layer + row + col];
 }
 
 to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0) -> Vector2
@@ -134,7 +135,7 @@ to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0)
     return (pos + offset) * scale * Game.camera.zoom + to_ss_vector;
 }
 
-get_cell :: (x: int, y: int, z: int) -> GridCell
+get_cell :: (x: int, y: int, z: int) -> *GridCell
 {
     using Game;
 
@@ -145,13 +146,13 @@ get_cell :: (x: int, y: int, z: int) -> GridCell
     layer := z * grid.chunkWidth * grid.chunkWidth;
     row := (y % grid.chunkWidth) * grid.chunkWidth;
     col := x % grid.chunkWidth;
-    return grid.chunks[chunk_index].cells[layer + row + col];
+    return *grid.chunks[chunk_index].cells[layer + row + col];
 }
 
-get_grid_punch :: (x: int, y: int) -> [..] GridCell
+get_grid_punch :: (x: int, y: int) -> [..] *GridCell
 {
     using Game;
-    result: [..] GridCell;
+    result: [..] *GridCell;
     for z: 0..grid.worldHeight - 1
     {
         cell := get_cell(x, y, z);
@@ -160,7 +161,7 @@ get_grid_punch :: (x: int, y: int) -> [..] GridCell
     return result;
 }
 
-get_grid_punch :: (gc: GridCell) -> [..] GridCell
+get_grid_punch :: (gc: GridCell) -> [..] *GridCell
 {
     return get_grid_punch(gc.x, gc.y);
 }

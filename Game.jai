@@ -816,6 +816,10 @@ game_reset :: ()
         }
     }
 
+    // @TEMP: falling terrain
+    fall_cell_index := Game.grid.chunkWidth * 2 + 3;
+    Game.grid.chunks[Game.grid.currentChunk].cells[fall_cell_index].type = .WATER;
+
     // init player
     noAI: Maybe(AI);
     Game.player.person = NewPerson(.{200, 200, 2}, noAI);

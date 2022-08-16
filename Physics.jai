@@ -7,6 +7,8 @@ handle_physics :: (dt: float)
     for items { apply_gravity(*it.entity, dt); }
     for equipment { apply_gravity(*it.entity, dt); }
     for containers { apply_gravity(*it.entity, dt); }
+
+    for < grid.chunks[grid.currentChunk].cells { apply_gravity(it_index, dt); }
 }
 
 apply_gravity :: (entity: *Entity, dt: float)
@@ -25,6 +27,24 @@ apply_gravity :: (entity: *Entity, dt: float)
             cell := world_to_grid(entity.position.value);
             if entity.position.value.z < cast(float) cell.z then entity.position.value.z += dt;
             else entity.position.value.z = cast(float) cell.z;
+        }
+    }
+}
+
+apply_gravity :: (cell_index: int, dt: float)
+{
+    using Game;
+    cell := *grid.chunks[grid.currentChunk].cells[cell_index];
+    punch := get_grid_punch(cell);
+    above_bedrock := cell.z < grid.worldHeight - 1;
+
+    if above_bedrock
+    {
+        no_terrain_below := punch[cell.z + 1].type == .AIR;
+        if cell.type != .AIR && no_terrain_below
+        {
+            punch[cell.z + 1].type = cell.type;
+            cell.type = .AIR;
         }
     }
 }
