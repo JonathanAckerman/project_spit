@@ -33,6 +33,9 @@ Debug: struct
         "DEBUG INFO 1"
     ];
     showEntityInfo := false;
+
+    debugRectangles : [..] DebugRectangle;
+    debugCircles :    [..] DebugCircle;
 }
 
 DebugCursor :: struct
@@ -44,6 +47,64 @@ DebugCursor :: struct
     size: Vector2;
     blinkState := true;
     blinkTimer := 0.5;
+}
+
+DebugRectangle :: struct
+{
+    pos: Vector2;
+    size: Vector2;
+    color: Color;
+}
+make_debug_rectangle :: (pos: Vector2, size: Vector2, c: Color) -> DebugRectangle { return make_debug_rectangle(pos.x, pos.y, size.x, size.y, c); }
+make_debug_rectangle :: (x: float, y: float, w: float, h: float, c: Color) -> DebugRectangle
+{
+    dbr: DebugRectangle;
+    dbr.pos.x = x;
+    dbr.pos.y = y;
+    dbr.size.x = w;
+    dbr.size.y = h;
+    dbr.color = c;
+    return dbr;
+}
+defer_draw_rect :: (dbr: DebugRectangle) { array_add(*Debug.debugRectangles, dbr); }
+
+
+DebugCircle :: struct
+{
+    pos: Vector2;
+    radius: float;
+    color: Color;
+}
+make_debug_circle :: (pos: Vector2, r: float, c: Color) -> DebugCircle { return make_debug_circle(pos.x, pos.y, r, c); }
+make_debug_circle :: (x: float, y: float, r: float, c: Color) -> DebugCircle
+{
+    dbc: DebugCircle;
+    dbc.pos.x = x;
+    dbc.pos.y = y;
+    dbc.radius = r;
+    dbc.color = c;
+    return dbc;
+}
+defer_draw_circle :: (dbc: DebugCircle) { array_add(*Debug.debugCircles, dbc); }
+
+debug_deferred_draw_rectancles :: ()
+{
+    for Debug.debugRectangles 
+    {
+        DrawRectangleLines(xx it.pos.x, xx it.pos.y, xx it.size.x, xx it.size.y, it.color);
+        remove it;
+    }
+
+}
+
+debug_deferred_draw_circles :: ()
+{
+    for Debug.debugCircles 
+    {
+        DrawCircleLines(xx it.pos.x, xx it.pos.y, xx it.radius, it.color);
+        remove it;
+    }
+
 }
 
 debug_player_info :: ()

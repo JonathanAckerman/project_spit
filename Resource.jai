@@ -181,11 +181,11 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
     return equipment;
 }
 
-NewResource :: (type: Resource_Type, collider: *Collider, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
+NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
 {
     resource := New(Resource);
-    mass := ifx type == .BUSH then 0 else 999;
-    resource.entity = init_entity_data(pos, collider, null, mass);
+    mass := ifx type == .BUSH then 0 else 100;
+    resource.entity = init_entity_data(pos, null, null, mass);
     resource.type = type;
     resource.quantity = quantity;
     resource.harvestRequirement = req;
@@ -202,6 +202,8 @@ NewResource :: (type: Resource_Type, collider: *Collider, pos: Vector3, quantity
         case;
             resource.textureInfo.texture = *ERROR_TEXTURE;
     }
+    size := xy(xx resource.textureInfo.texture.width, xx resource.textureInfo.texture.height);
+    resource.collider = NewCollider(size);
     return resource;
 }
 

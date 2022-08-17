@@ -75,7 +75,6 @@ handle_collision :: (using entity: *Entity)
         if dist < c1.collider.radius + c2.collider.radius
         {
             overlap_scalar := dist - (c1.collider.radius + c2.collider.radius);
-            // resolve
             if c1.rigidBody.value.mass < c2.rigidBody.value.mass
             {
                 c1.position.value += unit_vector(displacement) * -overlap_scalar;
@@ -92,41 +91,51 @@ handle_collision :: (using entity: *Entity)
         }
     }
 
-    circle_rect :: (c: Entity, r: Entity) // @TEMP: just pretend circle is a rect
+    circle_rect :: (c: *Entity, r: *Entity)
     {
-        cleft   := c.position.value.x - c.collider.radius;
-        cright  := c.position.value.x + c.collider.radius;
-        ctop    := c.position.value.y - c.collider.radius;
-        cbottom := c.position.value.y + c.collider.radius;
+        size_modifier := 1.0 - (r.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+        rleft   := r.position.value.x - (r.collider.rect.x * Game.camera.zoom * size_modifier * 0.5)/2;
+        rright  := r.position.value.x + (r.collider.rect.x * Game.camera.zoom * size_modifier * 0.5)/2;
+        rtop    := r.position.value.y - (r.collider.rect.y * Game.camera.zoom * size_modifier * 0.5)/2;
+        rbottom := r.position.value.y + (r.collider.rect.y * Game.camera.zoom * size_modifier * 0.5)/2;
 
-        rleft   := r.position.value.x - r.collider.rect.x/2;
-        rright  := r.position.value.x + r.collider.rect.x/2;
-        rtop    := r.position.value.y - r.collider.rect.y/2;
-        rbottom := r.position.value.y + r.collider.rect.y/2;
+        rect_modified_size := (r.collider.rect * Game.camera.zoom * size_modifier * 0.5)/2;
+        displacement := c.position.value - r.position.value;
+        closest_x := r.position.value.x + clamp(displacement.x, -rect_modified_size.x, rect_modified_size.x);
+        closest_y := r.position.value.y + clamp(displacement.y, -rect_modified_size.y, rect_modified_size.y);
 
-        left  := cleft > rright;
-        right := cright < rleft;
-        above := cbottom < rtop;
-        below := ctop > rbottom;
-
-        if !(left || right || above || below)
+        circle_to_closest := c.position.value.xy - xy(closest_x, closest_y); 
+        if length(circle_to_closest) < c.collider.radius
         {
-            // resolve
-            print("COLLIDING CIRCLE RECT");
+            overlap_scalar := c.collider.radius - length(circle_to_closest);
+            if c.rigidBody.value.mass < r.rigidBody.value.mass
+            {
+                c.position.value.xy += unit_vector(circle_to_closest) * overlap_scalar;
+            }
+            else if c.rigidBody.value.mass > r.rigidBody.value.mass
+            {
+                r.position.value.xy += unit_vector(circle_to_closest) * -overlap_scalar;
+            }
+            else
+            {
+                c.position.value.xy += unit_vector(circle_to_closest) * overlap_scalar/2;
+                r.position.value.xy += unit_vector(circle_to_closest) * -overlap_scalar/2;
+            }
         }
     }
 
-    rect_rect :: (r1: Entity, r2: Entity)
+    rect_rect :: (r1: *Entity, r2: *Entity)
     {
-        r1_left   := r2.position.value.x - r2.collider.rect.x/2;
-        r1_right  := r2.position.value.x + r2.collider.rect.x/2;
-        r1_top    := r2.position.value.y - r2.collider.rect.y/2;
-        r1_bottom := r2.position.value.y + r2.collider.rect.y/2;
+        size_modifier := 1.0 - (r1.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+        r1_left   := r1.position.value.x - (r1.collider.rect.x * Game.camera.zoom * size_modifier * 0.5)/2;
+        r1_right  := r1.position.value.x + (r1.collider.rect.x * Game.camera.zoom * size_modifier * 0.5)/2;
+        r1_top    := r1.position.value.y - (r1.collider.rect.y * Game.camera.zoom * size_modifier * 0.5)/2;
+        r1_bottom := r1.position.value.y + (r1.collider.rect.y * Game.camera.zoom * size_modifier * 0.5)/2;
 
-        r2_left   := r2.position.value.x - r2.collider.rect.x/2;
-        r2_right  := r2.position.value.x + r2.collider.rect.x/2;
-        r2_top    := r2.position.value.y - r2.collider.rect.y/2;
-        r2_bottom := r2.position.value.y + r2.collider.rect.y/2;
+        r2_left   := r2.position.value.x - (r2.collider.rect.x * Game.camera.zoom * size_modifier * 0.5)/2;
+        r2_right  := r2.position.value.x + (r2.collider.rect.x * Game.camera.zoom * size_modifier * 0.5)/2;
+        r2_top    := r2.position.value.y - (r2.collider.rect.y * Game.camera.zoom * size_modifier * 0.5)/2;
+        r2_bottom := r2.position.value.y + (r2.collider.rect.y * Game.camera.zoom * size_modifier * 0.5)/2;
 
         left  := r1_left > r2_right;
         right := r1_right < r2_left;
@@ -135,8 +144,6 @@ handle_collision :: (using entity: *Entity)
 
         if !(left || right || above || below)
         {
-            // resolve
-            print("COLLIDING RECT RECT");
         }
     }
 }
