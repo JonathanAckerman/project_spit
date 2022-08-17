@@ -48,13 +48,33 @@ DebugCursor :: struct
 
 debug_player_info :: ()
 {
-    ss_player := to_screen_space(Game.player.position.value.xy);
-    drawpos := ss_player + xy(30 * Game.camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", Game.player.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * Game.camera.zoom;
-    DrawText(to_c_string(tprint("ID:  %", Game.player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    using Game;
+    ss_player := to_screen_space(player.position.value.xy);
+    drawpos := ss_player + xy(30 * camera.zoom, 0);
+    DrawText(to_c_string(tprint("pos: %", player.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    drawpos.y += 20.0 * camera.zoom;
+    DrawText(to_c_string(tprint("ID:  %", player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 
-    DrawCircleLines(xx ss_player.x, xx ss_player.y, Game.player.interactRange * Game.camera.zoom, PINK);
+    DrawCircleLines(xx ss_player.x, xx ss_player.y, player.interactRange * camera.zoom, PINK);
+
+    layer_size_modifier := 1.0 - (player.position.value.z - cast(int) camera.position.z) * 0.1;
+    if player.textureInfo.texture != null
+    {
+        base_size := xy(xx player.textureInfo.width, xx player.textureInfo.height) * 0.5;
+        modified_size := base_size * camera.zoom * layer_size_modifier;
+        texture_drawpos := ss_player - modified_size/2;
+        DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
+    }
+
+    if player.collider.type == {
+        case .CIRCLE;
+            DrawCircleLines(xx ss_player.x, xx ss_player.y, player.collider.radius * camera.zoom * layer_size_modifier, YELLOW);
+        case .RECT;
+            base_size := xy(player.collider.rect.x, player.collider.rect.y) * 0.5;
+            modified_size := base_size * camera.zoom * layer_size_modifier;
+            collider_drawpos := ss_player - modified_size/2;
+            DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx modified_size.x, xx modified_size.y, YELLOW);
+    }
 }
 
 debug_entity_info :: (e: Entity)

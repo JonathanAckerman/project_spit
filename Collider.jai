@@ -58,23 +58,37 @@ handle_collision :: (using entity: *Entity)
     {
         if `collider.type == .CIRCLE
         {
-            if `it.collider.type == .CIRCLE then circle_circle(`entity, `it.entity);
-            else circle_rect(`entity, `it.entity);
+            if `it.collider.type == .CIRCLE then circle_circle(`entity, *`it.entity);
+            else circle_rect(`entity, *`it.entity);
         }
         else
         {
-            if `it.collider.type == .CIRCLE then circle_rect(`it.entity, `entity);
-            else rect_rect(`entity, `it.entity);
+            if `it.collider.type == .CIRCLE then circle_rect(*`it.entity, `entity);
+            else rect_rect(`entity, *`it.entity);
         }
     }
 
-    circle_circle :: (c1: Entity, c2: Entity)
+    circle_circle :: (c1: *Entity, c2: *Entity)
     {
-        dist := length(c1.position.value - c2.position.value);
+        displacement := c1.position.value - c2.position.value;
+        dist := length(displacement);
         if dist < c1.collider.radius + c2.collider.radius
         {
+            overlap_scalar := dist - (c1.collider.radius + c2.collider.radius);
             // resolve
-            print("COLLIDING CIRCLE CIRCLE");
+            if c1.rigidBody.value.mass < c2.rigidBody.value.mass
+            {
+                c1.position.value += unit_vector(displacement) * -overlap_scalar;
+            }
+            else if c1.rigidBody.value.mass > c2.rigidBody.value.mass
+            {
+                c2.position.value += unit_vector(displacement) * overlap_scalar;
+            }
+            else
+            {
+                c1.position.value += unit_vector(displacement) * -overlap_scalar/2;
+                c2.position.value += unit_vector(displacement) * overlap_scalar/2;
+            }
         }
     }
 
