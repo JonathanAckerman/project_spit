@@ -54,7 +54,7 @@ debug_player_info :: ()
     drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", Game.player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 
-    DrawCircleLines(xx ss_player.x, xx ss_player.y, Game.player.interactRange, PINK);
+    DrawCircleLines(xx ss_player.x, xx ss_player.y, Game.player.interactRange * Game.camera.zoom, PINK);
 }
 
 debug_entity_info :: (e: Entity)
@@ -65,13 +65,25 @@ debug_entity_info :: (e: Entity)
     drawpos.y += 20.0 * Game.camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * Game.camera.zoom;
-    // DrawText(to_c_string(tprint("Ent_Type:  %", e.tag)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    // drawpos.y += 20.0 * Game.camera.zoom;
-    // if e.tag ==
-    // {
-    //     case .RESOURCE;
-    //         DrawText(to_c_string(tprint("Res_Type:  %", e.resource.type)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    // }
+
+    layer_size_modifier := 1.0 - (e.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    if e.texture.exists
+    {
+        base_size := xy(xx e.texture.value.width, xx e.texture.value.height) * 0.5;
+        modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+        texture_drawpos := ss_entity - modified_size/2;
+        DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
+    }
+
+    if e.collider.type == {
+        case .CIRCLE;
+            DrawCircleLines(xx ss_entity.x, xx ss_entity.y, e.collider.radius * Game.camera.zoom * layer_size_modifier, YELLOW);
+        case .RECT;
+            base_size := xy(e.collider.rect.x, e.collider.rect.y) * 0.5;
+            modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+            collider_drawpos := ss_entity - modified_size/2;
+            DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx modified_size.x, xx modified_size.y, YELLOW);
+    }
 }
 
 debug_console :: (dt: float)
@@ -215,11 +227,11 @@ debug_is_command_valid :: (cmd: string)
     {
         game_reset();
     }
-    if cmd == "DEBUG INFO 0"
+    if cmd == "DEBUG INFO 0" || "DB0"
     {
         Debug.showEntityInfo = false;
     }
-    if cmd == "DEBUG INFO 1"
+    if cmd == "DEBUG INFO 1" || "DB1"
     {
         Debug.showEntityInfo = true;
     }

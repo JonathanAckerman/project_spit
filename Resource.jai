@@ -46,7 +46,6 @@ Item_Type :: enum
     // byproducts
     COPPER_NUGGET;
     IRON_NUGGET;
-    WATER; // this might work differently
     WOOD_LOG;
     FIBER;
 }
@@ -220,7 +219,6 @@ draw_item :: (item: Item)
     tint.g = xx (tint.g * layer_size_modifier);
     tint.b = xx (tint.b * layer_size_modifier);
     DrawTextureEx(item.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
-    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
 }
 
 get_item_texture :: (type: Item_Type) -> Maybe(*Texture2D)
@@ -249,7 +247,6 @@ draw_item_ui :: (pos: Vector2, collider: Collider, scale: float, type: Item_Type
     drawpos := pos;
     texture := get_item_texture(type);
     DrawTextureEx(texture.value, xx drawpos, 0.0, scale, WHITE);
-    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (texture.value.width * scale), xx (texture.value.height * scale), PINK);
 }
 
 draw_container :: (container: Container)
@@ -328,22 +325,10 @@ draw_resource :: (resource: Resource)
     base_size := xy(xx resource.texture.value.width, xx resource.texture.value.height) * 0.5;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
     center_pos := to_screen_space(resource.position.value.xy);
-    if resource.texture.exists 
-    {
-        drawpos := center_pos - modified_size / 2;
-        tint := Color.{255, 255, 255, 255};
-        tint.r = xx (tint.r * layer_size_modifier);
-        tint.g = xx (tint.g * layer_size_modifier);
-        tint.b = xx (tint.b * layer_size_modifier);
-        DrawTextureEx(resource.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
-        DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
-        resource_color := get_resource_color(resource.type);
-        EndShaderMode();
-        DrawCircleV(center_pos, xx resource.quantity * Game.camera.zoom * layer_size_modifier, resource_color);
-    }
-    else
-    {
-        resource_color := get_resource_color(resource.type);
-        DrawCircleV(center_pos, xx resource.quantity * Game.camera.zoom * layer_size_modifier, resource_color);
-    }
+    drawpos := center_pos - modified_size / 2;
+    tint := Color.{255, 255, 255, 255};
+    tint.r = xx (tint.r * layer_size_modifier);
+    tint.g = xx (tint.g * layer_size_modifier);
+    tint.b = xx (tint.b * layer_size_modifier);
+    DrawTextureEx(resource.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
 }

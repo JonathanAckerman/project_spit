@@ -1032,7 +1032,7 @@ populate_resources :: ()
                     req = NewMaybe(Item_Type.PICK_AXE);
 
             }
-            collider := NewCollider(cast(float) quantity);
+            collider := NewCollider(.{20, 10});
             r := NewResource(type, collider, pos, xx quantity, req);
             array_add(*Game.resources, r);
         }
