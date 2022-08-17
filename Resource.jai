@@ -148,18 +148,18 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
     if type == 
     {
         case .WOOD_LOG;
-            item.texture.value = table_find_pointer(*Textures.table, "wood_log");
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "wood_log");
         case .SWORD;
-            item.texture.value = table_find_pointer(*Textures.table, "sword");
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "sword");
         case .LUMBER_AXE;
-            item.texture.value = table_find_pointer(*Textures.table, "lumber_axe");
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "lumber_axe");
         case .PICK_AXE;
-            item.texture.value = table_find_pointer(*Textures.table, "pick_axe");
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "pick_axe");
         case .HEWING_SAW;
-            item.texture.value = table_find_pointer(*Textures.table, "hewing_saw");
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "hewing_saw");
+        case;
+            item.textureInfo.texture = *ERROR_TEXTURE;
     }
-    if item.texture.value == null then item.texture.value = *ERROR_TEXTURE;
-    item.texture.exists = true;
     return item;
 }
 
@@ -192,16 +192,16 @@ NewResource :: (type: Resource_Type, collider: *Collider, pos: Vector3, quantity
     if resource.type == 
     {
         case .COPPER_VEIN;
-            resource.texture.value = table_find_pointer(*Textures.table, "copper_vein");
+            resource.textureInfo.texture = table_find_pointer(*Textures.table, "copper_vein");
         case .IRON_VEIN;
-            resource.texture.value = table_find_pointer(*Textures.table, "iron_vein");
+            resource.textureInfo.texture = table_find_pointer(*Textures.table, "iron_vein");
         case .BUSH;
-            resource.texture.value = table_find_pointer(*Textures.table, "bush");
+            resource.textureInfo.texture = table_find_pointer(*Textures.table, "bush");
         case .TREE;
-            resource.texture.value = table_find_pointer(*Textures.table, "tree");
+            resource.textureInfo.texture = table_find_pointer(*Textures.table, "tree");
+        case;
+            resource.textureInfo.texture = *ERROR_TEXTURE;
     }
-    if resource.texture.value == null then resource.texture.value = *ERROR_TEXTURE;
-    resource.texture.exists = true;
     return resource;
 }
 
@@ -210,43 +210,43 @@ draw_item :: (item: Item)
     if !item.position.exists return;
 
     layer_size_modifier := 1.0 - (item.position.value.z - cast(int) Game.camera.position.z) * 0.1;
-    base_size := xy(xx item.texture.value.width, xx item.texture.value.height) * 0.5;
+    base_size := xy(xx item.textureInfo.width, xx item.textureInfo.height) * 0.5;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
     center_pos := to_screen_space(item.position.value.xy);
     drawpos := center_pos - modified_size / 2;
-    tint := Color.{255, 255, 255, 255};
+    tint := item.textureInfo.tint;
     tint.r = xx (tint.r * layer_size_modifier);
     tint.g = xx (tint.g * layer_size_modifier);
     tint.b = xx (tint.b * layer_size_modifier);
-    DrawTextureEx(item.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
+    DrawTextureEx(item.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
 }
 
-get_item_texture :: (type: Item_Type) -> Maybe(*Texture2D)
+get_item_texture_info :: (type: Item_Type) -> TextureInfo
 {
-    texture: Maybe(*Texture2D);
+    info: TextureInfo;
     if type == 
     {
         case .WOOD_LOG;
-            texture.value = table_find_pointer(*Textures.table, "wood_log");
+            info.texture = table_find_pointer(*Textures.table, "wood_log");
         case .SWORD;
-            texture.value = table_find_pointer(*Textures.table, "sword");
+            info.texture = table_find_pointer(*Textures.table, "sword");
         case .LUMBER_AXE;
-            texture.value = table_find_pointer(*Textures.table, "lumber_axe");
+            info.texture = table_find_pointer(*Textures.table, "lumber_axe");
         case .PICK_AXE;
-            texture.value = table_find_pointer(*Textures.table, "pick_axe");
+            info.texture = table_find_pointer(*Textures.table, "pick_axe");
         case .HEWING_SAW;
-            texture.value = table_find_pointer(*Textures.table, "hewing_saw");
+            info.texture = table_find_pointer(*Textures.table, "hewing_saw");
+        case;
+            info.texture = *ERROR_TEXTURE;
     }
-    if texture.value == null then texture.value = *ERROR_TEXTURE;
-    texture.exists = true;
-    return texture;
+    return info;
 }
 
 draw_item_ui :: (pos: Vector2, collider: Collider, scale: float, type: Item_Type)
 {
     drawpos := pos;
-    texture := get_item_texture(type);
-    DrawTextureEx(texture.value, xx drawpos, 0.0, scale, WHITE);
+    info := get_item_texture_info(type);
+    DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
 }
 
 draw_container :: (container: Container)
@@ -322,13 +322,13 @@ draw_resource :: (resource: Resource)
     if !resource.position.exists return;
 
     layer_size_modifier := 1.0 - (resource.position.value.z - cast(int) Game.camera.position.z) * 0.1;
-    base_size := xy(xx resource.texture.value.width, xx resource.texture.value.height) * 0.5;
+    base_size := xy(xx resource.textureInfo.width, xx resource.textureInfo.height) * 0.5;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
     center_pos := to_screen_space(resource.position.value.xy);
     drawpos := center_pos - modified_size / 2;
-    tint := Color.{255, 255, 255, 255};
+    tint := resource.textureInfo.tint;
     tint.r = xx (tint.r * layer_size_modifier);
     tint.g = xx (tint.g * layer_size_modifier);
     tint.b = xx (tint.b * layer_size_modifier);
-    DrawTextureEx(resource.texture.value, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
+    DrawTextureEx(resource.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
 }

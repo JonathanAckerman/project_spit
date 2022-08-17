@@ -4,8 +4,13 @@ ENTRY_POINT :: "main.jai";
 
 #run {
     args := get_build_options().compile_time_command_line;
-    for arg: args if arg == "trim-pngs" {
-        tools_workspace := compiler_create_workspace("Tools Program"); {
+    for arg: args 
+    {
+        if arg == "help" {
+            print("trim-pngs\n");
+        }
+        else if arg == "trim-pngs" {
+            tools_workspace := compiler_create_workspace("Tools Program"); 
             if !tools_workspace { print("Workspace creation failed.\n"); return; }
             options := get_build_options(tools_workspace);
             options.text_output_flags = 0;

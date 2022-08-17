@@ -67,9 +67,9 @@ debug_entity_info :: (e: Entity)
     drawpos.y += 20.0 * Game.camera.zoom;
 
     layer_size_modifier := 1.0 - (e.position.value.z - cast(int) Game.camera.position.z) * 0.1;
-    if e.texture.exists
+    if e.textureInfo.texture != null
     {
-        base_size := xy(xx e.texture.value.width, xx e.texture.value.height) * 0.5;
+        base_size := xy(xx e.textureInfo.width, xx e.textureInfo.height) * 0.5;
         modified_size := base_size * Game.camera.zoom * layer_size_modifier;
         texture_drawpos := ss_entity - modified_size/2;
         DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);

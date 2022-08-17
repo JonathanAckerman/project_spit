@@ -10,7 +10,7 @@ Entity :: struct
     rigidBody: Maybe(RigidBody);
 
     id: u64;
-    texture: Maybe(*Texture2D);
+    textureInfo: TextureInfo;
     owner: Maybe(*Person);
 }
 
@@ -37,4 +37,10 @@ init_entity_data :: (pos: Vector3, collider: *Collider, owner: *Person = null, m
     e.id = _Entity_ID;
     _Entity_ID += 1;
     return e;
+}
+
+TextureInfo :: struct
+{
+    using texture: *Texture2D;
+    tint: Color = WHITE;
 }

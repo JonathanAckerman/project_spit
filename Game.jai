@@ -646,8 +646,8 @@ game_loop :: inline ()
         for resources 
             if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { 
                 textureSize : [2] float;
-                textureSize[0] = xx it.texture.value.width; 
-                textureSize[1] = xx it.texture.value.height;
+                textureSize[0] = xx it.textureInfo.width; 
+                textureSize[1] = xx it.textureInfo.height;
                 textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
                 SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
                 draw_resource(it);

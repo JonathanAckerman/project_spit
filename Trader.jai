@@ -67,6 +67,9 @@ NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
     collider := NewCollider(20.0);
     person.entity = init_entity_data(pos, collider, null, 1);
     person.ai = ai;
+    person.textureInfo.texture = table_find_pointer(*Textures.table, "person");
+    if !ai.exists then person.textureInfo.tint = BLACK;
+    else person.textureInfo.tint = ORANGE;
     return person;
 }
 
