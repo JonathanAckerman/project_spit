@@ -184,7 +184,7 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
 NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
 {
     resource := New(Resource);
-    mass := ifx type == .BUSH then 0 else 100;
+    mass := ifx type == .BUSH then 0 else 999;
     resource.entity = init_entity_data(pos, null, null, mass);
     resource.type = type;
     resource.quantity = quantity;

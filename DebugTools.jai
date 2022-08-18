@@ -122,17 +122,17 @@ debug_player_info :: ()
     if player.textureInfo.texture != null
     {
         base_size := xy(xx player.textureInfo.width, xx player.textureInfo.height) * 0.5;
-        modified_size := base_size * camera.zoom * layer_size_modifier;
+        modified_size := base_size * camera.zoom;
         texture_drawpos := ss_player - modified_size/2;
         DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
     }
 
     if player.collider.type == {
         case .CIRCLE;
-            DrawCircleLines(xx ss_player.x, xx ss_player.y, player.collider.radius * camera.zoom * layer_size_modifier, YELLOW);
+            DrawCircleLines(xx ss_player.x, xx ss_player.y, player.collider.radius * camera.zoom, YELLOW);
         case .RECT;
             base_size := xy(player.collider.rect.x, player.collider.rect.y) * 0.5;
-            modified_size := base_size * camera.zoom * layer_size_modifier;
+            modified_size := base_size * camera.zoom;
             collider_drawpos := ss_player - modified_size/2;
             DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx modified_size.x, xx modified_size.y, YELLOW);
     }
@@ -140,28 +140,29 @@ debug_player_info :: ()
 
 debug_entity_info :: (e: Entity)
 {
+    using Game;
     ss_entity := to_screen_space(e.position.value.xy);
-    drawpos := ss_entity + xy(30 * Game.camera.zoom, 0);
+    drawpos := ss_entity + xy(30 * camera.zoom, 0);
     DrawText(to_c_string(tprint("pos: %", e.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * Game.camera.zoom;
+    drawpos.y += 20.0 * camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
-    drawpos.y += 20.0 * Game.camera.zoom;
+    drawpos.y += 20.0 * camera.zoom;
 
-    layer_size_modifier := 1.0 - (e.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    layer_size_modifier := 1.0 - (e.position.value.z - cast(int) camera.position.z) * 0.1;
     if e.textureInfo.texture != null
     {
         base_size := xy(xx e.textureInfo.width, xx e.textureInfo.height) * 0.5;
-        modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+        modified_size := base_size * camera.zoom;
         texture_drawpos := ss_entity - modified_size/2;
         DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
     }
 
     if e.collider.type == {
         case .CIRCLE;
-            DrawCircleLines(xx ss_entity.x, xx ss_entity.y, e.collider.radius * Game.camera.zoom * layer_size_modifier, YELLOW);
+            DrawCircleLines(xx ss_entity.x, xx ss_entity.y, e.collider.radius * camera.zoom, YELLOW);
         case .RECT;
             base_size := xy(e.collider.rect.x, e.collider.rect.y) * 0.5;
-            modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+            modified_size := base_size * camera.zoom;
             collider_drawpos := ss_entity - modified_size/2;
             DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx modified_size.x, xx modified_size.y, YELLOW);
     }
