@@ -38,9 +38,3 @@ init_entity_data :: (pos: Vector3, collider: *Collider, owner: *Person = null, m
     _Entity_ID += 1;
     return e;
 }
-
-TextureInfo :: struct
-{
-    using texture: *Texture2D;
-    tint: Color = WHITE;
-}

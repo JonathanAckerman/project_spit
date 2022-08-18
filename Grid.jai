@@ -30,6 +30,7 @@ GridCell :: struct
     y: int;
     z: int;
     type: Cell_Type;
+    block: Maybe(Block);
 }
 
 Cell_Type :: enum
@@ -38,6 +39,7 @@ Cell_Type :: enum
     BEDROCK;
     DIRT;
     WATER;
+    BLOCK;
 }
 
 operator == :: (a: GridCell, b: GridCell) -> bool

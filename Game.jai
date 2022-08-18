@@ -42,6 +42,7 @@ game_loop :: inline ()
         update_current_chunk();
 
         camera.position.xy = player.position.value.xy;
+        // camera.position.z = player.position.value.z - 1;
 
         equipItem :: ()
         {
@@ -610,11 +611,12 @@ game_loop :: inline ()
             drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
             for cell: cells_below_camera
             {
-                if cell.type == .AIR continue;
 
                 offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
                 if !drawn_flags[offset_from_layer]
                 {
+                    if cell.type == .AIR continue;
+
                     drawpos := to_screen_space(grid_to_world(cell.x, cell.y, 0).xy);
                     size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
                     camera_dist_to_cell := (cell.z - cast(int) camera.position.z) - 1;
@@ -636,6 +638,8 @@ game_loop :: inline ()
                             DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BROWN, size_modifier));
                         case .WATER;
                             DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
+                        case .BLOCK;
+                            draw_cell(cell);
                     }
                     DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
                     drawn_flags[offset_from_layer] = true;
@@ -815,14 +819,22 @@ game_reset :: ()
                         // else if 
                         else cell.type = .DIRT;
                     }
+
+                    cell.block = Nothing(Block);
                 }
             }
         }
     }
 
+    // @TEMP: stairs block
+    stair_cell_index := Game.grid.chunkWidth * Game.grid.chunkWidth * 2 + Game.grid.chunkWidth * 2 + 6;
+    stairs := make_block(.STAIRS, .{1, 0});
+    Game.grid.chunks[Game.grid.currentChunk].cells[stair_cell_index].type = .BLOCK;
+    Game.grid.chunks[Game.grid.currentChunk].cells[stair_cell_index].block = NewMaybe(stairs);
+
     // @TEMP: falling terrain
     fall_cell_index := Game.grid.chunkWidth * 2 + 3;
-    Game.grid.chunks[Game.grid.currentChunk].cells[fall_cell_index].type = .WATER;
+    Game.grid.chunks[Game.grid.currentChunk].cells[fall_cell_index].type = .BEDROCK;
 
     // init player
     noAI: Maybe(AI);
@@ -851,9 +863,10 @@ game_reset :: ()
 
     // init shops
     {
+        no_block :: Maybe(Block).{};
         area := GridCell.[
-            .{0, 0, 2, .AIR}, .{1, 0, 2, .AIR}, .{2, 0, 2, .AIR},
-            .{0, 1, 2, .AIR}, .{1, 1, 2, .AIR}, .{2, 1, 2, .AIR},
+            .{0, 0, 2, .AIR, no_block}, .{1, 0, 2, .AIR, no_block}, .{2, 0, 2, .AIR, no_block},
+            .{0, 1, 2, .AIR, no_block}, .{1, 1, 2, .AIR, no_block}, .{2, 1, 2, .AIR, no_block},
         ];
 
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);

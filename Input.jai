@@ -74,7 +74,7 @@ handle_input :: inline ()
         else if IsKeyPressed(xx KeyboardKey.FOUR) then equipSlot = 3;
         else if IsKeyPressed(xx KeyboardKey.FIVE) then equipSlot = 4;
         else if IsKeyPressed(xx KeyboardKey.SIX) then equipSlot = 5;
-
+        
         if IsKeyPressed(xx KeyboardKey.EQUAL)
         {
             if Game.camera.position.z > 0 then Game.camera.position.z -= 1;
@@ -98,6 +98,7 @@ handle_input :: inline ()
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
             Debug.c.charNumber += 1;
         }
+
 
         // submit command
         if IsKeyPressed(xx KeyboardKey.ENTER)

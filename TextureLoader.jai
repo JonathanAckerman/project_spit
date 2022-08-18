@@ -2,6 +2,24 @@ TEXTURES_PATH :: "C:/jai/sandbox/project_spit/assets/textures";
 ERROR_TEXTURE_PATH :: "C:/jai/sandbox/project_spit/assets/textures/error.png";
 ERROR_TEXTURE: Texture2D;
 
+Textures: struct
+{
+    table: Table(string, Texture2D);
+    path_table: Table(string, string);
+
+    outlineShader: Shader;
+    outlineSize := 2.0;
+    outlineSizeLoc: s32;
+    textureSizeLoc: s32;
+}
+
+TextureInfo :: struct
+{
+    using texture: *Texture2D;
+    tint: Color = WHITE;
+    size: Vector2;
+}
+
 generate_textures_struct :: ()
 {
     get_data :: (info: *File_Visit_Info, data: *[..] string) 
@@ -57,17 +75,6 @@ generate_textures_struct :: ()
         }
     }
     result := builder_to_string(*builder);
-}
-
-Textures: struct
-{
-    table: Table(string, Texture2D);
-    path_table: Table(string, string);
-
-    outlineShader: Shader;
-    outlineSize := 2.0;
-    outlineSizeLoc: s32;
-    textureSizeLoc: s32;
 }
 
 load_all_textures :: ()

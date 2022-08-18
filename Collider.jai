@@ -46,6 +46,9 @@ handle_collision :: (using entity: *Entity)
     if position.value.x > grid_to_world(Grid.right(grid)) then position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if position.value.y > grid_to_world(Grid.bottom(grid)) then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
 
+    // collision with grid
+    
+
     if !rigidBody.exists return;
 
     for resources   if it.position.exists && it.rigidBody.exists check_and_resolve();

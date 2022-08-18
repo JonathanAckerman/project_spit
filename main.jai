@@ -27,6 +27,7 @@ main :: () {
 #load "Collider.jai";
 #load "Physics.jai";
 #load "Resource.jai";
+#load "Building.jai";
 #load "Trader.jai";
 #load "DebugTools.jai";
 #load "Maybe.jai";
