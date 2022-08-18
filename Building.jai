@@ -28,9 +28,11 @@ make_block :: (type: Block_Type, orientation: Vector2) -> Block
 // @TODO: for now this will only be responsible for drawing blocks, not cells in general, eventually it'll do both
 draw_cell :: (cell: GridCell)
 {
-    layer_size_modifier := 1.0 - (cell.z - cast(int) Game.camera.position.z) * 0.1;
-    base_size := xy(xx cell.block.value.textureInfo.width, xx cell.block.value.textureInfo.height) * 0.5;
-    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+    layer_size_modifier := 1.0 - (cell.z - (cast(int) Game.camera.position.z + 1)) * 0.1;
+    // @TEMP: for now make resizing preserve aspect ratio
+    resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
+    base_size := xy(xx cell.block.value.textureInfo.width, xx cell.block.value.textureInfo.height);
+    modified_size := base_size * resize_ratio * Game.camera.zoom * layer_size_modifier;
     ss_block := to_screen_space(grid_to_world(cell.x, cell.y, cell.z, true).xy);
     drawpos := ss_block - modified_size / 2;
     tint := cell.block.value.textureInfo.tint;
@@ -53,7 +55,5 @@ draw_cell :: (cell: GridCell)
         rot = 270.0;
         drawpos += .{0, Game.grid.cellSize};
     }
-    // @TEMP: for now make resizing preserve aspect ratio
-    resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
     DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, rot, resize_ratio * Game.camera.zoom * layer_size_modifier, tint);
 }

@@ -42,7 +42,7 @@ game_loop :: inline ()
         update_current_chunk();
 
         camera.position.xy = player.position.value.xy;
-        // camera.position.z = player.position.value.z - 1;
+        camera.position.z = player.position.value.z - 1;
 
         equipItem :: ()
         {
@@ -619,7 +619,7 @@ game_loop :: inline ()
 
                     drawpos := to_screen_space(grid_to_world(cell.x, cell.y, 0).xy);
                     size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-                    camera_dist_to_cell := (cell.z - cast(int) camera.position.z) - 1;
+                    camera_dist_to_cell := (cell.z - (cast(int) camera.position.z + 2));
                     if camera_dist_to_cell < 0 then camera_dist_to_cell = 0;
                     size_modifier := 1.0 - camera_dist_to_cell * 0.1;
                     drawpos_offset_from_size := size - size * size_modifier;

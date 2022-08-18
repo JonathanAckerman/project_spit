@@ -118,7 +118,7 @@ debug_player_info :: ()
 
     DrawCircleLines(xx ss_player.x, xx ss_player.y, player.interactRange * camera.zoom, PINK);
 
-    layer_size_modifier := 1.0 - (player.position.value.z - cast(int) camera.position.z) * 0.1;
+    layer_size_modifier := 1.0 - (player.position.value.z - (cast(int) camera.position.z + 1)) * 0.1;
     if player.textureInfo.texture != null
     {
         base_size := xy(xx player.textureInfo.width, xx player.textureInfo.height) * 0.5;
@@ -148,7 +148,7 @@ debug_entity_info :: (e: Entity)
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
 
-    layer_size_modifier := 1.0 - (e.position.value.z - cast(int) camera.position.z) * 0.1;
+    layer_size_modifier := 1.0 - (e.position.value.z - (cast(int) camera.position.z + 1)) * 0.1;
     if e.textureInfo.texture != null
     {
         base_size := xy(xx e.textureInfo.width, xx e.textureInfo.height) * 0.5;

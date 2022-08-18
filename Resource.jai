@@ -211,7 +211,7 @@ draw_item :: (item: Item)
 {
     if !item.position.exists return;
 
-    layer_size_modifier := 1.0 - (item.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    layer_size_modifier := 1.0 - (item.position.value.z - (cast(int) Game.camera.position.z + 1)) * 0.1;
     base_size := xy(xx item.textureInfo.width, xx item.textureInfo.height) * 0.5;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
     center_pos := to_screen_space(item.position.value.xy);
@@ -323,7 +323,7 @@ draw_resource :: (resource: Resource)
 {
     if !resource.position.exists return;
 
-    layer_size_modifier := 1.0 - (resource.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    layer_size_modifier := 1.0 - (resource.position.value.z - (cast(int) Game.camera.position.z + 1)) * 0.1;
     base_size := xy(xx resource.textureInfo.width, xx resource.textureInfo.height) * 0.5;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
     center_pos := to_screen_space(resource.position.value.xy);
