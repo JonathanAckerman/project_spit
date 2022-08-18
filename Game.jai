@@ -586,6 +586,7 @@ game_loop :: inline ()
                     npc.velocity = .{};
                 }
                 npc.position.value += npc.velocity;
+                handle_collision(*npc.entity);
             }
         }
 
