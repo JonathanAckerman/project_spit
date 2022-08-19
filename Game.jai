@@ -777,6 +777,7 @@ game_loop :: inline ()
 
             debug_deferred_draw_rectancles();
             debug_deferred_draw_circles();
+            debug_deferred_draw_lines();
         }
 
         EndDrawing();

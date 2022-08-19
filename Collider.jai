@@ -46,10 +46,15 @@ handle_collision :: (using entity: *Entity)
     if position.value.x > grid_to_world(Grid.right(grid)) then position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if position.value.y > grid_to_world(Grid.bottom(grid)) then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
 
-    // collision with grid
-
-    // stairs
     cell := world_to_grid(entity.position.value);
+
+    // collision with grid
+    if cell.type != .AIR && cell.type != .BLOCK
+    {
+        circle_gridcell(entity, cell, true);
+    }
+    
+    // stairs
     if cell.block.exists
     {
         if cell.block.value.type == .STAIR_BOTTOM
@@ -140,11 +145,6 @@ handle_collision :: (using entity: *Entity)
 
     circle_rect :: (c: *Entity, r: *Entity, shouldResolve: bool) -> bool
     {
-        rleft   := r.position.value.x - (r.collider.rect.x * 0.5)/2;
-        rright  := r.position.value.x + (r.collider.rect.x * 0.5)/2;
-        rtop    := r.position.value.y - (r.collider.rect.y * 0.5)/2;
-        rbottom := r.position.value.y + (r.collider.rect.y * 0.5)/2;
-
         rect_modified_size := (r.collider.rect * 0.5)/2;
         displacement := c.position.value - r.position.value;
         closest_x := r.position.value.x + clamp(displacement.x, -rect_modified_size.x, rect_modified_size.x);
@@ -159,6 +159,34 @@ handle_collision :: (using entity: *Entity)
                 if shouldResolve then c.position.value.xy += unit_vector(circle_to_closest) * overlap_scalar;
                 return true;
             }
+        }
+        return false;
+    }
+
+    circle_gridcell :: (c: *Entity, g: *GridCell, shouldResolve: bool) -> bool
+    {
+        gpos := grid_to_world(g, true);
+        gleft   := gpos.x - Game.grid.cellSize/2;
+        gright  := gpos.x + Game.grid.cellSize/2;
+        gtop    := gpos.y - Game.grid.cellSize/2;
+        gbottom := gpos.y + Game.grid.cellSize/2;
+
+        size := xy(Game.grid.cellSize, Game.grid.cellSize);
+        displacement := c.position.value - gpos;
+        dbl := make_debug_line(to_screen_space(c.position.value.xy), to_screen_space(gpos.xy), YELLOW);
+        defer_draw_line(dbl);
+        closest_x := gpos.x + clamp(displacement.x, -size.x, size.x);
+        closest_y := gpos.y + clamp(displacement.y, -size.y, size.y);
+        // dbr := make_debug_rectangle(to_screen_space(gpos.xy - size/2), size, YELLOW);
+        // defer_draw_rect(dbr);
+        // print("%, %, %\n", c.position.value.xy, closest_x, closest_y);
+
+        circle_to_closest := c.position.value.xy - xy(closest_x, closest_y);
+        if length(circle_to_closest) < c.collider.radius
+        {
+            overlap_scalar := c.collider.radius - length(circle_to_closest);
+            if shouldResolve then c.position.value.xy += unit_vector(circle_to_closest) * overlap_scalar;
+            return true;
         }
         return false;
     }

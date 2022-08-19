@@ -36,6 +36,7 @@ Debug: struct
 
     debugRectangles : [..] DebugRectangle;
     debugCircles :    [..] DebugCircle;
+    debugLines :      [..] DebugLine;
 }
 
 DebugCursor :: struct
@@ -87,6 +88,27 @@ make_debug_circle :: (x: float, y: float, r: float, c: Color) -> DebugCircle
 }
 defer_draw_circle :: (dbc: DebugCircle) { array_add(*Debug.debugCircles, dbc); }
 
+DebugLine :: struct
+{
+    x0: float;
+    y0: float;
+    x1: float;
+    y1: float;
+    color: Color;
+}
+make_debug_line :: (start: Vector2, stop: Vector2, c: Color) -> DebugLine { return make_debug_line(start.x, start.y, stop.x, stop.y, c); }
+make_debug_line :: (x0: float, y0: float, x1: float, y1: float, c: Color) -> DebugLine
+{
+    dbl: DebugLine;
+    dbl.x0 = x0;
+    dbl.y0 = y0;
+    dbl.x1 = x1;
+    dbl.y1 = y1;
+    dbl.color = c;
+    return dbl;
+}
+defer_draw_line :: (dbl: DebugLine) { array_add(*Debug.debugLines, dbl); }
+
 debug_deferred_draw_rectancles :: ()
 {
     for Debug.debugRectangles 
@@ -105,6 +127,15 @@ debug_deferred_draw_circles :: ()
         remove it;
     }
 
+}
+
+debug_deferred_draw_lines :: ()
+{
+    for Debug.debugLines
+    {
+        DrawLine(xx it.x0, xx it.y0, xx it.x1, xx it.y1, it.color);
+        remove it;
+    }
 }
 
 debug_player_info :: ()
