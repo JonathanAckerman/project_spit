@@ -1,7 +1,7 @@
 Block :: struct
 {
     type: Block_Type;
-    orientation: Vector2;
+    orientation: float;
     textureInfo: TextureInfo;
     // location: (within the cell)
 }
@@ -9,16 +9,17 @@ Block :: struct
 Block_Type :: enum
 {
     FULL_WALL;
-    STAIRS;
+    STAIR_TOP;
+    STAIR_BOTTOM;
 }
 
-make_block :: (type: Block_Type, orientation: Vector2) -> Block
+make_block :: (type: Block_Type, orientation: float) -> Block
 {
     block: Block;
     block.type = type;
     block.orientation = orientation;
     info: TextureInfo;
-    if type == .STAIRS then info.texture = table_find_pointer(*Textures.table, "stairs");
+    if type == .STAIR_BOTTOM then info.texture = table_find_pointer(*Textures.table, "stairs");
     info.tint = WHITE;
     info.size = xy(Game.grid.cellSize, Game.grid.cellSize);
     block.textureInfo = info;
@@ -28,6 +29,8 @@ make_block :: (type: Block_Type, orientation: Vector2) -> Block
 // @TODO: for now this will only be responsible for drawing blocks, not cells in general, eventually it'll do both
 draw_cell :: (cell: GridCell)
 {
+    if cell.block.value.type == .STAIR_TOP return;
+    
     layer_size_modifier := 1.0 - (cell.z - (cast(int) Game.camera.position.z + 1)) * 0.1;
     // @TEMP: for now make resizing preserve aspect ratio
     resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
@@ -39,21 +42,8 @@ draw_cell :: (cell: GridCell)
     tint.r = xx (tint.r * layer_size_modifier);
     tint.g = xx (tint.g * layer_size_modifier);
     tint.b = xx (tint.b * layer_size_modifier);
-    rot: float = 0;
-    if cell.block.value.orientation == .{0, 1} 
-    {
-        rot = 90.0;
-        drawpos += .{Game.grid.cellSize, 0};
-    }
-    if cell.block.value.orientation == .{-1, 0} 
-    {
-        rot = 180.0;
-        drawpos += .{Game.grid.cellSize, Game.grid.cellSize};
-    }
-    if cell.block.value.orientation == .{0, -1} 
-    {
-        rot = 270.0;
-        drawpos += .{0, Game.grid.cellSize};
-    }
-    DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, rot, resize_ratio * Game.camera.zoom * layer_size_modifier, tint);
+    if cell.block.value.orientation == 90.0  then drawpos += xy(0, 1) * Game.grid.cellSize;
+    if cell.block.value.orientation == 180.0 then drawpos += xy(1, 1) * Game.grid.cellSize;
+    if cell.block.value.orientation == 270.0 then drawpos += xy(1, 0) * Game.grid.cellSize;
+    DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, -cell.block.value.orientation, resize_ratio * Game.camera.zoom * layer_size_modifier, tint);
 }

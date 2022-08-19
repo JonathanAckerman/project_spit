@@ -642,7 +642,8 @@ game_loop :: inline ()
                             draw_cell(cell);
                     }
                     DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
-                    drawn_flags[offset_from_layer] = true;
+                    if cell.type != .BLOCK || cell.block.value.type == .STAIR_BOTTOM
+                        drawn_flags[offset_from_layer] = true;
                 }
             }
         }
@@ -827,10 +828,16 @@ game_reset :: ()
     }
 
     // @TEMP: stairs block
-    stair_cell_index := Game.grid.chunkWidth * Game.grid.chunkWidth * 2 + Game.grid.chunkWidth * 2 + 6;
-    stairs := make_block(.STAIRS, .{1, 0});
-    Game.grid.chunks[Game.grid.currentChunk].cells[stair_cell_index].type = .BLOCK;
-    Game.grid.chunks[Game.grid.currentChunk].cells[stair_cell_index].block = NewMaybe(stairs);
+    stair_bot := make_block(.STAIR_BOTTOM, 0.0);
+    stair_bot_cell_index := Game.grid.chunkWidth * Game.grid.chunkWidth * 2 + Game.grid.chunkWidth * 2 + 6;
+    Game.grid.chunks[Game.grid.currentChunk].cells[stair_bot_cell_index].type = .BLOCK;
+    Game.grid.chunks[Game.grid.currentChunk].cells[stair_bot_cell_index].block = NewMaybe(stair_bot);
+
+    stair_top := make_block(.STAIR_TOP, 0.0);
+    stair_top_cell_index := Game.grid.chunkWidth * Game.grid.chunkWidth * 1 + Game.grid.chunkWidth * 2 + 6;
+    Game.grid.chunks[Game.grid.currentChunk].cells[stair_top_cell_index].type = .BLOCK;
+    Game.grid.chunks[Game.grid.currentChunk].cells[stair_top_cell_index].block = NewMaybe(stair_top);
+
 
     // @TEMP: falling terrain
     fall_cell_index := Game.grid.chunkWidth * 2 + 3;
