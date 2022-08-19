@@ -837,16 +837,20 @@ game_reset :: ()
 
     // @TEMP: stairs block
     stair_bot := make_block(.STAIR_BOTTOM, 0.0);
-    stair_bot_cell_index := grid.chunkWidth * grid.chunkWidth * 2 + grid.chunkWidth * 2 + 6;
-    grid.chunks[grid.currentChunk].cells[stair_bot_cell_index].type = .BLOCK;
-    grid.chunks[grid.currentChunk].cells[stair_bot_cell_index].block = NewMaybe(stair_bot);
+    bot_cell := get_cell(6, 2, 2);
+    bot_cell.type = .BLOCK;
+    bot_cell.block = NewMaybe(stair_bot);
 
     stair_top := make_block(.STAIR_TOP, 0.0);
-    stair_top_cell_index := grid.chunkWidth * grid.chunkWidth * 1 + grid.chunkWidth * 2 + 6;
-    grid.chunks[grid.currentChunk].cells[stair_top_cell_index].type = .BLOCK;
-    grid.chunks[grid.currentChunk].cells[stair_top_cell_index].block = NewMaybe(stair_top);
+    top_cell := get_cell(6, 2, 1);
+    top_cell.type = .BLOCK;
+    top_cell.block = NewMaybe(stair_top);
 
-
+    get_cell(7, 2, 2).type = .BEDROCK;
+    get_cell(8, 2, 2).type = .BEDROCK;
+    get_cell(8, 3, 2).type = .BEDROCK;
+    get_cell(8, 1, 2).type = .BEDROCK;
+    
     // @TEMP: falling terrain
     fall_cell_index := grid.chunkWidth * 2 + 3;
     grid.chunks[grid.currentChunk].cells[fall_cell_index].type = .BEDROCK;
