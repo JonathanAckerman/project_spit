@@ -8,7 +8,6 @@ main :: () {
     SetTargetFPS(60);
     Debug.font = LoadFont("./assets/fonts/cour.ttf");
     SetTraceLogLevel(xx TraceLogLevel.LOG_NONE);
-    load_all_textures();
 
     Game.resetting = true;
     while Game.resetting {

@@ -49,6 +49,9 @@ handle_collision :: (using entity: *Entity)
     cell := world_to_grid(entity.position.value);
 
     // collision with grid
+    // @@@: Here I only check collision for the current cell, which is the cell containing the entity's center, I should look at all adjacent cells (in all 3D directions including diagonals)
+    //      but I'll need to account for cells that abut the edge of the map and cells that abut an adjacent chunk (in all 3D directions including diagonals).
+    //      Maybe have a method get_adjacent_cells()
     if cell.type != .AIR && cell.type != .BLOCK
     {
         circle_gridcell(entity, cell, true);

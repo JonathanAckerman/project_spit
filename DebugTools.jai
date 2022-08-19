@@ -208,11 +208,13 @@ debug_entity_info :: (e: Entity)
 debug_grid_info :: ()
 {
     using Game;
-    for y: 0..grid.chunkWidth - 1
+    for grid.loadedChunks
     {
-        for x: 0..grid.chunkWidth - 1
+        for it.cells
         {
-            punch := get_grid_punch(x, y);
+            if it.z == 1 break;
+            
+            punch := get_grid_punch(it.x, it.y);
             for punch if it.type != .AIR
             {
                 drawpos := to_screen_space(grid_to_world(it).xy, .{4, 4});
@@ -366,11 +368,11 @@ debug_is_command_valid :: (cmd: string)
     {
         game_reset();
     }
-    if cmd == "DEBUG INFO 0" || "DB0"
+    if cmd == "DEBUG INFO 0" || cmd == "DB0"
     {
         Debug.showEntityInfo = false;
     }
-    if cmd == "DEBUG INFO 1" || "DB1"
+    if cmd == "DEBUG INFO 1" || cmd == "DB1"
     {
         Debug.showEntityInfo = true;
     }

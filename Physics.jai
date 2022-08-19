@@ -3,12 +3,11 @@ handle_physics :: (dt: float)
     using Game;
     
     apply_gravity(*player.person.entity, dt);
-    for npcs { apply_gravity(*it.entity, dt); }
-    for items { apply_gravity(*it.entity, dt); }
-    for equipment { apply_gravity(*it.entity, dt); }
-    for containers { apply_gravity(*it.entity, dt); }
-
-    for < grid.chunks[grid.currentChunk].cells { apply_gravity(it_index, dt); }
+    for npcs       if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
+    for items      if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
+    for equipment  if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
+    for containers if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
+    for grid.loadedChunks for < it.cells { apply_gravity(it_index, dt); }
 }
 
 apply_gravity :: (entity: *Entity, dt: float)
@@ -34,7 +33,7 @@ apply_gravity :: (entity: *Entity, dt: float)
 apply_gravity :: (cell_index: int, dt: float)
 {
     using Game;
-    cell := *grid.chunks[grid.currentChunk].cells[cell_index];
+    cell := *grid.chunks[grid.currentChunk].cells[cell_index]; // @@@:HERE
     punch := get_grid_punch(cell);
     above_bedrock := cell.z < grid.worldHeight - 1;
 

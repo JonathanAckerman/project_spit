@@ -603,9 +603,7 @@ game_loop :: inline ()
 
         // draw grid
         layer_index := cast(int) camera.position.z * grid.chunkWidth * grid.chunkWidth;
-        chunks_to_draw: [..] *GridChunk;
-        array_add(*chunks_to_draw, *grid.chunks[grid.currentChunk]);
-        for chunk: chunks_to_draw
+        for chunk: grid.loadedChunks
         {
             cells_below_camera := array_view(chunk.cells, layer_index);
             drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
@@ -650,7 +648,7 @@ game_loop :: inline ()
 
         BeginShaderMode(Textures.outlineShader);
         for resources 
-            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { 
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { 
                 textureSize : [2] float;
                 textureSize[0] = xx it.textureInfo.width; 
                 textureSize[1] = xx it.textureInfo.height;
@@ -659,18 +657,20 @@ game_loop :: inline ()
                 draw_resource(it);
         }
         EndShaderMode();
-        for shops if is_in_current_chunk(xyz(xx it.area[0].x, xx it.area[0].y, xx it.area[0].z)) && xx it.area[0].z >= camera.position.z { draw_shop(it); }
+        for shop: shops for shop.area {
+            if is_in_loaded_chunk(it) && xx it.z >= camera.position.z
+                draw_shop(shop); 
+        }
         for items
-            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_item(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_item(it); }
         for containers 
-            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_container(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_container(it); }
         for equipment 
-            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_equipment(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_equipment(it); }
         for npcs 
-            if it.position.exists && is_in_current_chunk(it.position.value) && it.position.value.z >= camera.position.z { draw_person(it); }
-        if is_in_current_chunk(player.position.value) && player.position.value.z >= camera.position.z
-        {
-            draw_person(player);
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_person(it); }
+        if is_in_loaded_chunk(player) && player.position.value.z >= camera.position.z { 
+            draw_person(player); 
         }
 
         // draw ui
@@ -763,11 +763,11 @@ game_loop :: inline ()
             if Debug.showEntityInfo
             {
                 debug_player_info();
-                for items { debug_entity_info(<<it); }
-                for containers { debug_entity_info(<<it); }
-                for equipment { debug_entity_info(<<it); }
-                for npcs { debug_entity_info(<<it); }
-                for resources { debug_entity_info(<<it); }
+                for items       if is_in_loaded_chunk(it) { debug_entity_info(<<it); }
+                for containers  if is_in_loaded_chunk(it) { debug_entity_info(<<it); }
+                for equipment   if is_in_loaded_chunk(it) { debug_entity_info(<<it); }
+                for npcs        if is_in_loaded_chunk(it) { debug_entity_info(<<it); }
+                for resources   if is_in_loaded_chunk(it) { debug_entity_info(<<it); }
                 debug_grid_info();
             }
 
@@ -789,33 +789,39 @@ game_loop :: inline ()
 
 game_reset :: () 
 {
+    using Game;
     log("RESETTING GAME");
+    load_all_textures();
+
     Game  = .{};
     Input = .{};
 
     // init grid
-    for chunk_index: 0..(Game.grid.gridWidth * Game.grid.gridWidth) - 1
+    chunk_neighbor_offsets := valid_neighboring_offsets(0, grid.chunkWidth);
+    for chunk_index: 0..(grid.gridWidth * grid.gridWidth) - 1
     {
-        chunk := *Game.grid.chunks[chunk_index];
-        for layer: 0..Game.grid.worldHeight - 1
+        chunk := *grid.chunks[chunk_index];
+        for chunk_neighbor_offsets if chunk_index == it then array_add(*grid.loadedChunks, chunk);
+        
+        for layer: 0..grid.worldHeight - 1
         {
-            for i: 0..Game.grid.chunkWidth - 1
+            for i: 0..grid.chunkWidth - 1
             {
-                for j: 0..Game.grid.chunkWidth - 1
+                for j: 0..grid.chunkWidth - 1
                 {
-                    x := (chunk_index % Game.grid.gridWidth) * Game.grid.chunkWidth + j;
-                    y := (chunk_index / Game.grid.gridWidth) * Game.grid.chunkWidth + i;
+                    x := (chunk_index % grid.gridWidth) * grid.chunkWidth + j;
+                    y := (chunk_index / grid.gridWidth) * grid.chunkWidth + i;
 
-                    layer_offset := layer * Game.grid.chunkWidth * Game.grid.chunkWidth;
-                    row_offset   := i * Game.grid.chunkWidth;
+                    layer_offset := layer * grid.chunkWidth * grid.chunkWidth;
+                    row_offset   := i * grid.chunkWidth;
                     cell := *chunk.cells[layer_offset + row_offset + j];
                     cell.x = x;
                     cell.y = y;
                     cell.z = layer;
 
-                    if layer == Game.grid.worldHeight - 1 then cell.type = .BEDROCK;
-                    else if layer == Game.grid.worldHeight - 2 then cell.type = .DIRT;
-                    else if layer == Game.grid.worldHeight - 3
+                    if layer == grid.worldHeight - 1 then cell.type = .BEDROCK;
+                    else if layer == grid.worldHeight - 2 then cell.type = .DIRT;
+                    else if layer == grid.worldHeight - 3
                     {
                         if (x == 4 && y >= 15) || (x == 16 && y <= 15) || (y == 15 && x <= 15 && x > 4)
                             cell.type = .WATER;
@@ -831,23 +837,23 @@ game_reset :: ()
 
     // @TEMP: stairs block
     stair_bot := make_block(.STAIR_BOTTOM, 0.0);
-    stair_bot_cell_index := Game.grid.chunkWidth * Game.grid.chunkWidth * 2 + Game.grid.chunkWidth * 2 + 6;
-    Game.grid.chunks[Game.grid.currentChunk].cells[stair_bot_cell_index].type = .BLOCK;
-    Game.grid.chunks[Game.grid.currentChunk].cells[stair_bot_cell_index].block = NewMaybe(stair_bot);
+    stair_bot_cell_index := grid.chunkWidth * grid.chunkWidth * 2 + grid.chunkWidth * 2 + 6;
+    grid.chunks[grid.currentChunk].cells[stair_bot_cell_index].type = .BLOCK;
+    grid.chunks[grid.currentChunk].cells[stair_bot_cell_index].block = NewMaybe(stair_bot);
 
     stair_top := make_block(.STAIR_TOP, 0.0);
-    stair_top_cell_index := Game.grid.chunkWidth * Game.grid.chunkWidth * 1 + Game.grid.chunkWidth * 2 + 6;
-    Game.grid.chunks[Game.grid.currentChunk].cells[stair_top_cell_index].type = .BLOCK;
-    Game.grid.chunks[Game.grid.currentChunk].cells[stair_top_cell_index].block = NewMaybe(stair_top);
+    stair_top_cell_index := grid.chunkWidth * grid.chunkWidth * 1 + grid.chunkWidth * 2 + 6;
+    grid.chunks[grid.currentChunk].cells[stair_top_cell_index].type = .BLOCK;
+    grid.chunks[grid.currentChunk].cells[stair_top_cell_index].block = NewMaybe(stair_top);
 
 
     // @TEMP: falling terrain
-    fall_cell_index := Game.grid.chunkWidth * 2 + 3;
-    Game.grid.chunks[Game.grid.currentChunk].cells[fall_cell_index].type = .BEDROCK;
+    fall_cell_index := grid.chunkWidth * 2 + 3;
+    grid.chunks[grid.currentChunk].cells[fall_cell_index].type = .BEDROCK;
 
     // init player
     noAI: Maybe(AI);
-    Game.player.person = NewPerson(.{200, 200, 2}, noAI);
+    player.person = NewPerson(.{200, 200, 2}, noAI);
 
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
@@ -857,7 +863,7 @@ game_reset :: ()
     populate_resources();
 
     // init npcs
-    chunk := Game.grid.chunks[Game.grid.currentChunk];
+    chunk := grid.chunks[grid.currentChunk];
     for 1..7
     {
         x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
@@ -867,7 +873,7 @@ game_reset :: ()
         npcAI := NewMaybe(ai);
         npc := NewPerson(pos, npcAI);
         npc.speed = 0.5;
-        array_add(*Game.npcs, npc);
+        array_add(*npcs, npc);
     }
 
     // init shops
@@ -881,9 +887,9 @@ game_reset :: ()
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
         basket_collider := NewCollider(.{20, 20});
         basket_pos += xyz(-basket_collider.rect.x/2, -basket_collider.rect.y/2, 0);
-        owner := Game.npcs[0];
+        owner := npcs[0];
         ware := NewContainer(.BASKET, basket_collider, basket_pos, owner);
-        array_add(*Game.containers, ware);
+        array_add(*containers, ware);
         price := Price.{amount = 10, entityStandIn = .{tag = .ITEM, item = .FIBER}};
         basket_deal: Deal;
         basket_deal.price = price;
@@ -895,30 +901,30 @@ game_reset :: ()
         deals[0] = basket_deal;
 
         basket_shop := NewShop(area, deals, owner);
-        array_add(*Game.shops, basket_shop);
+        array_add(*shops, basket_shop);
     }
 
     // init items on ground
     {
-        pos := Game.player.position.value + .{100, -100, 0};
+        pos := player.position.value + .{100, -100, 0};
         collider := NewCollider(10.0);
         lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
-        array_add(*Game.items, lumberaxe);
+        array_add(*items, lumberaxe);
 
-        pos = Game.player.position.value + .{200, -100, 0};
+        pos = player.position.value + .{200, -100, 0};
         sword := NewItem(.SWORD, collider, pos);
-        array_add(*Game.items, sword);
+        array_add(*items, sword);
     }
     // init equipment on ground
     {
-        pos := Game.player.position.value + .{0, -100, 0};
+        pos := player.position.value + .{0, -100, 0};
         collider := NewCollider(.{60, 15});
         toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
-        array_add(*Game.equipment, toolbelt);
+        array_add(*equipment, toolbelt);
 
-        pos = Game.player.position.value + .{0, -200, 0};
+        pos = player.position.value + .{0, -200, 0};
         weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
-        array_add(*Game.equipment, weaponbelt);
+        array_add(*equipment, weaponbelt);
     }
 }
 
