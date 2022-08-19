@@ -7,7 +7,7 @@ handle_physics :: (dt: float)
     for items      if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
     for equipment  if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
     for containers if is_in_loaded_chunk(it) { apply_gravity(*it.entity, dt); }
-    for grid.loadedChunks for < it.cells { apply_gravity(it_index, dt); }
+    for grid.loadedChunks for *< it.cells { apply_gravity(it, dt); }
 }
 
 apply_gravity :: (entity: *Entity, dt: float)
@@ -30,10 +30,9 @@ apply_gravity :: (entity: *Entity, dt: float)
     }
 }
 
-apply_gravity :: (cell_index: int, dt: float)
+apply_gravity :: (cell: *GridCell, dt: float)
 {
     using Game;
-    cell := *grid.chunks[grid.currentChunk].cells[cell_index]; // @@@:HERE
     punch := get_grid_punch(cell);
     above_bedrock := cell.z < grid.worldHeight - 1;
 
