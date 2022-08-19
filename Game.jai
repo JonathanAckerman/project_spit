@@ -768,6 +768,7 @@ game_loop :: inline ()
                 for equipment { debug_entity_info(<<it); }
                 for npcs { debug_entity_info(<<it); }
                 for resources { debug_entity_info(<<it); }
+                debug_grid_info();
             }
 
             if Debug.isActive

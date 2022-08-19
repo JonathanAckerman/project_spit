@@ -143,7 +143,10 @@ debug_player_info :: ()
     using Game;
     ss_player := to_screen_space(player.position.value.xy);
     drawpos := ss_player + xy(30 * camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", player.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    fx := formatFloat(player.position.value.x, trailing_width=1, zero_removal=.YES);
+    fy := formatFloat(player.position.value.y, trailing_width=1, zero_removal=.YES);
+    fz := formatFloat(player.position.value.z, trailing_width=1, zero_removal=.YES);
+    DrawText(to_c_string(tprint("pos: %, %, %", fx, fy, fz)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 
@@ -174,7 +177,10 @@ debug_entity_info :: (e: Entity)
     using Game;
     ss_entity := to_screen_space(e.position.value.xy);
     drawpos := ss_entity + xy(30 * camera.zoom, 0);
-    DrawText(to_c_string(tprint("pos: %", e.position.value)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    fx := formatFloat(e.position.value.x, trailing_width=1, zero_removal=.YES);
+    fy := formatFloat(e.position.value.y, trailing_width=1, zero_removal=.YES);
+    fz := formatFloat(e.position.value.z, trailing_width=1, zero_removal=.YES);
+    DrawText(to_c_string(tprint("pos: %, %, %", fx, fy, fz)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
@@ -197,6 +203,26 @@ debug_entity_info :: (e: Entity)
             collider_drawpos := ss_entity - modified_size/2;
             DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx modified_size.x, xx modified_size.y, YELLOW);
     }
+}
+
+debug_grid_info :: ()
+{
+    using Game;
+    for y: 0..grid.chunkWidth - 1
+    {
+        for x: 0..grid.chunkWidth - 1
+        {
+            punch := get_grid_punch(x, y);
+            for punch if it.type != .AIR
+            {
+                drawpos := to_screen_space(grid_to_world(it).xy, .{4, 4});
+                str := tprint("%, %, %", it.x, it.y, it.z);
+                DrawText(to_c_string(str), xx drawpos.x, xx drawpos.y, 14, PINK);
+                break;
+            }
+        }
+    }
+
 }
 
 debug_console :: (dt: float)
