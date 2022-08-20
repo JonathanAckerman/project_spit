@@ -43,7 +43,7 @@ draw_shop :: (shop : *Shop)
     {
         ss_cell := to_screen_space(grid_to_world(it).xy + .{5, 5});
         size := xy(90, 90) * Game.camera.zoom;
-        size_modifier := 1.0 - (it.z - cast(int) Game.camera.position.z) * 0.1;
+        size_modifier := 1.0 - (xx it.z - (Game.camera.position.z + 1)) * 0.1;
         drawpos_offset_from_size := size - size * size_modifier;
         ss_cell += drawpos_offset_from_size / 2;
         DrawRectangleV(ss_cell, size * size_modifier, LIGHTGRAY);
@@ -76,7 +76,7 @@ NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
 draw_person :: (person: Person)
 {
     ss_person := to_screen_space(person.position.value.xy);
-    size_modifier := 1.0 - (person.position.value.z - cast(int) Game.camera.position.z) * 0.1;
+    size_modifier := 1.0 - (xx person.position.value.z - (Game.camera.position.z + 1)) * 0.1;
     color := ifx person.ai.exists then ORANGE else BLACK;
     DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom * size_modifier, color);
     front := ss_person + person.forward.xy * cast(float) person.collider.radius * Game.camera.zoom * size_modifier;

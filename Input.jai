@@ -75,14 +75,14 @@ handle_input :: inline ()
         else if IsKeyPressed(xx KeyboardKey.FIVE) then equipSlot = 4;
         else if IsKeyPressed(xx KeyboardKey.SIX) then equipSlot = 5;
 
-        if IsKeyPressed(xx KeyboardKey.EQUAL)
-        {
-            if Game.camera.position.z > 0 then Game.camera.position.z -= 1;
-        }
-        if IsKeyPressed(xx KeyboardKey.MINUS)
-        {
-            if Game.camera.position.z < Game.grid.worldHeight - 1 then Game.camera.position.z += 1;
-        }
+        // if IsKeyPressed(xx KeyboardKey.EQUAL)
+        // {
+        //     if Game.camera.position.z > 0 then Game.camera.position.z -= 1;
+        // }
+        // if IsKeyPressed(xx KeyboardKey.MINUS)
+        // {
+        //     if Game.camera.position.z < Game.grid.worldHeight - 1 then Game.camera.position.z += 1;
+        // }
     }
     else // debug on
     {

@@ -31,7 +31,8 @@ draw_cell :: (cell: GridCell)
 {
     if cell.block.value.type == .STAIR_TOP return;
     
-    layer_size_modifier := 1.0 - (cell.z - (cast(int) Game.camera.position.z + 1)) * 0.1;
+    layer_size_modifier := 1.0 - (xx cell.z - (Game.camera.position.z + 1)) * 0.1;
+    layer_size_modifier = clamp(layer_size_modifier, 0.0, 1.0);
     // @TEMP: for now make resizing preserve aspect ratio
     resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
     base_size := xy(xx cell.block.value.textureInfo.width, xx cell.block.value.textureInfo.height);

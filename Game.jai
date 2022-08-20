@@ -602,14 +602,13 @@ game_loop :: inline ()
         ClearBackground(WHITE);
 
         // draw grid
-        layer_index := cast(int) camera.position.z * grid.chunkWidth * grid.chunkWidth;
+        layer_index := (cast(int) camera.position.z + 1) * grid.chunkWidth * grid.chunkWidth;
         for chunk: grid.loadedChunks
         {
             cells_below_camera := array_view(chunk.cells, layer_index);
             drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
             for cell: cells_below_camera
             {
-
                 offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
                 if !drawn_flags[offset_from_layer]
                 {
@@ -617,7 +616,7 @@ game_loop :: inline ()
 
                     drawpos := to_screen_space(grid_to_world(cell.x, cell.y, 0).xy);
                     size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-                    camera_dist_to_cell := (cell.z - (cast(int) camera.position.z + 2));
+                    camera_dist_to_cell := (xx cell.z - (camera.position.z + 2));
                     if camera_dist_to_cell < 0 then camera_dist_to_cell = 0;
                     size_modifier := 1.0 - camera_dist_to_cell * 0.1;
                     drawpos_offset_from_size := size - size * size_modifier;
@@ -648,7 +647,7 @@ game_loop :: inline ()
 
         BeginShaderMode(Textures.outlineShader);
         for resources 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { 
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { 
                 textureSize : [2] float;
                 textureSize[0] = xx it.textureInfo.width; 
                 textureSize[1] = xx it.textureInfo.height;
@@ -658,18 +657,18 @@ game_loop :: inline ()
         }
         EndShaderMode();
         for shop: shops for shop.area {
-            if is_in_loaded_chunk(it) && xx it.z >= camera.position.z
+            if is_in_loaded_chunk(it) && xx it.z > camera.position.z
                 draw_shop(shop); 
         }
         for items
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_item(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_item(it); }
         for containers 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_container(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_container(it); }
         for equipment 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_equipment(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_equipment(it); }
         for npcs 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z >= camera.position.z { draw_person(it); }
-        if is_in_loaded_chunk(player) && player.position.value.z >= camera.position.z { 
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_person(it); }
+        if is_in_loaded_chunk(player) && player.position.value.z > camera.position.z { 
             draw_person(player); 
         }
 
@@ -835,22 +834,42 @@ game_reset :: ()
         }
     }
 
-    // @TEMP: stairs block
-    stair_bot := make_block(.STAIR_BOTTOM, 0.0);
-    bot_cell := get_cell(6, 2, 2);
-    bot_cell.type = .BLOCK;
-    bot_cell.block = NewMaybe(stair_bot);
+    // @TEMP: stairs testing
+    {
+        stair_bot := make_block(.STAIR_BOTTOM, 0.0);
+        bot_cell := get_cell(6, 2, 2);
+        bot_cell.type = .BLOCK;
+        bot_cell.block = NewMaybe(stair_bot);
 
-    stair_top := make_block(.STAIR_TOP, 0.0);
-    top_cell := get_cell(6, 2, 1);
-    top_cell.type = .BLOCK;
-    top_cell.block = NewMaybe(stair_top);
-
+        stair_top := make_block(.STAIR_TOP, 0.0);
+        top_cell := get_cell(6, 2, 1);
+        top_cell.type = .BLOCK;
+        top_cell.block = NewMaybe(stair_top);
+    }
     get_cell(7, 2, 2).type = .BEDROCK;
     get_cell(8, 2, 2).type = .BEDROCK;
     get_cell(8, 3, 2).type = .BEDROCK;
     get_cell(8, 1, 2).type = .BEDROCK;
-    
+    {
+        stair_bot := make_block(.STAIR_BOTTOM, 0.0);
+        bot_cell := get_cell(8, 2, 1);
+        bot_cell.type = .BLOCK;
+        bot_cell.block = NewMaybe(stair_bot);
+
+        stair_top := make_block(.STAIR_TOP, 0.0);
+        top_cell := get_cell(8, 2, 0);
+        top_cell.type = .BLOCK;
+        top_cell.block = NewMaybe(stair_top);
+    }
+    get_cell(9, 2, 2).type = .BEDROCK;
+    get_cell(9, 2, 1).type = .BEDROCK;
+    get_cell(10, 2, 2).type = .BEDROCK;
+    get_cell(10, 2, 1).type = .BEDROCK;
+    get_cell(10, 3, 2).type = .BEDROCK;
+    get_cell(10, 3, 1).type = .BEDROCK;
+    get_cell(10, 1, 2).type = .BEDROCK;
+    get_cell(10, 1, 1).type = .BEDROCK;
+
     // @TEMP: falling terrain
     fall_cell_index := grid.chunkWidth * 2 + 3;
     grid.chunks[grid.currentChunk].cells[fall_cell_index].type = .BEDROCK;
