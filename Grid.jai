@@ -212,3 +212,19 @@ is_in_loaded_chunk :: (cell: GridCell) -> bool
     }
     return false;
 }
+
+// Given a cell, compute the index it's at for its chunk
+global_to_relative_grid_index :: (global_index: int, z: int) -> int
+{
+    x := global_index % Game.grid.chunkWidth;
+    y := (global_index / (Game.grid.chunkWidth * Game.grid.gridWidth)) % Game.grid.chunkWidth;
+    layer := z * Game.grid.chunkWidth * Game.grid.chunkWidth;
+    return layer + y * Game.grid.chunkWidth + x;
+}
+
+get_chunk_index :: (cell_x: int, cell_y: int) -> int
+{
+    x := cell_x / Game.grid.chunkWidth;
+    y := cell_y / Game.grid.chunkWidth;
+    return y * Game.grid.gridWidth + x;
+}

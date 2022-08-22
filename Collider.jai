@@ -49,12 +49,20 @@ handle_collision :: (using entity: *Entity)
     cell := world_to_grid(entity.position.value);
 
     // collision with grid
-    // @@@: Here I only check collision for the current cell, which is the cell containing the entity's center, I should look at all adjacent cells (in all 3D directions including diagonals)
-    //      but I'll need to account for cells that abut the edge of the map and cells that abut an adjacent chunk (in all 3D directions including diagonals).
-    //      Maybe have a method get_adjacent_cells()
-    if cell.type != .AIR && cell.type != .BLOCK
+    global_cell_index := cell.y * grid.chunkWidth * grid.gridWidth + cell.x;
+    for valid_neighboring_offsets(global_cell_index, grid.chunkWidth * grid.gridWidth)
     {
-        circle_gridcell(entity, cell, true);
+        global_check_cell_index := global_cell_index + it;
+        check_cell_x := global_check_cell_index % (grid.chunkWidth * grid.gridWidth);
+        check_cell_y := global_check_cell_index / (grid.chunkWidth * grid.gridWidth);
+        chunk_index := get_chunk_index(check_cell_x, check_cell_y);
+        relative_cell_index := global_to_relative_grid_index(global_check_cell_index, cell.z);
+
+        check_cell := *grid.chunks[chunk_index].cells[relative_cell_index];
+        if check_cell.type != .AIR && check_cell.type != .BLOCK
+        {
+            circle_gridcell(entity, check_cell, shouldResolve=true);
+        }
     }
     
     // stairs
@@ -112,8 +120,8 @@ handle_collision :: (using entity: *Entity)
 
     check_and_resolve :: () #expand
     {
-        if `it.collider.type == .CIRCLE then circle_circle(`entity, *`it.entity, true);
-        else circle_rect(`entity, *`it.entity, true);
+        if `it.collider.type == .CIRCLE then circle_circle(`entity, *`it.entity, shouldResolve=true);
+        else circle_rect(`entity, *`it.entity, shouldResolve=true);
     }
 
     circle_circle :: (c1: *Entity, c2: *Entity, shouldResolve: bool) -> bool
@@ -169,20 +177,11 @@ handle_collision :: (using entity: *Entity)
     circle_gridcell :: (c: *Entity, g: *GridCell, shouldResolve: bool) -> bool
     {
         gpos := grid_to_world(g, true);
-        gleft   := gpos.x - Game.grid.cellSize/2;
-        gright  := gpos.x + Game.grid.cellSize/2;
-        gtop    := gpos.y - Game.grid.cellSize/2;
-        gbottom := gpos.y + Game.grid.cellSize/2;
 
-        size := xy(Game.grid.cellSize, Game.grid.cellSize);
+        half_size := xy(Game.grid.cellSize/2, Game.grid.cellSize/2);
         displacement := c.position.value - gpos;
-        dbl := make_debug_line(to_screen_space(c.position.value.xy), to_screen_space(gpos.xy), YELLOW);
-        defer_draw_line(dbl);
-        closest_x := gpos.x + clamp(displacement.x, -size.x, size.x);
-        closest_y := gpos.y + clamp(displacement.y, -size.y, size.y);
-        // dbr := make_debug_rectangle(to_screen_space(gpos.xy - size/2), size, YELLOW);
-        // defer_draw_rect(dbr);
-        // print("%, %, %\n", c.position.value.xy, closest_x, closest_y);
+        closest_x := gpos.x + clamp(displacement.x, -half_size.x, half_size.x);
+        closest_y := gpos.y + clamp(displacement.y, -half_size.y, half_size.y);
 
         circle_to_closest := c.position.value.xy - xy(closest_x, closest_y);
         if length(circle_to_closest) < c.collider.radius
