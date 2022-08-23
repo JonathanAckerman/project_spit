@@ -45,6 +45,7 @@ handle_collision :: (using entity: *Entity)
     if position.value.y < grid_to_world(Grid.top(grid)) then position.value.y = grid_to_world(Grid.top(grid));
     if position.value.x > grid_to_world(Grid.right(grid)) then position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if position.value.y > grid_to_world(Grid.bottom(grid)) then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
+    if position.value.z < 0 then position.value.z = 0;
 
     cell := world_to_grid(entity.position.value);
 
@@ -126,27 +127,27 @@ handle_collision :: (using entity: *Entity)
 
     circle_circle :: (c1: *Entity, c2: *Entity, shouldResolve: bool) -> bool
     {
-        displacement := c1.position.value - c2.position.value;
+        displacement := (c1.position.value - c2.position.value).xy;
         dist := length(displacement);
         if dist < c1.collider.radius + c2.collider.radius
         {
             overlap_scalar := dist - (c1.collider.radius + c2.collider.radius);
             if c1.rigidBody.value.mass < c2.rigidBody.value.mass
             {
-                if shouldResolve then c1.position.value += unit_vector(displacement) * -overlap_scalar;
+                if shouldResolve then c1.position.value.xy += unit_vector(displacement) * -overlap_scalar;
                 return true;
             }
             else if c1.rigidBody.value.mass > c2.rigidBody.value.mass
             {
-                if shouldResolve then c2.position.value += unit_vector(displacement) * overlap_scalar;
+                if shouldResolve then c2.position.value.xy += unit_vector(displacement) * overlap_scalar;
                 return true;
             }
             else
             {
                 if shouldResolve
                 {
-                    c1.position.value += unit_vector(displacement) * -overlap_scalar/2;
-                    c2.position.value += unit_vector(displacement) * overlap_scalar/2;
+                    c1.position.value.xy += unit_vector(displacement) * -overlap_scalar/2;
+                    c2.position.value.xy += unit_vector(displacement) * overlap_scalar/2;
                 }
                 return true;
             }
