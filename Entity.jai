@@ -12,6 +12,7 @@ Entity :: struct
     id: u64;
     textureInfo: TextureInfo;
     owner: Maybe(*Person);
+    entityType: Entity_Type;
 }
 
 Entity_Type :: enum

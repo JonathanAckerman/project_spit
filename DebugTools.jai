@@ -25,6 +25,7 @@ Debug: struct
         "SPAWN WEAPONBELT",
         "TP",
         "GOTTAGOFAST",
+        "DT",
         "SPEED",
         "PRINT PLAYER",
         "REPOP RESOURCES",
@@ -33,6 +34,7 @@ Debug: struct
         "DEBUG INFO 1"
     ];
     showEntityInfo := false;
+    dtMultiplier := 1.0;
 
     debugRectangles : [..] DebugRectangle;
     debugCircles :    [..] DebugCircle;
@@ -155,8 +157,7 @@ debug_player_info :: ()
     layer_size_modifier := 1.0 - (xx player.position.value.z - (camera.position.z + 1)) * 0.1;
     if player.textureInfo.texture != null
     {
-        base_size := xy(xx player.textureInfo.width, xx player.textureInfo.height) * 0.5;
-        modified_size := base_size * camera.zoom;
+        modified_size := player.textureInfo.size * camera.zoom;
         texture_drawpos := ss_player - modified_size/2;
         DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
     }
@@ -188,8 +189,7 @@ debug_entity_info :: (e: Entity)
     layer_size_modifier := 1.0 - (e.position.value.z - (camera.position.z + 1)) * 0.1;
     if e.textureInfo.texture != null
     {
-        base_size := xy(xx e.textureInfo.width, xx e.textureInfo.height) * 0.5;
-        modified_size := base_size * camera.zoom;
+        modified_size := e.textureInfo.size * camera.zoom;
         texture_drawpos := ss_entity - modified_size/2;
         DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
     }
@@ -350,6 +350,15 @@ debug_is_command_valid :: (cmd: string)
             {
                 if it_index == 0 continue; // skip "TP" string
                 Game.player.position.value.component[it_index - 1] = string_to_float(it);
+            }
+        }
+
+        if begins_with(cmd, "DT")
+        {
+            for cmd_array
+            {
+                if it_index == 0 continue;
+                Debug.dtMultiplier = string_to_float(it);
             }
         }
     }

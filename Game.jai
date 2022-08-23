@@ -26,6 +26,7 @@ game_loop :: inline ()
 {
     using Game;
     dt := GetFrameTime();
+    if Debug.isActive then dt *= Debug.dtMultiplier;
 
     // Input
     handle_input();
@@ -653,7 +654,7 @@ game_loop :: inline ()
                 textureSize[1] = xx it.textureInfo.height;
                 textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
                 SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                draw_resource(it);
+                draw_entity(it);
         }
         EndShaderMode();
         for shop: shops for shop.area {
@@ -661,11 +662,11 @@ game_loop :: inline ()
                 draw_shop(shop); 
         }
         for items
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_item(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_entity(it); }
         for containers 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_container(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_entity(it); }
         for equipment 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_equipment(it); }
+            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_entity(it); }
         for npcs 
             if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_person(it); }
         if is_in_loaded_chunk(player) && player.position.value.z > camera.position.z { 
@@ -687,20 +688,20 @@ game_loop :: inline ()
                         if player.held.value.container.type ==
                         {
                             case .BASKET;
-                                draw_container_ui(xy(xpos + 15.0, ypos + 12.0), 0.2, .BASKET);
+                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, .BASKET);
                                 xpos += 80.0;
                             case .BUCKET;
-                                draw_container_ui(xy(xpos + 15.0, ypos + 12.0), 0.2, .BUCKET);
+                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, .BUCKET);
                                 xpos += 80.0;
                             case .CHEST;
-                                draw_container_ui(xy(xpos + 13.0, ypos + 15.0), 0.15, .CHEST);
+                                draw_ui_representation(xy(xpos + 13.0, ypos + 15.0), 0.15, .CHEST);
                                 xpos += 80.0;
                         }
                     case .ITEM;
                         if player.held.value.item.type ==
                         {
                             case;
-                                draw_item_ui(xy(xx xpos, xx ypos), 0.3, player.held.value.item.type);
+                                draw_ui_representation(xy(xx xpos, xx ypos), 0.3, player.held.value.item.type);
                                 xpos += 80.0;
                         }
                 }
@@ -710,8 +711,9 @@ game_loop :: inline ()
             DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.toolBelt.exists
             {
-                draw_equipment_ui(xy(xpos + 30.0, ypos + 35.0), 0.1, .TOOL_BELT);
-                // DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), GREEN); //draw ui representation
+                pos := xy(xpos + 55.0, ypos + 35.0);
+                pos -= player.toolBelt.value.textureInfo.size / 2;
+                draw_ui_representation(pos, 0.1, .TOOL_BELT);
 
                 xpos = WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
@@ -719,7 +721,7 @@ game_loop :: inline ()
                     DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
+                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
                     }
                 }
             }
@@ -728,15 +730,16 @@ game_loop :: inline ()
             DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.weaponBelt.exists
             {
-                draw_equipment_ui(xy(xpos + 30.0, ypos + 35.0), 0.1, .WEAPON_BELT);
-                // DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), RED); //draw ui representation
+                pos := xy(xpos + 55.0, ypos + 25.0);
+                pos -= player.toolBelt.value.textureInfo.size / 2;
+                draw_ui_representation(pos, 0.1, .WEAPON_BELT);
                 xpos = WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
                     DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
+                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
                     }
                 }
             }

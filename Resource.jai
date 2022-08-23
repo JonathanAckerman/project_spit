@@ -127,6 +127,7 @@ NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 
     mass := ifx type == .CHEST then 1 else 0;
     container.entity = init_entity_data(pos, collider, owner, mass);
     container.type = type;
+    container.entityType = .CONTAINER;
     cap: int;
     if type ==
     {
@@ -144,6 +145,8 @@ NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 
             cap = 100;
     }
     container.capacity = cap;
+    resize_ratio := 0.3;
+    container.textureInfo.size = xy(xx container.textureInfo.texture.width, xx container.textureInfo.texture.height) * resize_ratio;
     return container;
 }
 
@@ -153,6 +156,7 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
     mass := ifx type == .WOOD_LOG then 1 else 0;
     item.entity = init_entity_data(pos, collider, owner, mass);
     item.type = type;
+    item.entityType = .ITEM;
     if type == 
     {
         // weapons
@@ -181,6 +185,8 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
         case;
             item.textureInfo.texture = *ERROR_TEXTURE;
     }
+    resize_ratio := 0.5;
+    item.textureInfo.size = xy(xx item.textureInfo.texture.width, xx item.textureInfo.texture.height) * resize_ratio;
     return item;
 }
 
@@ -189,6 +195,7 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
     equipment := New(Equipment);
     equipment.entity = init_entity_data(pos, collider, owner);
     equipment.type = type;
+    equipment.entityType = .EQUIPMENT;
     if type ==
     {
         case .TOOL_BELT;
@@ -202,6 +209,8 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
     }
     equipment.capacity = 3;
     array_resize(*equipment.contents, equipment.capacity);
+    resize_ratio := 0.2;
+    equipment.textureInfo.size = xy(xx equipment.textureInfo.texture.width, xx equipment.textureInfo.texture.height) * resize_ratio;
     return equipment;
 }
 
@@ -211,8 +220,10 @@ NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Ite
     mass := ifx type == .BUSH then 0 else 999;
     resource.entity = init_entity_data(pos, null, null, mass);
     resource.type = type;
+    resource.entityType = .RESOURCE;
     resource.quantity = quantity;
     resource.harvestRequirement = req;
+    // @TEMP: for now make resizing preserve aspect ratio
     if resource.type == 
     {
         case .COPPER_VEIN;
@@ -226,30 +237,15 @@ NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Ite
         case;
             resource.textureInfo.texture = *ERROR_TEXTURE;
     }
-    size := xy(xx resource.textureInfo.texture.width, xx resource.textureInfo.texture.height);
-    resource.collider = NewCollider(size);
+    resize_ratio := 0.5;
+    resource.textureInfo.size = xy(xx resource.textureInfo.texture.width, xx resource.textureInfo.texture.height) * resize_ratio;
+    resource.collider = NewCollider(resource.textureInfo.size);
     return resource;
-}
-
-draw_item :: (item: Item)
-{
-    if !item.position.exists return;
-
-    layer_size_modifier := 1.0 - (xx item.position.value.z - (Game.camera.position.z + 1)) * 0.1;
-    base_size := xy(xx item.textureInfo.width, xx item.textureInfo.height) * 0.5;
-    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
-    center_pos := to_screen_space(item.position.value.xy);
-    drawpos := center_pos - modified_size / 2;
-    tint := item.textureInfo.tint;
-    tint.r = xx (tint.r * layer_size_modifier);
-    tint.g = xx (tint.g * layer_size_modifier);
-    tint.b = xx (tint.b * layer_size_modifier);
-    DrawTextureEx(item.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
 }
 
 // @JAY: is there a way to make this generic for any texture lookup? polymorph?
 // @JAY: can I generate this during the textureload step?
-get_item_texture_info :: (type: Item_Type) -> TextureInfo
+get_texture_info :: (type: Item_Type) -> TextureInfo
 {
     info: TextureInfo;
     if type == 
@@ -282,7 +278,7 @@ get_item_texture_info :: (type: Item_Type) -> TextureInfo
     }
     return info;
 }
-get_equipment_texture_info :: (type: Equipment_Type) -> TextureInfo
+get_texture_info :: (type: Equipment_Type) -> TextureInfo
 {
     info: TextureInfo;
     if type == 
@@ -298,7 +294,7 @@ get_equipment_texture_info :: (type: Equipment_Type) -> TextureInfo
     }
     return info;
 }
-get_container_texture_info :: (type: Container_Type) -> TextureInfo
+get_texture_info :: (type: Container_Type) -> TextureInfo
 {
     info: TextureInfo;
     if type == 
@@ -316,73 +312,29 @@ get_container_texture_info :: (type: Container_Type) -> TextureInfo
     return info;
 }
 
-draw_item_ui :: (pos: Vector2, scale: float, type: Item_Type)
+draw_ui_representation  :: (pos: Vector2, scale: float, type: Item_Type)      { _draw_ui_representation(pos, scale, get_texture_info(type)); }
+draw_ui_representation  :: (pos: Vector2, scale: float, type: Container_Type) { _draw_ui_representation(pos, scale, get_texture_info(type)); }
+draw_ui_representation  :: (pos: Vector2, scale: float, type: Equipment_Type) { _draw_ui_representation(pos, scale, get_texture_info(type)); }
+
+_draw_ui_representation :: (pos: Vector2, scale: float, info: TextureInfo)
 {
     drawpos := pos;
-    info := get_item_texture_info(type);
     DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
 }
 
-draw_container :: (container: Container)
+draw_entity :: (entity: Entity)
 {
-    if !container.position.exists return;
+    if !entity.position.exists return;
 
-    layer_size_modifier := 1.0 - (xx container.position.value.z - (Game.camera.position.z + 1)) * 0.1;
-    base_size := xy(xx container.textureInfo.width, xx container.textureInfo.height) * 0.3;
+    scale := entity.textureInfo.size.x / entity.textureInfo.texture.width;
+    layer_size_modifier := 1.0 - (xx entity.position.value.z - (Game.camera.position.z + 1)) * 0.1;
+    base_size := xy(xx entity.textureInfo.width, xx entity.textureInfo.height) * scale;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
-    center_pos := to_screen_space(container.position.value.xy);
+    center_pos := to_screen_space(entity.position.value.xy);
     drawpos := center_pos - modified_size / 2;
-    tint := container.textureInfo.tint;
+    tint := entity.textureInfo.tint;
     tint.r = xx (tint.r * layer_size_modifier);
     tint.g = xx (tint.g * layer_size_modifier);
     tint.b = xx (tint.b * layer_size_modifier);
-    DrawTextureEx(container.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.3, tint);
-    
-}
-
-draw_container_ui :: (pos: Vector2, scale: float, type: Container_Type)
-{
-    drawpos := pos;
-    info := get_container_texture_info(type);
-    DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
-}
-
-draw_equipment :: (equipment: Equipment)
-{
-    if !equipment.position.exists return;
-
-    layer_size_modifier := 1.0 - (xx equipment.position.value.z - (Game.camera.position.z + 1)) * 0.1;
-    base_size := xy(xx equipment.textureInfo.width, xx equipment.textureInfo.height) * 0.2;
-    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
-    center_pos := to_screen_space(equipment.position.value.xy);
-    drawpos := center_pos - modified_size / 2;
-    tint := equipment.textureInfo.tint;
-    tint.r = xx (tint.r * layer_size_modifier);
-    tint.g = xx (tint.g * layer_size_modifier);
-    tint.b = xx (tint.b * layer_size_modifier);
-    DrawTextureEx(equipment.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.2, tint);
-}
-
-draw_equipment_ui :: (pos: Vector2, scale: float, type: Equipment_Type)
-{
-    info := get_equipment_texture_info(type);
-    size := xy(xx info.texture.width, xx info.texture.height) * scale;
-    drawpos := pos - size / 2;
-    DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
-}
-
-draw_resource :: (resource: Resource)
-{
-    if !resource.position.exists return;
-
-    layer_size_modifier := 1.0 - (xx resource.position.value.z - (Game.camera.position.z + 1)) * 0.1;
-    base_size := xy(xx resource.textureInfo.width, xx resource.textureInfo.height) * 0.5;
-    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
-    center_pos := to_screen_space(resource.position.value.xy);
-    drawpos := center_pos - modified_size / 2;
-    tint := resource.textureInfo.tint;
-    tint.r = xx (tint.r * layer_size_modifier);
-    tint.g = xx (tint.g * layer_size_modifier);
-    tint.b = xx (tint.b * layer_size_modifier);
-    DrawTextureEx(resource.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
+    DrawTextureEx(entity.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * scale, tint);
 }
