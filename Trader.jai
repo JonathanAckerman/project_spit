@@ -89,7 +89,8 @@ draw_person :: (person: Person)
     tint.r = xx (tint.r * size_modifier);
     tint.g = xx (tint.g * size_modifier);
     tint.b = xx (tint.b * size_modifier);
-    DrawTextureEx(person.textureInfo.texture, drawpos, -rad2deg(rot), Game.camera.zoom * size_modifier * 0.2, tint);
+    // DrawTextureEx(person.textureInfo.texture, drawpos, -rad2deg(rot), Game.camera.zoom * size_modifier * 0.2, tint);
+    draw_texture_centered(person.textureInfo, center_pos, person.forward.xy, modified_size, Game.camera.zoom * size_modifier * 0.2);
 }
 
 Player :: struct
