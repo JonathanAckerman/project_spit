@@ -687,20 +687,20 @@ game_loop :: inline ()
                         if player.held.value.container.type ==
                         {
                             case .BASKET;
-                                draw_container_ui(xy(xpos + 20.0, ypos + 15.0), player.held.value.container.collider, 1.0, .BASKET);
+                                draw_container_ui(xy(xpos + 15.0, ypos + 12.0), 0.2, .BASKET);
                                 xpos += 80.0;
                             case .BUCKET;
-                                draw_container_ui(xy(xpos + 20.0, ypos + 15.0), player.held.value.container.collider, 1.0, .BUCKET);
+                                draw_container_ui(xy(xpos + 15.0, ypos + 12.0), 0.2, .BUCKET);
                                 xpos += 80.0;
                             case .CHEST;
-                                draw_container_ui(xy(xpos + 20.0, ypos + 25.0), player.held.value.container.collider, 1.0, .CHEST);
+                                draw_container_ui(xy(xpos + 13.0, ypos + 15.0), 0.15, .CHEST);
                                 xpos += 80.0;
                         }
                     case .ITEM;
                         if player.held.value.item.type ==
                         {
                             case;
-                                draw_item_ui(xy(xx xpos, xx ypos), player.held.value.item.collider, 0.3, player.held.value.item.type);
+                                draw_item_ui(xy(xx xpos, xx ypos), 0.3, player.held.value.item.type);
                                 xpos += 80.0;
                         }
                 }
@@ -719,7 +719,7 @@ game_loop :: inline ()
                     DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), it.value.collider, 0.3, it.value.type); //draw inv items
+                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
                     }
                 }
             }
@@ -736,7 +736,7 @@ game_loop :: inline ()
                     DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), it.value.collider, 0.3, it.value.type); //draw inv items
+                        draw_item_ui(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
                     }
                 }
             }

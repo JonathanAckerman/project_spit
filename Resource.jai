@@ -131,9 +131,17 @@ NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 
     if type ==
     {
         case .BASKET;
+            container.textureInfo.texture = table_find_pointer(*Textures.table, "basket");
+            container.textureInfo.tint = BEIGE;
             cap = 100;
         case .CHEST;
+            container.textureInfo.texture = table_find_pointer(*Textures.table, "chest");
+            container.textureInfo.tint = BROWN;
             cap = 300;
+        case .BUCKET;
+            container.textureInfo.texture = table_find_pointer(*Textures.table, "bucket");
+            container.textureInfo.tint = LIGHTGRAY;
+            cap = 100;
     }
     container.capacity = cap;
     return container;
@@ -290,8 +298,25 @@ get_equipment_texture_info :: (type: Equipment_Type) -> TextureInfo
     }
     return info;
 }
+get_container_texture_info :: (type: Container_Type) -> TextureInfo
+{
+    info: TextureInfo;
+    if type == 
+    {
+        case .BASKET;
+            info.texture = table_find_pointer(*Textures.table, "basket");
+            info.tint = BEIGE;
+        case .CHEST;
+            info.texture = table_find_pointer(*Textures.table, "chest");
+            info.tint = BROWN;
+        case .BUCKET;
+            info.texture = table_find_pointer(*Textures.table, "bucket");
+            info.tint = LIGHTGRAY;
+    }
+    return info;
+}
 
-draw_item_ui :: (pos: Vector2, collider: Collider, scale: float, type: Item_Type)
+draw_item_ui :: (pos: Vector2, scale: float, type: Item_Type)
 {
     drawpos := pos;
     info := get_item_texture_info(type);
@@ -302,38 +327,24 @@ draw_container :: (container: Container)
 {
     if !container.position.exists return;
 
-    scale := 1.0;
-    scale *= Game.camera.zoom;
-    pos := to_screen_space(container.position.value.xy);
-    if container.type ==
-    {
-        case .BASKET;
-            DrawRectangleV(pos, container.collider.rect * scale, BEIGE);
-            DrawCircleV(pos + xy(container.collider.rect.x/2.0, container.collider.rect.y) * scale, (container.collider.rect.x/2.0) * scale, BEIGE);
-        case .CHEST;
-            DrawRectangleV(pos, container.collider.rect * scale, DARKGREEN);
-            DrawCircleV(pos + xy(container.collider.rect.x/2.0, 0) * scale, (container.collider.rect.x/2.0) * scale, DARKGREEN);
-        case .BUCKET;
-            DrawRectangleV(pos, container.collider.rect * scale, LIGHTGRAY);
-            DrawCircleV(pos + xy(container.collider.rect.x/2.0, container.collider.rect.y) * scale, (container.collider.rect.x/2.0) * scale, LIGHTGRAY);
-    }
+    layer_size_modifier := 1.0 - (xx container.position.value.z - (Game.camera.position.z + 1)) * 0.1;
+    base_size := xy(xx container.textureInfo.width, xx container.textureInfo.height) * 0.3;
+    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+    center_pos := to_screen_space(container.position.value.xy);
+    drawpos := center_pos - modified_size / 2;
+    tint := container.textureInfo.tint;
+    tint.r = xx (tint.r * layer_size_modifier);
+    tint.g = xx (tint.g * layer_size_modifier);
+    tint.b = xx (tint.b * layer_size_modifier);
+    DrawTextureEx(container.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.3, tint);
+    
 }
 
-draw_container_ui :: (pos: Vector2, collider: Collider, scale: float, type: Container_Type)
+draw_container_ui :: (pos: Vector2, scale: float, type: Container_Type)
 {
     drawpos := pos;
-    if type ==
-    {
-        case .BASKET;
-            DrawRectangleV(drawpos, collider.rect * scale, BEIGE);
-            DrawCircleV(drawpos + xy(collider.rect.x/2.0, collider.rect.y - 2), (collider.rect.x/2.0) * scale, BEIGE);
-        case .BUCKET;
-            DrawRectangleV(drawpos, collider.rect * scale, LIGHTGRAY);
-            DrawCircleV(drawpos + xy(collider.rect.x/2.0, collider.rect.y - 2), (collider.rect.x/2.0) * scale, LIGHTGRAY);
-        case .CHEST;
-            DrawRectangleV(drawpos + .{0, -8}, collider.rect * scale, DARKGREEN);
-            DrawCircleV(drawpos + xy(collider.rect.x/2.0, -6), (collider.rect.x/2.0) * scale, DARKGREEN);
-    }
+    info := get_container_texture_info(type);
+    DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
 }
 
 draw_equipment :: (equipment: Equipment)
