@@ -28,3 +28,10 @@ valid_neighboring_offsets :: (cur_index: int, width: int) -> [] int
     }
     return result;
 }
+
+rad2deg :: (radians) => radians*180/PI;
+
+rotate_vector :: (v: Vector2, radians: float) -> Vector2
+{
+    return xy(v.x * cos(radians) - v.y * sin(radians), v.x * sin(radians) + v.y * cos(radians));
+}

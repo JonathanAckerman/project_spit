@@ -68,19 +68,28 @@ NewPerson :: (pos: Vector3, ai: Maybe(AI)) -> *Person
     person.entity = init_entity_data(pos, collider, null, 100);
     person.ai = ai;
     person.textureInfo.texture = table_find_pointer(*Textures.table, "person");
-    if !ai.exists then person.textureInfo.tint = BLACK;
+    if !ai.exists then person.textureInfo.tint = WHITE;
     else person.textureInfo.tint = ORANGE;
     return person;
 }
 
 draw_person :: (person: Person)
 {
-    ss_person := to_screen_space(person.position.value.xy);
+    if !person.position.exists return;
+
+    center_pos := to_screen_space(person.position.value.xy);
     size_modifier := 1.0 - (xx person.position.value.z - (Game.camera.position.z + 1)) * 0.1;
-    color := ifx person.ai.exists then ORANGE else BLACK;
-    DrawCircle(xx ss_person.x, xx ss_person.y, xx person.collider.radius * Game.camera.zoom * size_modifier, color);
-    front := ss_person + person.forward.xy * cast(float) person.collider.radius * Game.camera.zoom * size_modifier;
-    DrawLineEx(xx ss_person, xx front, 2.0, WHITE);
+    base_size := xy(xx person.textureInfo.width, xx person.textureInfo.height) * 0.2;
+    modified_size := base_size * Game.camera.zoom * size_modifier;
+    rot := atan2(-person.forward.y, person.forward.x);
+    reverse_ray_bullshit_vector := rotate_vector(modified_size/2, atan2(person.forward.y, person.forward.x));
+    drawpos := center_pos - reverse_ray_bullshit_vector;
+
+    tint := person.textureInfo.tint;
+    tint.r = xx (tint.r * size_modifier);
+    tint.g = xx (tint.g * size_modifier);
+    tint.b = xx (tint.b * size_modifier);
+    DrawTextureEx(person.textureInfo.texture, drawpos, -rad2deg(rot), Game.camera.zoom * size_modifier * 0.2, tint);
 }
 
 Player :: struct
