@@ -147,16 +147,29 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
     item.type = type;
     if type == 
     {
-        case .WOOD_LOG;
-            item.textureInfo.texture = table_find_pointer(*Textures.table, "wood_log");
+        // weapons
         case .SWORD;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "sword");
+        case .WHIP;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "whip");
+        // tools
         case .LUMBER_AXE;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "lumber_axe");
         case .PICK_AXE;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "pick_axe");
         case .HEWING_SAW;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "hewing_saw");
+        case .CARPENTERS_HAMMER;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "carpenters_hammer");
+        // by-products
+        case .WOOD_LOG;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "wood_log");
+        case .COPPER_NUGGET;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "copper_nugget");
+        case .IRON_NUGGET;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "iron_nugget");
+        case .FIBER;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "fiber");
         case;
             item.textureInfo.texture = *ERROR_TEXTURE;
     }
@@ -168,15 +181,18 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
     equipment := New(Equipment);
     equipment.entity = init_entity_data(pos, collider, owner);
     equipment.type = type;
-    cap: int;
     if type ==
     {
         case .TOOL_BELT;
-            cap = 3;
+            equipment.textureInfo.texture = table_find_pointer(*Textures.table, "tool_belt");
+            equipment.textureInfo.tint = BEIGE;
         case .WEAPON_BELT;
-            cap = 3;
+            equipment.textureInfo.texture = table_find_pointer(*Textures.table, "weapon_belt");
+            equipment.textureInfo.tint = BROWN;
+        case;
+            equipment.textureInfo.texture = *ERROR_TEXTURE;
     }
-    equipment.capacity = cap;
+    equipment.capacity = 3;
     array_resize(*equipment.contents, equipment.capacity);
     return equipment;
 }
@@ -223,21 +239,52 @@ draw_item :: (item: Item)
     DrawTextureEx(item.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.5, tint);
 }
 
+// @JAY: is there a way to make this generic for any texture lookup? polymorph?
+// @JAY: can I generate this during the textureload step?
 get_item_texture_info :: (type: Item_Type) -> TextureInfo
 {
     info: TextureInfo;
     if type == 
     {
-        case .WOOD_LOG;
-            info.texture = table_find_pointer(*Textures.table, "wood_log");
+        // weapons
         case .SWORD;
             info.texture = table_find_pointer(*Textures.table, "sword");
+        case .WHIP;
+            info.texture = table_find_pointer(*Textures.table, "whip");
+        // tools
         case .LUMBER_AXE;
             info.texture = table_find_pointer(*Textures.table, "lumber_axe");
         case .PICK_AXE;
             info.texture = table_find_pointer(*Textures.table, "pick_axe");
         case .HEWING_SAW;
             info.texture = table_find_pointer(*Textures.table, "hewing_saw");
+        case .CARPENTERS_HAMMER;
+            info.texture = table_find_pointer(*Textures.table, "carpenters_hammer");
+        // by-products
+        case .WOOD_LOG;
+            info.texture = table_find_pointer(*Textures.table, "wood_log");
+        case .COPPER_NUGGET;
+            info.texture = table_find_pointer(*Textures.table, "copper_nugget");
+        case .IRON_NUGGET;
+            info.texture = table_find_pointer(*Textures.table, "iron_nugget");
+        case .FIBER;
+            info.texture = table_find_pointer(*Textures.table, "fiber");
+        case;
+            info.texture = *ERROR_TEXTURE;
+    }
+    return info;
+}
+get_equipment_texture_info :: (type: Equipment_Type) -> TextureInfo
+{
+    info: TextureInfo;
+    if type == 
+    {
+        case .TOOL_BELT;
+            info.texture = table_find_pointer(*Textures.table, "tool_belt");
+            info.tint = BEIGE;
+        case .WEAPON_BELT;
+            info.texture = table_find_pointer(*Textures.table, "weapon_belt");
+            info.tint = BROWN;
         case;
             info.texture = *ERROR_TEXTURE;
     }
@@ -293,30 +340,24 @@ draw_equipment :: (equipment: Equipment)
 {
     if !equipment.position.exists return;
 
-    scale := 1.0;
-    scale *= Game.camera.zoom;
-    pos := to_screen_space(equipment.position.value.xy);
-
-    if equipment.type ==
-    {
-        case .TOOL_BELT;
-            DrawRectangleV(pos, equipment.collider.rect * scale, GREEN);
-        case .WEAPON_BELT;
-            DrawRectangleV(pos, equipment.collider.rect * scale, RED);
-    }
+    layer_size_modifier := 1.0 - (xx equipment.position.value.z - (Game.camera.position.z + 1)) * 0.1;
+    base_size := xy(xx equipment.textureInfo.width, xx equipment.textureInfo.height) * 0.2;
+    modified_size := base_size * Game.camera.zoom * layer_size_modifier;
+    center_pos := to_screen_space(equipment.position.value.xy);
+    drawpos := center_pos - modified_size / 2;
+    tint := equipment.textureInfo.tint;
+    tint.r = xx (tint.r * layer_size_modifier);
+    tint.g = xx (tint.g * layer_size_modifier);
+    tint.b = xx (tint.b * layer_size_modifier);
+    DrawTextureEx(equipment.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * layer_size_modifier * 0.2, tint);
 }
 
-draw_equipment_ui :: (pos: Vector2, collider: Collider, scale: float, type: Equipment_Type)
+draw_equipment_ui :: (pos: Vector2, scale: float, type: Equipment_Type)
 {
-    drawpos := pos;
-
-    if type ==
-    {
-        case .TOOL_BELT;
-            DrawRectangleV(drawpos, collider.rect * scale, GREEN);
-        case .WEAPON_BELT;
-            DrawRectangleV(drawpos, collider.rect * scale, RED);
-    }
+    info := get_equipment_texture_info(type);
+    size := xy(xx info.texture.width, xx info.texture.height) * scale;
+    drawpos := pos - size / 2;
+    DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
 }
 
 draw_resource :: (resource: Resource)

@@ -710,7 +710,8 @@ game_loop :: inline ()
             DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.toolBelt.exists
             {
-                DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), GREEN); //draw ui representation
+                draw_equipment_ui(xy(xpos + 30.0, ypos + 35.0), 0.1, .TOOL_BELT);
+                // DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), GREEN); //draw ui representation
 
                 xpos = WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
@@ -727,7 +728,8 @@ game_loop :: inline ()
             DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.weaponBelt.exists
             {
-                DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), RED); //draw ui representation
+                draw_equipment_ui(xy(xpos + 30.0, ypos + 35.0), 0.1, .WEAPON_BELT);
+                // DrawRectangleV(xy(xpos + 10.0, ypos + 35.0), xy(40, 10), RED); //draw ui representation
                 xpos = WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
