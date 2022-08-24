@@ -2,7 +2,8 @@ TEXTURES_PATH :: "C:/jai/sandbox/project_spit/assets/textures";
 ERROR_TEXTURE_PATH :: "C:/jai/sandbox/project_spit/assets/textures/error.png";
 ERROR_TEXTURE: Texture2D;
 
-Textures: struct
+Textures: TexturesReference;
+TexturesReference :: struct
 {
     table: Table(string, Texture2D);
     path_table: Table(string, string);

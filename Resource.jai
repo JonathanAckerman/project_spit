@@ -312,6 +312,19 @@ get_texture_info :: (type: Container_Type) -> TextureInfo
     }
     return info;
 }
+get_texture_info :: (type: Terrain_Type) -> TextureInfo
+{
+    info: TextureInfo;
+    if type == {
+        case .BEDROCK;
+            info.texture = table_find_pointer(*Textures.table, "bedrock");
+            info.size = .{100, 100};
+        case .DIRT;
+            info.texture = table_find_pointer(*Textures.table, "dirt");
+            info.size = .{100, 100};
+    }
+    return info;
+}
 
 draw_ui_representation  :: (pos: Vector2, scale: float, info: TextureInfo)
 {

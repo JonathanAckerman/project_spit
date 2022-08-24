@@ -631,9 +631,13 @@ game_loop :: inline ()
                     }
                     if cell.type == {
                         case .BEDROCK;
-                            DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(DARKGRAY, size_modifier));
+                            info := get_texture_info(cell.type);
+                            scale := size.x / info.texture.width;
+                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
                         case .DIRT;
-                            DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BROWN, size_modifier));
+                            info := get_texture_info(cell.type);
+                            scale := size.x / info.texture.width;
+                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
                         case .WATER;
                             DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
                         case .BLOCK;

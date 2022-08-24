@@ -30,11 +30,11 @@ GridCell :: struct
     x: int;
     y: int;
     z: int;
-    type: Cell_Type;
+    type: Terrain_Type;
     block: Maybe(Block);
 }
 
-Cell_Type :: enum
+Terrain_Type :: enum
 {
     AIR;
     BEDROCK;
