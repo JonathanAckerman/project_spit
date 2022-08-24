@@ -127,6 +127,8 @@ handle_collision :: (using entity: *Entity)
 
     circle_circle :: (c1: *Entity, c2: *Entity, shouldResolve: bool) -> bool
     {
+        if cast(int) c1.position.value.z != cast(int) c2.position.value.z then return false;
+
         displacement := (c1.position.value - c2.position.value).xy;
         dist := length(displacement);
         if dist < c1.collider.radius + c2.collider.radius
@@ -157,6 +159,8 @@ handle_collision :: (using entity: *Entity)
 
     circle_rect :: (c: *Entity, r: *Entity, shouldResolve: bool) -> bool
     {
+        if cast(int) c.position.value.z != cast(int) r.position.value.z then return false;
+
         rect_modified_size := (r.collider.rect * 0.5)/2;
         displacement := c.position.value - r.position.value;
         closest_x := r.position.value.x + clamp(displacement.x, -rect_modified_size.x, rect_modified_size.x);
