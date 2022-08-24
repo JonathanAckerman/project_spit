@@ -143,6 +143,8 @@ debug_deferred_draw_lines :: ()
 debug_player_info :: ()
 {
     using Game;
+    if !player.position.exists return;
+
     ss_player := to_screen_space(player.position.value.xy);
     drawpos := ss_player + xy(30 * camera.zoom, 0);
     fx := formatFloat(player.position.value.x, trailing_width=1, zero_removal=.YES);
@@ -176,6 +178,8 @@ debug_player_info :: ()
 debug_entity_info :: (e: Entity)
 {
     using Game;
+    if !e.position.exists return;
+
     ss_entity := to_screen_space(e.position.value.xy);
     drawpos := ss_entity + xy(30 * camera.zoom, 0);
     fx := formatFloat(e.position.value.x, trailing_width=1, zero_removal=.YES);
@@ -224,7 +228,6 @@ debug_grid_info :: ()
             }
         }
     }
-
 }
 
 debug_console :: (dt: float)

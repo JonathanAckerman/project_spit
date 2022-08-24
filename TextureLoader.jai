@@ -62,7 +62,7 @@ generate_textures_struct :: ()
         for t, t_index: data[d_index + 1]
         {
             path := tprint("%/%/%.png", TEXTURES_PATH, d, t);
-            table_add(*Textures.path_table, key = tprint("%", t), value = path);
+            table_add(*Textures.path_table, key = t, value = path);
         }
     }
 
@@ -89,7 +89,7 @@ load_all_textures :: ()
     }
 
     Textures.outlineShader = LoadShader(null, to_c_string("./assets/shaders/outlineShader.fs"));
-    outlineColor : [4] float = .[1.0, 0.0, 0.0, 1.0 ];
+    outlineColor : [4] float = .[1.0, 0.0, 0.0, 1.0];
     outlineColorLoc: s32;
     // Get shader locations
     Textures.outlineSizeLoc = GetShaderLocation(Textures.outlineShader, "outlineSize");

@@ -688,20 +688,20 @@ game_loop :: inline ()
                         if player.held.value.container.type ==
                         {
                             case .BASKET;
-                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, .BASKET);
+                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, player.held.value.container.textureInfo);
                                 xpos += 80.0;
                             case .BUCKET;
-                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, .BUCKET);
+                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, player.held.value.container.textureInfo);
                                 xpos += 80.0;
                             case .CHEST;
-                                draw_ui_representation(xy(xpos + 13.0, ypos + 15.0), 0.15, .CHEST);
+                                draw_ui_representation(xy(xpos + 13.0, ypos + 15.0), 0.15, player.held.value.container.textureInfo);
                                 xpos += 80.0;
                         }
                     case .ITEM;
                         if player.held.value.item.type ==
                         {
                             case;
-                                draw_ui_representation(xy(xx xpos, xx ypos), 0.3, player.held.value.item.type);
+                                draw_ui_representation(xy(xx xpos, xx ypos), 0.3, player.held.value.item.textureInfo);
                                 xpos += 80.0;
                         }
                 }
@@ -713,7 +713,7 @@ game_loop :: inline ()
             {
                 pos := xy(xpos + 55.0, ypos + 35.0);
                 pos -= player.toolBelt.value.textureInfo.size / 2;
-                draw_ui_representation(pos, 0.1, .TOOL_BELT);
+                draw_ui_representation(pos, 0.1, player.toolBelt.value.textureInfo);
 
                 xpos = WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
@@ -721,7 +721,7 @@ game_loop :: inline ()
                     DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
+                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.textureInfo); //draw inv items
                     }
                 }
             }
@@ -732,14 +732,14 @@ game_loop :: inline ()
             {
                 pos := xy(xpos + 55.0, ypos + 25.0);
                 pos -= player.toolBelt.value.textureInfo.size / 2;
-                draw_ui_representation(pos, 0.1, .WEAPON_BELT);
+                draw_ui_representation(pos, 0.1, player.weaponBelt.value.textureInfo);
                 xpos = WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
                     DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
                     if it.exists
                     {
-                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.type); //draw inv items
+                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, it.value.textureInfo); //draw inv items
                     }
                 }
             }

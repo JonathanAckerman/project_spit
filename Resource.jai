@@ -238,8 +238,9 @@ NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Ite
             resource.textureInfo.texture = *ERROR_TEXTURE;
     }
     resize_ratio := 0.5;
-    resource.textureInfo.size = xy(xx resource.textureInfo.texture.width, xx resource.textureInfo.texture.height) * resize_ratio;
-    resource.collider = NewCollider(resource.textureInfo.size);
+    base_size := xy(xx resource.textureInfo.texture.width, xx resource.textureInfo.texture.height);
+    resource.textureInfo.size = base_size * resize_ratio;
+    resource.collider = NewCollider(base_size);
     return resource;
 }
 
@@ -312,11 +313,7 @@ get_texture_info :: (type: Container_Type) -> TextureInfo
     return info;
 }
 
-draw_ui_representation  :: (pos: Vector2, scale: float, type: Item_Type)      { _draw_ui_representation(pos, scale, get_texture_info(type)); }
-draw_ui_representation  :: (pos: Vector2, scale: float, type: Container_Type) { _draw_ui_representation(pos, scale, get_texture_info(type)); }
-draw_ui_representation  :: (pos: Vector2, scale: float, type: Equipment_Type) { _draw_ui_representation(pos, scale, get_texture_info(type)); }
-
-_draw_ui_representation :: (pos: Vector2, scale: float, info: TextureInfo)
+draw_ui_representation  :: (pos: Vector2, scale: float, info: TextureInfo)
 {
     drawpos := pos;
     DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
