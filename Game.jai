@@ -730,8 +730,8 @@ game_loop :: inline ()
             DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
             if player.weaponBelt.exists
             {
-                pos := xy(xpos + 55.0, ypos + 25.0);
-                pos -= player.toolBelt.value.textureInfo.size / 2;
+                pos := xy(xpos + 55.0, ypos + 45.0);
+                pos -= player.weaponBelt.value.textureInfo.size / 2;
                 draw_ui_representation(pos, 0.1, player.weaponBelt.value.textureInfo);
                 xpos = WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
