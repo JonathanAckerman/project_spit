@@ -12,6 +12,11 @@ TexturesReference :: struct
     outlineSize := 2.0;
     outlineSizeLoc: s32;
     textureSizeLoc: s32;
+
+    waterShader: Shader;
+    distortionOffset: Vector2;
+    distortionOffsetLoc: s32;
+    distortionTexLoc: s32;
 }
 
 TextureInfo :: struct
@@ -94,11 +99,15 @@ load_all_textures :: ()
     outlineColorLoc: s32;
     // Get shader locations
     Textures.outlineSizeLoc = GetShaderLocation(Textures.outlineShader, "outlineSize");
-    outlineColorLoc = GetShaderLocation(Textures.outlineShader, "outlineColor");
+    outlineColorLoc         = GetShaderLocation(Textures.outlineShader, "outlineColor");
     Textures.textureSizeLoc = GetShaderLocation(Textures.outlineShader, "textureSize");
     // Set shader values (they can be changed later)
     SetShaderValue(Textures.outlineShader, Textures.outlineSizeLoc, *Textures.outlineSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_FLOAT);
     SetShaderValue(Textures.outlineShader, outlineColorLoc, *outlineColor, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC4);
+
+    Textures.waterShader = LoadShader(null, to_c_string("./assets/shaders/DistortionMap.fs"));
+    Textures.distortionOffsetLoc = GetShaderLocation(Textures.waterShader, "distortionOffset");
+    Textures.distortionTexLoc    = GetShaderLocation(Textures.waterShader, "distortionSampler");
 }
 
 #import "Basic";            // to_c_string()

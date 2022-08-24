@@ -639,7 +639,16 @@ game_loop :: inline ()
                             scale := size.x / info.texture.width;
                             draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
                         case .WATER;
-                            DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
+                            BeginShaderMode(Textures.waterShader);
+                            info := get_texture_info(cell.type);
+                            distortionTex := table_find_pointer(*Textures.table, "distortion_map");
+                            scale := size.x / info.texture.width;
+                            Textures.distortionOffset += xy(dt, dt);
+                            SetShaderValue(Textures.waterShader, Textures.distortionOffsetLoc, *Textures.distortionOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+                            SetShaderValueTexture(Textures.waterShader, Textures.distortionTexLoc, <<distortionTex);
+                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
+                            EndShaderMode();
+                            // DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
                         case .BLOCK;
                             draw_cell(cell);
                     }
@@ -881,7 +890,7 @@ game_reset :: ()
 
     // @TEMP: falling terrain
     fall_cell_index := grid.chunkWidth * 2 + 3;
-    grid.chunks[grid.currentChunk].cells[fall_cell_index].type = .BEDROCK;
+    grid.chunks[grid.currentChunk].cells[fall_cell_index].type = .WATER;
 
     // init player
     noAI: Maybe(AI);
