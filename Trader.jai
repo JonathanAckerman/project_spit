@@ -84,12 +84,7 @@ draw_person :: (person: Person)
     rot := atan2(-person.forward.y, person.forward.x);
     reverse_ray_bullshit_vector := rotate_vector(modified_size/2, atan2(person.forward.y, person.forward.x));
     drawpos := center_pos - reverse_ray_bullshit_vector;
-
-    tint := person.textureInfo.tint;
-    tint.r = xx (tint.r * size_modifier);
-    tint.g = xx (tint.g * size_modifier);
-    tint.b = xx (tint.b * size_modifier);
-    draw_texture_centered(person.textureInfo, center_pos, person.forward.xy, modified_size, Game.camera.zoom * size_modifier * 0.2);
+    draw_texture_centered(person.textureInfo, center_pos, person.forward.xy, modified_size, Game.camera.zoom * size_modifier * 0.2, size_modifier);
 }
 
 Player :: struct

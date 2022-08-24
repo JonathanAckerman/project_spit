@@ -633,11 +633,11 @@ game_loop :: inline ()
                         case .BEDROCK;
                             info := get_texture_info(cell.type);
                             scale := size.x / info.texture.width;
-                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
+                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
                         case .DIRT;
                             info := get_texture_info(cell.type);
                             scale := size.x / info.texture.width;
-                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
+                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
                         case .WATER;
                             BeginShaderMode(Textures.waterShader);
                             info := get_texture_info(cell.type);
@@ -646,13 +646,11 @@ game_loop :: inline ()
                             Textures.distortionOffset += xy(dt, dt);
                             SetShaderValue(Textures.waterShader, Textures.distortionOffsetLoc, *Textures.distortionOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
                             SetShaderValueTexture(Textures.waterShader, Textures.distortionTexLoc, <<distortionTex);
-                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale);
+                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
                             EndShaderMode();
-                            // DrawRectangleV(drawpos + drawpos_offset_from_size / 2, size, tint(BLUE, size_modifier));
                         case .BLOCK;
                             draw_cell(cell);
                     }
-                    DrawRectangleLines(xx drawpos.x, xx drawpos.y, xx (grid.cellSize * camera.zoom), xx (grid.cellSize * camera.zoom), LIGHTGRAY);
                     if cell.type != .BLOCK || cell.block.value.type == .STAIR_BOTTOM
                         drawn_flags[offset_from_layer] = true;
                 }
@@ -864,10 +862,10 @@ game_reset :: ()
         top_cell.type = .BLOCK;
         top_cell.block = NewMaybe(stair_top);
     }
-    get_cell(7, 2, 2).type = .BEDROCK;
-    get_cell(8, 2, 2).type = .BEDROCK;
-    get_cell(8, 3, 2).type = .BEDROCK;
-    get_cell(8, 1, 2).type = .BEDROCK;
+    get_cell(7, 2, 2).type = .WATER;
+    get_cell(8, 2, 2).type = .WATER;
+    get_cell(8, 3, 2).type = .WATER;
+    get_cell(8, 1, 2).type = .WATER;
     {
         stair_bot := make_block(.STAIR_BOTTOM, 0.0);
         bot_cell := get_cell(8, 2, 1);
@@ -879,14 +877,17 @@ game_reset :: ()
         top_cell.type = .BLOCK;
         top_cell.block = NewMaybe(stair_top);
     }
-    get_cell(9, 2, 2).type = .BEDROCK;
-    get_cell(9, 2, 1).type = .BEDROCK;
-    get_cell(10, 2, 2).type = .BEDROCK;
-    get_cell(10, 2, 1).type = .BEDROCK;
-    get_cell(10, 3, 2).type = .BEDROCK;
-    get_cell(10, 3, 1).type = .BEDROCK;
-    get_cell(10, 1, 2).type = .BEDROCK;
-    get_cell(10, 1, 1).type = .BEDROCK;
+    get_cell(9, 2, 2).type  = .WATER;
+    get_cell(9, 2, 1).type  = .WATER;
+    get_cell(10, 2, 2).type = .WATER;
+    get_cell(10, 2, 1).type = .WATER;
+    get_cell(10, 3, 2).type = .WATER;
+    get_cell(10, 3, 1).type = .WATER;
+    get_cell(10, 1, 2).type = .WATER;
+    get_cell(10, 1, 1).type = .WATER;
+    get_cell(11, 2, 3).type = .AIR;
+    get_cell(11, 2, 4).type = .AIR;
+    get_cell(11, 2, 5).type = .DIRT;
 
     // @TEMP: falling terrain
     fall_cell_index := grid.chunkWidth * 2 + 3;

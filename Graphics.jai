@@ -1,4 +1,4 @@
-draw_texture_centered :: (info: TextureInfo, center: Vector2, forward: Vector2, size: Vector2, scale: float)
+draw_texture_centered :: (info: TextureInfo, center: Vector2, forward: Vector2, size: Vector2, scale: float, tint_modifier: float)
 {
     x := forward.x;
     y := ifx RAYLIB then -forward.y else forward.y;
@@ -12,7 +12,11 @@ draw_texture_centered :: (info: TextureInfo, center: Vector2, forward: Vector2, 
     }
 
     // for some reason 'size' & 'scale' need to be separate concepts, thanks ray
-    DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, info.tint);
+    tint := info.tint;
+    tint.r = xx (tint.r * tint_modifier);
+    tint.g = xx (tint.g * tint_modifier);
+    tint.b = xx (tint.b * tint_modifier);
+    DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, tint); // @TODO: if I want to tint the texture, i think I need to pass it into the shader
 }
 
 // @JAY: is there a way to make this generic for any texture lookup? polymorph?
