@@ -325,6 +325,7 @@ draw_entity :: (entity: Entity)
 
     scale := entity.textureInfo.size.x / entity.textureInfo.texture.width;
     layer_size_modifier := 1.0 - (xx entity.position.value.z - (Game.camera.position.z + 1)) * 0.1;
+    layer_size_modifier = clamp(layer_size_modifier, 0.0, 1.0);
     base_size := xy(xx entity.textureInfo.width, xx entity.textureInfo.height) * scale;
     modified_size := base_size * Game.camera.zoom * layer_size_modifier;
     center_pos := to_screen_space(entity.position.value.xy);
