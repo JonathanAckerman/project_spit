@@ -30,11 +30,13 @@ Debug: struct
         "PRINT PLAYER",
         "REPOP RESOURCES",
         "RESET",
-        "DEBUG INFO 0",
-        "DEBUG INFO 1"
+        "DEBUG INFO 0/1",
+        "FREECAM 0/1"
     ];
+    
     showEntityInfo := false;
-    dtMultiplier := 1.0;
+    freeCamera     := false;
+    dtMultiplier   := 1.0;
 
     debugRectangles : [..] DebugRectangle;
     debugCircles :    [..] DebugCircle;
@@ -387,6 +389,15 @@ debug_is_command_valid :: (cmd: string)
     if cmd == "DEBUG INFO 1" || cmd == "DB1"
     {
         Debug.showEntityInfo = true;
+    }
+
+    if cmd == "FREECAM 1" || cmd == "FC1"
+    {
+        Debug.freeCamera = true;
+    }
+    if cmd == "FREECAM 0" || cmd == "FC0"
+    {
+        Debug.freeCamera = false;
     }
 }
 

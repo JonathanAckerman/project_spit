@@ -42,8 +42,11 @@ game_loop :: inline ()
 
         update_current_chunk();
 
-        camera.position.xy = player.position.value.xy;
-        camera.position.z = player.position.value.z - 1;
+        if !Debug.freeCamera
+        {
+            camera.position.xy = player.position.value.xy;
+            camera.position.z = player.position.value.z - 1;
+        }
 
         equipItem :: ()
         {
@@ -604,6 +607,14 @@ game_loop :: inline ()
 
         // draw grid
         layer_index := (cast(int) camera.position.z + 1) * grid.chunkWidth * grid.chunkWidth;
+
+        start1 := to_screen_space(xy(0, 50));
+          end1 := to_screen_space(xy(0, -50));
+        start2 := to_screen_space(xy(100, 50));
+          end2 := to_screen_space(xy(100, -50));
+        DrawLine(xx start1.x, xx start1.y, xx end1.x, xx end1.y, BLUE);
+        DrawLine(xx start2.x, xx start2.y, xx end2.x, xx end2.y, BLUE);
+
         for chunk: grid.loadedChunks
         {
             cells_below_camera := array_view(chunk.cells, layer_index);
@@ -622,13 +633,6 @@ game_loop :: inline ()
                     size_modifier := 1.0 - camera_dist_to_cell * 0.1;
                     drawpos_offset_from_size := size - size * size_modifier;
                     size *= size_modifier;
-                    tint :: (c: Color, modifier: float) -> Color { 
-                        color: Color = c;
-                        color.r = xx (color.r * modifier);
-                        color.g = xx (color.g * modifier);
-                        color.b = xx (color.b * modifier);
-                        return color;
-                    }
                     if cell.type == {
                         case .BEDROCK;
                             info := get_texture_info(cell.type);

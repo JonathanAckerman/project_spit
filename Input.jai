@@ -13,31 +13,43 @@ handle_input :: inline ()
 
     if !Debug.isActive
     {
-        // movement
-        new_velocity: Vector3;
-        new_forward: Vector3;
-        if IsKeyDown(xx KeyboardKey.W) 
+        if !Debug.freeCamera 
         {
-            new_velocity.y = -1.0;
-            new_forward += .{0, -1, 0};
+            // movement
+            new_velocity: Vector3;
+            new_forward: Vector3;
+            if IsKeyDown(xx KeyboardKey.W) 
+            {
+                new_velocity.y = -1.0;
+                new_forward += .{0, -1, 0};
+            }
+            if IsKeyDown(xx KeyboardKey.A) 
+            {
+                new_velocity.x = -1.0;
+                new_forward += .{-1, 0, 0};
+            }
+            if IsKeyDown(xx KeyboardKey.S) 
+            {
+                new_velocity.y = 1.0;
+                new_forward += .{0, 1, 0};
+            }
+            if IsKeyDown(xx KeyboardKey.D) 
+            {
+                new_velocity.x = 1.0;
+                new_forward += .{1, 0, 0};
+            }
+            if length(new_forward) != 0 then Game.player.forward = unit_vector(new_forward);
+            Game.player.velocity = unit_vector(new_velocity) * Game.player.speed;
         }
-        if IsKeyDown(xx KeyboardKey.A) 
+        else
         {
-            new_velocity.x = -1.0;
-            new_forward += .{-1, 0, 0};
+            camera_velocity: Vector3;
+            if IsKeyDown(xx KeyboardKey.W) { camera_velocity += .{0, -1, 0}; }
+            if IsKeyDown(xx KeyboardKey.A) { camera_velocity += .{-1, 0, 0}; }
+            if IsKeyDown(xx KeyboardKey.S) { camera_velocity += .{0, 1, 0}; }
+            if IsKeyDown(xx KeyboardKey.D) { camera_velocity += .{1, 0, 0}; }
+            Game.camera.position += unit_vector(camera_velocity) * Game.player.speed;
         }
-        if IsKeyDown(xx KeyboardKey.S) 
-        {
-            new_velocity.y = 1.0;
-            new_forward += .{0, 1, 0};
-        }
-        if IsKeyDown(xx KeyboardKey.D) 
-        {
-            new_velocity.x = 1.0;
-            new_forward += .{1, 0, 0};
-        }
-        if length(new_forward) != 0 then Game.player.forward = unit_vector(new_forward);
-        Game.player.velocity = unit_vector(new_velocity) * Game.player.speed;
 
         // harvesting
         if IsKeyPressed(xx KeyboardKey.SPACE)
