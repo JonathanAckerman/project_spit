@@ -943,21 +943,31 @@ game_reset :: ()
             .{0, 1, 2, .AIR, no_block}, .{1, 1, 2, .AIR, no_block}, .{2, 1, 2, .AIR, no_block},
         ];
 
+        owner := npcs[0];
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
         basket_collider := NewCollider(.{20, 20});
         basket_pos += xyz(-basket_collider.rect.x/2, -basket_collider.rect.y/2, 0);
-        owner := npcs[0];
-        ware := NewContainer(.BASKET, basket_collider, basket_pos, owner);
-        array_add(*containers, ware);
+        basket := NewContainer(.BASKET, basket_collider, basket_pos, owner);
+        array_add(*containers, basket);
         basket_deal: Deal;
-        basket_deal.price = .{10, .FIBER};
-        basket_deal.ware = as_sellable(ware);
+        basket_deal.price = .{3, .FIBER};
+        basket_deal.ware = as_sellable(basket);
 
-        deals: [1] Deal;
+        chest_pos := grid_to_world(area[1], shouldGetCenter = true);
+        chest_collider := NewCollider(.{20, 20});
+        chest_pos += xyz(-chest_collider.rect.x/2, -chest_collider.rect.y/2, 0);
+        chest := NewContainer(.CHEST, chest_collider, chest_pos, owner);
+        array_add(*containers, chest);
+        chest_deal: Deal;
+        chest_deal.price = .{2, .WOOD_LOG};
+        chest_deal.ware = as_sellable(chest);
+
+        deals: [2] Deal;
         deals[0] = basket_deal;
+        deals[1] = chest_deal;
 
-        basket_shop := NewShop(area, deals, owner);
-        array_add(*shops, basket_shop);
+        shop := NewShop(area, deals, owner);
+        array_add(*shops, shop);
     }
 
     // init items on ground
@@ -982,24 +992,6 @@ game_reset :: ()
         weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*equipment, weaponbelt);
     }
-}
-
-get_nearest_shop_to_player :: () -> *Shop, float
-{
-    // using Game;
-    // nearest_index := 0;
-    // min_dist := length(buildings[0].position.value - player.position.value);
-    // for buildings
-    // {
-    //     dist := length(it.position.value - player.position.value);
-    //     if dist < min_dist
-    //     {
-    //         min_dist = dist;
-    //         nearest_index = it_index;
-    //     }
-    // }
-    // return *buildings[nearest_index], min_dist;
-    return null, 0.0;
 }
 
 get_holdables_in_range :: (range: float) -> [..] Holdable

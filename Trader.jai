@@ -15,6 +15,11 @@ Deal :: struct
     ware: Sellable;
 }
 
+// NewDeal :: (price_type: Item_Type, price_amount: int) -> *Deal
+// {
+
+// }
+
 NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> *Shop
 {
     shop := New(Shop);
