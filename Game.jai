@@ -523,7 +523,37 @@ game_loop :: inline ()
                         array_unordered_remove_by_value(*items, payment_buffer[i]); // @Note: I might end up leaving someone else's pointers to the item hanging
                     }
 
-                    if player.held.exists then drop_held();
+                    if player.held.exists 
+                    {
+                        held := player.held.value;
+
+                        if held.tag != .ITEM then drop_held();
+                        else
+                        {
+                            sheath_inv: *Equipment = null;
+                            if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
+                            else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
+                            
+                            if sheath_inv == null then drop_held();
+                            else
+                            {
+                                has_sheathed := false;
+                                for sheath_inv.contents // look for the first available slot
+                                {
+                                    if !it.exists
+                                    {
+                                        sheath_inv.contents[it_index].value = held.item;
+                                        sheath_inv.contents[it_index].exists = true;
+                                        player.held.exists = false;
+                                        has_sheathed = true;
+                                        break;
+                                    }
+                                }
+
+                                if !has_sheathed then drop_held();
+                            }
+                        }
+                    }
 
                     ware := as_concept(nearest_deal.ware);
                     player.held.value = as_holdable(ware);
