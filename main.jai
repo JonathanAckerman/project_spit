@@ -32,6 +32,7 @@ main :: () {
 #load "Trader.jai";
 #load "DebugTools.jai";
 #load "Maybe.jai";
+#load "Concepts.jai";
 #load "Grid.jai";
 #load "Utils.jai";
 #load "TextureLoader.jai";

@@ -189,7 +189,7 @@ game_loop :: inline ()
                                 }
                         }
 
-                    case .ITEM;
+                    case .ITEM; // @@@: this doesnt account for picking up byproducts
                         if !player.held.exists
                         {
                             player.held.value = it;
@@ -439,30 +439,18 @@ game_loop :: inline ()
                 {
                     shop.value = s;
                     shop.exists = true;
+                    break s;
                 }
             }
 
             if !shop.exists || shop.value.deals.count == 0 then return;
 
             // get the nearest deal to the player
-            get_pos :: inline (deal: Deal) -> Vector3
-            {
-                if deal.ware_tag ==
-                {
-                    case .ITEM;
-                        return (cast(*Item) deal.ware.value_pointer).position.value;
-                    case .CONTAINER;
-                        return (cast(*Container) deal.ware.value_pointer).position.value;
-                    case .EQUIPMENT;
-                        return (cast(*Equipment) deal.ware.value_pointer).position.value;
-                }
-                return .{0, 0, 0};
-            }
             nearest_deal := shop.value.deals[0];
-            nearest_deal_dist := length(get_pos(nearest_deal) - player.position.value);
+            nearest_deal_dist := length(nearest_deal.ware.position - player.position.value);
             for shop.value.deals
             {
-                dist := length(get_pos(it) - player.position.value);
+                dist := length(it.ware.position - player.position.value);
                 if dist < nearest_deal_dist
                 {
                     nearest_deal = it;
@@ -472,47 +460,80 @@ game_loop :: inline ()
 
             if nearest_deal_dist < player.interactRange
             {
-                //either the player is holding the payment (or part of payment)
-                //or the payment must be "inside" the shop
-                    // maybe rather than having this array of grid cells, I could just make it a rect collider, that way the payment (center point) doesnt have to be inside a cell, its just a normal collision
-                
                 price_amount := nearest_deal.price.amount;
-                price_tag    := nearest_deal.price.tag;
-                price_type   : Any;
-                if price_tag == 
-                {
-                    case .ITEM;
-                        price_type = nearest_deal.price.item;
-                    case .CONTAINER;
-                        price_type = nearest_deal.price.container;
-                    case .EQUIPMENT;
-                        price_type = nearest_deal.price.equipment;
-                }
+                price_type   := nearest_deal.price.item;
+                payment_buffer : [..] *Item;
 
-                // build a "wallet" for the player
-                payment_buffer : [..] Any;
                 if player.held.exists
                 {
-                    // holding some of the payment
-                    if player.held.value.tag == price_tag
+                    // player is holding some of the payment
+                    if player.held.value.tag == .ITEM && player.held.value.item.type == price_type
                     {
-                        // switch based on the tag
-                            // if the type == type
-                                // add to wallet
+                        array_add(*payment_buffer, player.held.value.item);
                     }
-                    // holding a basket...
+                    // player is holding a basket...
                     if player.held.value.tag == .CONTAINER && player.held.value.container.type == .BASKET
                     {
                         // ...which could contain some of the payment
                         basket := player.held.value.container;
-
-
+                        for basket.contents if it.tag == .ITEM && it.item.type == price_type
+                        {
+                            array_add(*payment_buffer, it.item);
+                        }
                     }
                 }
-                    // what they are holding
-                    //     if it's a basket then anything inside
-                    // any items inside the shop
-                    // any items in containers inside the shop
+                // any items inside the shop
+                for items if it.position.exists && 
+                             it.type == price_type && 
+                             (!it.owner.exists ||
+                             it.owner.exists && 
+                             it.owner.value == *player)
+                {
+                    item_cell := world_to_grid(it.position.value);
+                    for shop_cell: shop.value.area
+                    {
+                        if shop_cell == <<item_cell 
+                        {
+                            array_add(*payment_buffer, it); 
+                            break;
+                        }
+                    }
+                }
+                // any items in containers inside the shop
+                for c: containers if c.position.exists && c.owner.exists && c.owner.value == *player
+                {
+                    container_cell := world_to_grid(c.position.value);
+                    for shop_cell: shop.value.area if shop_cell == <<container_cell
+                    {
+                        for c.contents if it.tag == .ITEM && it.item.type == price_type
+                        {
+                            array_add(*payment_buffer, it.item);
+                        }
+                        break;
+                    }
+                }
+
+                if payment_buffer.count >= price_amount
+                {
+                    // remove those items from the game
+                    for i: 0..price_amount - 1
+                    {
+                        // Maybe make a method for removing items from the game
+                        free(payment_buffer[i]);
+                        array_unordered_remove_by_value(*items, payment_buffer[i]); // @Note: I might end up leaving someone else's pointers to the item hanging
+                    }
+
+                    if player.held.exists then drop_held();
+
+                    ware := as_concept(nearest_deal.ware);
+                    player.held.value = as_holdable(ware);
+                    player.held.exists = true;
+
+                    held := get_holdable_entity(player.held.value);
+                    held.owner.value = *player;
+                    held.owner.exists = true;
+                    held.position.exists = false;
+                }
             }
         }
         if Input.trade then buyFromShop();
@@ -928,12 +949,9 @@ game_reset :: ()
         owner := npcs[0];
         ware := NewContainer(.BASKET, basket_collider, basket_pos, owner);
         array_add(*containers, ware);
-        price := Price.{amount = 10, entityStandIn = .{tag = .ITEM, item = .FIBER}};
         basket_deal: Deal;
-        basket_deal.price = price;
-        basket_deal.ware.type = type_info(*Container);
-        basket_deal.ware.value_pointer = ware;
-        basket_deal.ware_tag = .CONTAINER;
+        basket_deal.price = .{10, .FIBER};
+        basket_deal.ware = as_sellable(ware);
 
         deals: [1] Deal;
         deals[0] = basket_deal;

@@ -33,7 +33,7 @@ Debug: struct
         "DEBUG INFO 0/1",
         "FREECAM 0/1"
     ];
-    
+
     showEntityInfo := false;
     freeCamera     := false;
     dtMultiplier   := 1.0;
@@ -315,7 +315,7 @@ debug_is_command_valid :: (cmd: string)
             }
 
             // Items
-            if cmd_array[1] == "AXE" || cmd_array[1] == "SAW" || cmd_array[1] == "HAMMER" || cmd_array[1] == "SWORD" || cmd_array[1] == "WHIP" || cmd_array[1] == "PICK"
+            if cmd_array[1] == "AXE" || cmd_array[1] == "SAW" || cmd_array[1] == "HAMMER" || cmd_array[1] == "SWORD" || cmd_array[1] == "WHIP" || cmd_array[1] == "PICK" || cmd_array[1] == "FIBER"
             {
                 if cmd_array[1] == "AXE" then cmd_array[1] = "LUMBER_AXE";
                 if cmd_array[1] == "PICK" then cmd_array[1] = "PICK_AXE";

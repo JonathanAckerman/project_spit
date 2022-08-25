@@ -1,31 +1,18 @@
 Shop :: struct
 {
-    owner: *Entity;
-    area: [..] GridCell;
-    deals: [..] Deal;
+    owner:      *Entity;
+    area:  [..]  GridCell;
+    deals: [..]  Deal;
 }
 
 Deal :: struct
 {
-    price: Price;
-    ware: Any;
-    ware_tag: Entity_Type;
-}
-
-Price :: struct
-{
-    amount: int;
-    using entityStandIn: struct
+    price: struct 
     {
-        tag: Entity_Type;
-
-        union
-        {
-            item: Item_Type;
-            container: Container_Type;
-            equipment: Equipment_Type;
-        }
+        amount: int;
+        item: Item_Type;
     }
+    ware: Sellable;
 }
 
 NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> *Shop

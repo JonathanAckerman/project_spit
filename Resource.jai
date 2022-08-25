@@ -64,7 +64,7 @@ Container :: struct
     using #as entity: Entity;
     type: Container_Type;
     capacity: int;
-    contents: [..] Holdable;
+    contents: [..] Containable;
 }
 Container_Type :: enum
 {
@@ -84,41 +84,6 @@ Equipment_Type :: enum
 {
     TOOL_BELT;
     WEAPON_BELT;
-}
-
-Holdable :: struct
-{
-    tag: Entity_Type;
-    union
-    {
-        #as item: *Item;
-        #as container: *Container;
-        #as equipment: *Equipment;
-    }
-}
-
-as_holdable :: (item: *Item) -> Holdable
-{
-    h: Holdable;
-    h.item = item;
-    h.tag = .ITEM;
-    return h;
-}
-
-as_holdable :: (container: *Container) -> Holdable
-{
-    h: Holdable;
-    h.container = container;
-    h.tag = .CONTAINER;
-    return h;
-}
-
-as_holdable :: (equipment: *Equipment) -> Holdable
-{
-    h: Holdable;
-    h.equipment = equipment;
-    h.tag = .EQUIPMENT;
-    return h;
 }
 
 NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Container
