@@ -607,14 +607,6 @@ game_loop :: inline ()
 
         // draw grid
         layer_index := (cast(int) camera.position.z + 1) * grid.chunkWidth * grid.chunkWidth;
-
-        start1 := to_screen_space(xy(0, 50));
-          end1 := to_screen_space(xy(0, -50));
-        start2 := to_screen_space(xy(100, 50));
-          end2 := to_screen_space(xy(100, -50));
-        DrawLine(xx start1.x, xx start1.y, xx end1.x, xx end1.y, BLUE);
-        DrawLine(xx start2.x, xx start2.y, xx end2.x, xx end2.y, BLUE);
-
         for chunk: grid.loadedChunks
         {
             cells_below_camera := array_view(chunk.cells, layer_index);
