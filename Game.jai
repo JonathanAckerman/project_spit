@@ -354,12 +354,13 @@ game_loop :: inline ()
             using Game;
 
             // compile list of resources in range, sort by distance to player
-            resource_info :: struct { resource: *Resource; direction: Vector3; index: int; }
+            resource_info :: struct { resource: *Resource; direction: Vector2; index: int; }
             sorted_resources: [..] resource_info;
             for resources
             {
-                player_to_resource : Vector3 = it.position.value - player.position.value;
-                if length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
+                player_to_resource : Vector2 = it.position.value.xy - player.position.value.xy;
+                if it.position.value.z == player.position.value.z && 
+                   length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
                 {
                     info: resource_info;
                     info.resource = resources[it_index];
@@ -408,16 +409,19 @@ game_loop :: inline ()
             if resource_to_harvest.exists
             {
                 by_product: *Item = null;
+                resource_pos := resource_to_harvest.value.resource.position.value;
+                direction_offset := unit_vector(resource_to_harvest.value.direction) * 15;
+                by_product_pos := xyz(resource_pos.xy + direction_offset, resource_pos.z);
                 if resource_to_harvest.value.resource.type ==
                 {
                     case .COPPER_VEIN;
-                        by_product = NewItem(.COPPER_NUGGET, NewCollider(10.0), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.COPPER_NUGGET, NewCollider(10.0), by_product_pos);
                     case .IRON_VEIN;
-                        by_product = NewItem(.IRON_NUGGET, NewCollider(10.0), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.IRON_NUGGET, NewCollider(10.0), by_product_pos);
                     case .TREE;
-                        by_product = NewItem(.WOOD_LOG, NewCollider(.{10, 10}), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.WOOD_LOG, NewCollider(.{10, 10}), by_product_pos);
                     case .BUSH;
-                        by_product = NewItem(.FIBER, NewCollider(10.0), resource_to_harvest.value.resource.position.value + unit_vector(resource_to_harvest.value.direction) * 15);
+                        by_product = NewItem(.FIBER, NewCollider(10.0), by_product_pos);
                 }
 
                 array_add(*items, by_product);
@@ -1031,9 +1035,11 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
     dist_info :: struct { holdable: Holdable; dist: float; }
     info_list: [..] dist_info;
 
-    for containers if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
+    for containers if it.position.exists && 
+                      (!it.owner.exists || it.owner.value == *player.person) &&
+                      it.position.value.z == player.position.value.z
     { 
-        dist := length(Game.player.position.value - it.position.value);
+        dist := length(Game.player.position.value.xy - it.position.value.xy);
         if dist < range
         {
             info: dist_info;
@@ -1043,9 +1049,11 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
             array_add(*info_list, info);
         }
     }
-    for items if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
+    for items if it.position.exists && 
+                 (!it.owner.exists || it.owner.value == *player.person) &&
+                 it.position.value.z == player.position.value.z
     {
-        dist := length(Game.player.position.value - it.position.value);
+        dist := length(Game.player.position.value.xy - it.position.value.xy);
         if dist < range
         {
             info: dist_info;
@@ -1055,9 +1063,11 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
             array_add(*info_list, info);
         }
     }
-    for equipment if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
+    for equipment if it.position.exists && 
+                     (!it.owner.exists || it.owner.value == *player.person) &&
+                     it.position.value.z == player.position.value.z
     {
-        dist := length(Game.player.position.value - it.position.value);
+        dist := length(Game.player.position.value.xy - it.position.value.xy);
         if dist < range
         {
             info: dist_info;
