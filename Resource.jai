@@ -122,6 +122,7 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
     item.entity = init_entity_data(pos, collider, owner, mass);
     item.type = type;
     item.entityType = .ITEM;
+    resize_ratio := 0.5;
     if type == 
     {
         // weapons
@@ -129,11 +130,13 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
             item.textureInfo.texture = table_find_pointer(*Textures.table, "sword");
         case .WHIP;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "whip");
+            resize_ratio = 0.3;
         // tools
         case .LUMBER_AXE;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "lumber_axe");
         case .PICK_AXE;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "pick_axe");
+            resize_ratio = 0.4;
         case .HEWING_SAW;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "hewing_saw");
         case .CARPENTERS_HAMMER;
@@ -150,7 +153,6 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
         case;
             item.textureInfo.texture = *ERROR_TEXTURE;
     }
-    resize_ratio := 0.5;
     item.textureInfo.size = xy(xx item.textureInfo.texture.width, xx item.textureInfo.texture.height) * resize_ratio;
     return item;
 }
@@ -179,7 +181,7 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
     return equipment;
 }
 
-NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Item_Type)) -> *Resource
+NewResource :: (type: Resource_Type, pos: Vector3, quantity: int) -> *Resource
 {
     resource := New(Resource);
     mass := ifx type == .BUSH then 0 else 999;
@@ -187,18 +189,21 @@ NewResource :: (type: Resource_Type, pos: Vector3, quantity: int, req: Maybe(Ite
     resource.type = type;
     resource.entityType = .RESOURCE;
     resource.quantity = quantity;
-    resource.harvestRequirement = req;
     // @TEMP: for now make resizing preserve aspect ratio
     if resource.type == 
     {
         case .COPPER_VEIN;
             resource.textureInfo.texture = table_find_pointer(*Textures.table, "copper_vein");
+            resource.harvestRequirement = NewMaybe(Item_Type.PICK_AXE);
         case .IRON_VEIN;
             resource.textureInfo.texture = table_find_pointer(*Textures.table, "iron_vein");
+            resource.harvestRequirement = NewMaybe(Item_Type.PICK_AXE);
         case .BUSH;
             resource.textureInfo.texture = table_find_pointer(*Textures.table, "bush");
+            resource.harvestRequirement = NewMaybe(Item_Type.SWORD);
         case .TREE;
             resource.textureInfo.texture = table_find_pointer(*Textures.table, "tree");
+            resource.harvestRequirement = NewMaybe(Item_Type.LUMBER_AXE);
         case;
             resource.textureInfo.texture = *ERROR_TEXTURE;
     }

@@ -303,39 +303,46 @@ debug_is_command_valid :: (cmd: string)
     {
         if begins_with(cmd, "SPAWN")
         {
+            Nicknames :: struct {
+                name: string;
+                alt: string;
+            }
+
+            nicknames: [] Nicknames = .[
+                .{name="LUMBER_AXE", alt="AXE"},
+                .{name="CARPENTERS_HAMMER", alt="HAMMER"},
+                .{name="PICK_AXE", alt="PICK"},
+                .{name="HEWING_SAW", alt="SAW"},
+                .{name="WOOD_LOG", alt="LOG"},
+                .{name="TOOL_BELT", alt="TOOLBELT"},
+                .{name="WEAPON_BELT", alt="WEAPONBELT"},
+                .{name="COPPER_VEIN", alt="COPPERORE"},
+                .{name="COPPER_NUGGET", alt="COPPERNUG"},
+                .{name="IRON_VEIN", alt="IRONORE"},
+                .{name="IRON_NUGGET", alt="IRONNUG"},
+            ];
+            for nicknames if cmd_array[1] == it.alt then cmd_array[1] = it.name;
+
+            type := entity_type_from_string(cmd_array[1]);
             pos := Game.player.position.value + Game.player.person.forward * 50;
             collider: *Collider;
 
-            // Containers
-            if cmd_array[1] == "BASKET" || cmd_array[1] == "CHEST" || cmd_array[1] == "BUCKET"
-            {
-                collider = NewCollider(.{20, 30});
-                container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
-                array_add(*Game.containers, container);
-            }
-
-            // Items
-            if cmd_array[1] == "AXE" || cmd_array[1] == "SAW" || cmd_array[1] == "HAMMER" || cmd_array[1] == "SWORD" || cmd_array[1] == "WHIP" || cmd_array[1] == "PICK" || cmd_array[1] == "FIBER"
-            {
-                if cmd_array[1] == "AXE" then cmd_array[1] = "LUMBER_AXE";
-                if cmd_array[1] == "PICK" then cmd_array[1] = "PICK_AXE";
-                if cmd_array[1] == "SAW" then cmd_array[1] = "HEWING_SAW";
-                if cmd_array[1] == "HAMMER" then cmd_array[1] = "CARPENTERS_HAMMER";
-                
-                collider = NewCollider(10);
-                item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
-                array_add(*Game.items, item);
-            }
-
-            // Equipment
-            if cmd_array[1] == "TOOLBELT" || cmd_array[1] == "WEAPONBELT"
-            {
-                if cmd_array[1] == "TOOLBELT" then cmd_array[1] = "TOOL_BELT";
-                if cmd_array[1] == "WEAPONBELT" then cmd_array[1] = "WEAPON_BELT";
-
-                collider = NewCollider(.{60, 15});
-                equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
-                array_add(*Game.equipment, equipment);
+            if type.exists if type.value == {
+                case .CONTAINER;
+                    collider = NewCollider(.{20, 30});
+                    container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
+                    array_add(*Game.containers, container);
+                case .ITEM;
+                    collider = NewCollider(10);
+                    item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
+                    array_add(*Game.items, item);
+                case .EQUIPMENT;
+                    collider = NewCollider(.{60, 15});
+                    equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
+                    array_add(*Game.equipment, equipment);
+                case .RESOURCE;
+                    resource := NewResource(resource_type_from_string(cmd_array[1]).value, pos, 10);
+                    array_add(*Game.resources, resource);
             }
         }
 
@@ -438,4 +445,26 @@ equipment_type_from_string :: (s: string) -> Maybe(Equipment_Type)
         }
     }
     return Nothing(Equipment_Type);
+}
+
+resource_type_from_string :: (s: string) -> Maybe(Resource_Type)
+{
+    for enum_names(Resource_Type)
+    {
+        if s == it
+        {
+            m := NewMaybe(cast(Resource_Type) enum_values_as_s64(Resource_Type)[it_index]);
+            return m;
+        }
+    }
+    return Nothing(Resource_Type);
+}
+
+entity_type_from_string :: (s: string) -> Maybe(Entity_Type)
+{
+    for enum_names(Item_Type)      if s == it then return NewMaybe(Entity_Type.ITEM);
+    for enum_names(Container_Type) if s == it then return NewMaybe(Entity_Type.CONTAINER);
+    for enum_names(Equipment_Type) if s == it then return NewMaybe(Entity_Type.EQUIPMENT);
+    for enum_names(Resource_Type)  if s == it then return NewMaybe(Entity_Type.RESOURCE);
+    return Nothing(Entity_Type);
 }

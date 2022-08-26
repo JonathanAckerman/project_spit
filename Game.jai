@@ -1139,20 +1139,7 @@ populate_resources :: ()
             pos := grid_to_world(cast(int) x, cast(int) y, 2);
             type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
             quantity := max(random_get() % 20, 10);
-            req: Maybe(Item_Type);
-            if type == 
-            {
-                case .TREE;
-                    req = NewMaybe(Item_Type.LUMBER_AXE);
-                case .BUSH;
-                    req = NewMaybe(Item_Type.SWORD); // Maybe make property flags on items like "sharp" or "bladed"
-                case .IRON_VEIN; 
-                    #through;
-                case .COPPER_VEIN;
-                    req = NewMaybe(Item_Type.PICK_AXE);
-
-            }
-            r := NewResource(type, pos, xx quantity, req);
+            r := NewResource(type, pos, xx quantity);
             array_add(*Game.resources, r);
         }
     }
