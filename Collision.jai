@@ -41,11 +41,12 @@ handle_collision :: (using entity: *Entity)
     if !position.exists return;
 
     // bound to grid
-    if position.value.x < grid_to_world(Grid.left(grid)) then position.value.x = grid_to_world(Grid.left(grid));
-    if position.value.y < grid_to_world(Grid.top(grid)) then position.value.y = grid_to_world(Grid.top(grid));
-    if position.value.x > grid_to_world(Grid.right(grid)) then position.value.x = grid_to_world(Grid.right(grid)) - 1;
-    if position.value.y > grid_to_world(Grid.bottom(grid)) then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
+    if position.value.x < grid_to_world(Grid.left(grid))   then position.value.x = grid_to_world(Grid.left(grid));
+    if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
+    if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
+    if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
     if position.value.z < 0 then position.value.z = 0;
+    if position.value.z >= grid.worldHeight then position.value.z = grid.worldHeight - 1;
 
     cell := world_to_grid(entity.position.value);
 
@@ -197,4 +198,12 @@ handle_collision :: (using entity: *Entity)
         }
         return false;
     }
+
+    // bound to grid...again because collision with an object might have pushed us OOB
+    if position.value.x < grid_to_world(Grid.left(grid))   then position.value.x = grid_to_world(Grid.left(grid));
+    if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
+    if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
+    if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
+    if position.value.z < 0 then position.value.z = 0;
+    if position.value.z >= grid.worldHeight then position.value.z = grid.worldHeight - 1;
 }
