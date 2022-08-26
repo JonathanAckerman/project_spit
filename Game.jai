@@ -692,11 +692,11 @@ game_loop :: inline ()
                         case .WATER;
                             BeginShaderMode(Textures.waterShader);
                             info := get_texture_info(cell.type);
-                            distortionTex := table_find_pointer(*Textures.table, "distortion_map");
+                            displacementTex := table_find_pointer(*Textures.table, "displacement_map");
                             scale := size.x / info.texture.width;
-                            Textures.distortionOffset += xy(dt, dt);
-                            SetShaderValue(Textures.waterShader, Textures.distortionOffsetLoc, *Textures.distortionOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                            SetShaderValueTexture(Textures.waterShader, Textures.distortionTexLoc, <<distortionTex);
+                            Textures.displacementOffset += xy(dt, dt);
+                            SetShaderValue(Textures.waterShader, Textures.displacementOffsetLoc, *Textures.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+                            SetShaderValueTexture(Textures.waterShader, Textures.displacementTexLoc, <<displacementTex);
                             draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
                             EndShaderMode();
                         case .BLOCK;
@@ -938,7 +938,7 @@ game_reset :: ()
     get_cell(10, 1, 1).type = .WATER;
     get_cell(11, 2, 3).type = .AIR;
     get_cell(11, 2, 4).type = .AIR;
-    get_cell(11, 2, 5).type = .DIRT;
+    get_cell(11, 2, 5).type = .WATER;
 
     // @TEMP: falling terrain
     fall_cell_index := grid.chunkWidth * 2 + 3;
