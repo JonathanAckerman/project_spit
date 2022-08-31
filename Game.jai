@@ -35,8 +35,8 @@ game_loop :: inline ()
     npc_text_to_draw: [..] string;
     // Simulate
     {
-        if player.position.exists then player.position.value += player.velocity;
         handle_collision(*player.entity);
+        if player.position.exists then player.position.value += player.velocity;
         player.velocity = .{};
 
         update_current_chunk();
@@ -826,8 +826,19 @@ game_reset :: ()
                     cell.x = x;
                     cell.y = y;
 
-                    if cell.x == 5 || cell.y == 10 then cell.type = .WATER;
-                    else cell.type = .DIRT;
+                    cell.type = .DIRT;
+                    
+                    if cell.x == 5
+                    {
+                        cell.type = .WATER;
+                        cell.forward = .{0, 1};
+                    }
+                    if cell.y == 10
+                    {
+                        cell.type = .WATER;
+                        cell.forward = .{1, 0};
+                    }
+                    if cell.x == 5 && cell.y == 10 then cell.forward = .{1, 1};
 
                     cell.block = Nothing(Block);
                 }
@@ -863,11 +874,9 @@ game_reset :: ()
     // init shops
     {
         no_block :: Maybe(Block).{};
-        area := GridCell.[
-            .{0, 0, .AIR, no_block}, .{1, 0, .AIR, no_block}, .{2, 0, .AIR, no_block},
-            .{0, 1, .AIR, no_block}, .{1, 1, .AIR, no_block}, .{2, 1, .AIR, no_block},
-        ];
-
+        area: [..] *GridCell;
+        array_add(*area, get_cell(0, 0)); array_add(*area, get_cell(1, 0)); array_add(*area, get_cell(2, 0));
+        array_add(*area, get_cell(0, 1)); array_add(*area, get_cell(1, 1)); array_add(*area, get_cell(2, 1));
         owner := npcs[0];
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
         basket_collider := NewCollider(.{20, 20});

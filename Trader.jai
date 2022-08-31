@@ -1,7 +1,7 @@
 Shop :: struct
 {
     owner:      *Entity;
-    area:  [..]  GridCell;
+    area:  [..] *GridCell;
     deals: [..]  Deal;
 }
 
@@ -15,7 +15,7 @@ Deal :: struct
     ware: Sellable;
 }
 
-NewShop :: (area: [] GridCell, deals: [] Deal, owner: *Entity) -> *Shop
+NewShop :: (area: [] *GridCell, deals: [] Deal, owner: *Entity) -> *Shop
 {
     shop := New(Shop);
     for area array_add(*shop.area, it);

@@ -30,6 +30,7 @@ GridCell :: struct
     x: int;
     y: int;
     type: Terrain_Type;
+    forward: Vector2 = .{0, -1};
     block: Maybe(Block);
 }
 

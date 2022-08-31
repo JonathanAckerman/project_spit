@@ -48,22 +48,12 @@ handle_collision :: (using entity: *Entity)
 
     cell := world_to_grid(entity.position.value);
 
-    // // collision with grid
-    // global_cell_index := cell.y * grid.chunkWidth * grid.gridWidth + cell.x;
-    // for valid_neighboring_offsets(global_cell_index, grid.chunkWidth * grid.gridWidth)
-    // {
-    //     global_check_cell_index := global_cell_index + it;
-    //     check_cell_x := global_check_cell_index % (grid.chunkWidth * grid.gridWidth);
-    //     check_cell_y := global_check_cell_index / (grid.chunkWidth * grid.gridWidth);
-    //     chunk_index := get_chunk_index(check_cell_x, check_cell_y);
-    //     relative_cell_index := global_to_relative_grid_index(global_check_cell_index);
-
-    //     check_cell := *grid.chunks[chunk_index].cells[relative_cell_index];
-    //     if check_cell.type != .AIR && check_cell.type != .BLOCK
-    //     {
-    //         circle_gridcell(entity, check_cell, shouldResolve=true);
-    //     }
-    // }
+    // water pushes things
+    if cell.type == .WATER && circle_gridcell(entity, cell, shouldResolve=false)
+    {
+        water_speed :: 300;
+        entity.velocity += cell.forward * water_speed * dt;
+    }
 
     if !rigidBody.exists return;
 
