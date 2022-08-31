@@ -49,10 +49,13 @@ handle_collision :: (using entity: *Entity)
     cell := world_to_grid(entity.position.value);
 
     // water pushes things
-    if cell.type == .WATER && circle_gridcell(entity, cell, shouldResolve=false)
+    if cell.type == .WATER
     {
-        water_speed :: 300;
-        entity.velocity += cell.forward * water_speed * dt;
+        if entity.collider.type == .CIRCLE && circle_gridcell(entity, cell, shouldResolve=false)
+        {
+            water_speed :: 300;
+            entity.velocity += cell.forward * water_speed * dt;
+        }
     }
 
     if !rigidBody.exists return;

@@ -827,7 +827,7 @@ game_reset :: ()
                     cell.y = y;
 
                     cell.type = .DIRT;
-                    
+
                     if cell.x == 5
                     {
                         cell.type = .WATER;
@@ -1028,16 +1028,43 @@ populate_resources :: ()
 {
     for chunk: Game.grid.chunks
     {
-        resources_per_chunk :: 20;
-        for 0..resources_per_chunk
+        // choose how many resource types we want in this chunk
+        max_resource_types_per_chunk :: 2;
+        num_resource_types := cast(int) random_get_within_range(0, max_resource_types_per_chunk);
+        if num_resource_types == 0 continue;
+        resource_types: [] Resource_Type;
+        array_resize(*resource_types, num_resource_types);
+        for type_index: 0..num_resource_types - 1
         {
-            x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
-            y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-            pos := grid_to_world(cast(int) x, cast(int) y);
+            // select what those resources will be
             type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
-            quantity := max(random_get() % 20, 10);
-            r := NewResource(type, pos, xx quantity);
-            array_add(*Game.resources, r);
+            while array_find(resource_types, type) {
+                type = cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
+            }
+            resource_types[type_index] = type;
+
+            max_hotspots_per_resource_type :: 2;
+            num_hotspots := cast(int) random_get_within_range(1, max_hotspots_per_resource_type);
+            for 0..num_hotspots - 1
+            {
+                hotspot_x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
+                hotspot_y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
+                hotspot_world_pos := grid_to_world(cast(int) hotspot_x, cast(int) hotspot_y);
+
+                max_resources_per_hotspot :: 20;
+                num_resources := cast(int) random_get_within_range(0, max_resources_per_hotspot);
+                for 0..num_resources - 1
+                {
+                    hotspot_radius :: 500;
+                    x := random_get_within_range(hotspot_world_pos.x - hotspot_radius, hotspot_world_pos.x + hotspot_radius);
+                    y := random_get_within_range(hotspot_world_pos.y - hotspot_radius, hotspot_world_pos.y + hotspot_radius);
+                    x = clamp(x, Game.grid.cellSize * cast(float) Grid.left(Game.grid), Game.grid.cellSize * cast(float) Grid.right(Game.grid) - 1);
+                    y = clamp(y, Game.grid.cellSize * cast(float) Grid.top(Game.grid),  Game.grid.cellSize * cast(float) Grid.bottom(Game.grid) - 1);
+                    quantity := max(random_get() % 20, 10);
+                    r := NewResource(type, xy(x, y), xx quantity);
+                    array_add(*Game.resources, r);
+                }
+            }
         }
     }
 }
