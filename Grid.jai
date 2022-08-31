@@ -115,9 +115,9 @@ world_to_grid :: (p: Vector2) -> *GridCell
     x := world_to_grid(p.x);
     y := world_to_grid(p.y);
 
-    if x < 0 || x >= grid.chunkWidth * grid.gridWidth ||
-       y < 0 || y >= grid.chunkWidth * grid.gridWidth
-       then return null;
+    // if x < 0 || x >= grid.chunkWidth * grid.gridWidth ||
+    //    y < 0 || y >= grid.chunkWidth * grid.gridWidth
+    //    then return null;
     
     chunk_x := x / grid.chunkWidth;
     chunk_y := y / grid.chunkWidth;

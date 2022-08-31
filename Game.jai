@@ -37,6 +37,7 @@ game_loop :: inline ()
     {
         handle_collision(*player.entity);
         if player.position.exists then player.position.value += player.velocity;
+        bound_to_grid(*player.entity);
         player.velocity = .{};
 
         update_current_chunk();
@@ -644,6 +645,7 @@ game_loop :: inline ()
                 }
                 handle_collision(*npc.entity);
                 npc.position.value += npc.velocity;
+                bound_to_grid(*npc.entity);
             }
         }
     }

@@ -35,20 +35,22 @@ RigidBody :: struct
     mass: int;
 }
 
+bound_to_grid :: (using entity: *Entity)
+{
+    using Game;
+    if position.value.x < grid_to_world(Grid.left(grid))   then position.value.x = grid_to_world(Grid.left(grid));
+    if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
+    if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
+    if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
+}
+
 handle_collision :: (using entity: *Entity)
 {
     using Game;
     if !position.exists return;
 
-    // bound to grid
-    if position.value.x < grid_to_world(Grid.left(grid))   then position.value.x = grid_to_world(Grid.left(grid));
-    if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
-    if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
-    if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
-
-    cell := world_to_grid(entity.position.value);
-
     // water pushes things
+    cell := world_to_grid(entity.position.value);
     if cell.type == .WATER
     {
         if entity.collider.type == .CIRCLE && circle_gridcell(entity, cell, shouldResolve=false)
