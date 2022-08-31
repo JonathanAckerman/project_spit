@@ -665,10 +665,7 @@ game_loop :: inline ()
             for x: left..right
             {
                 cell := get_cell(x, y);
-                if cell != null
-                {
-                    draw_cell(cell);
-                }
+                if cell != null draw_cell(cell);
             }
         }
 

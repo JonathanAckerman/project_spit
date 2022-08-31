@@ -219,7 +219,6 @@ debug_grid_info :: ()
                 drawpos := to_screen_space(grid_to_world(it), .{4, 4});
                 str := tprint("%, %", it.x, it.y);
                 DrawText(to_c_string(str), xx drawpos.x, xx drawpos.y, 14, PINK);
-                break;
             }
         }
     }
