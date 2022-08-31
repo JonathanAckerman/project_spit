@@ -642,8 +642,8 @@ game_loop :: inline ()
                     npc.forward = unit_vector(npc_to_player);
                     npc.velocity = .{};
                 }
-                npc.position.value += npc.velocity;
                 handle_collision(*npc.entity);
+                npc.position.value += npc.velocity;
             }
         }
     }
