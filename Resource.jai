@@ -48,6 +48,8 @@ Item_Type :: enum
     IRON_NUGGET;
     WOOD_LOG;
     FIBER;
+    // other?
+    BLUEPRINT;
 }
 
 is_tool :: (type: Item_Type) -> bool
@@ -118,7 +120,7 @@ NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector2 = .{0, 
 NewItem :: (type: Item_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Item
 {
     item := New(Item);
-    mass := ifx type == .WOOD_LOG then 1 else 0;
+    mass := ifx type == .WOOD_LOG then 1 else 0; // @Jay: why do logs have a mass of 1?
     item.entity = init_entity_data(pos, collider, owner, mass);
     item.type = type;
     item.entityType = .ITEM;
@@ -150,6 +152,9 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner:
             item.textureInfo.texture = table_find_pointer(*Textures.table, "iron_nugget");
         case .FIBER;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "fiber");
+        // other?
+        case .BLUEPRINT;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "blueprint");
         case;
             item.textureInfo.texture = *ERROR_TEXTURE;
     }

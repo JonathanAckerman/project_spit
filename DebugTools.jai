@@ -17,6 +17,7 @@ Debug: struct
         "GOTTAGOFAST",
         "DT",
         "SPEED",
+        "ZOOM",
         "PRINT PLAYER",
         "REPOP RESOURCES",
         "RESET",
@@ -210,8 +211,13 @@ debug_grid_info :: ()
                 str := tprint("%, %", it.x, it.y);
                 DrawText(to_c_string(str), xx drawpos.x, xx drawpos.y, 14, PINK);
             }
+
+            pos := to_screen_space(grid_to_world(it));
+            size := cast(s32) (grid.cellSize * camera.zoom);
+            DrawRectangleLines(xx pos.x, xx pos.y, size, size, PINK);
         }
     }
+
 }
 
 debug_console :: (dt: float)
@@ -331,6 +337,11 @@ debug_is_command_valid :: (cmd: string)
         if begins_with(cmd, "SPEED")
         {
             Game.player.speed = string_to_float(cmd_array[1]);
+        }
+
+        if begins_with(cmd, "ZOOM")
+        {
+            Game.camera.zoom = string_to_float(cmd_array[1]);
         }
 
         if begins_with(cmd, "PRINT")

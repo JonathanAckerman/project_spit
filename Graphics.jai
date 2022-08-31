@@ -46,6 +46,9 @@ get_texture_info :: (type: Item_Type) -> TextureInfo
             info.texture = table_find_pointer(*Textures.table, "iron_nugget");
         case .FIBER;
             info.texture = table_find_pointer(*Textures.table, "fiber");
+        // others
+        case .BLUEPRINT;
+            info.texture = table_find_pointer(*Textures.table, "blueprint");
         case;
             info.texture = *ERROR_TEXTURE;
     }
@@ -163,3 +166,7 @@ draw_cell :: (cell: GridCell)
     }
 }
 
+draw_blueprint :: (bp: Blueprint)
+{
+    draw_entity(bp);
+}

@@ -28,6 +28,7 @@ main :: () {
 #load "Graphics.jai";
 #load "Resource.jai";
 #load "Building.jai";
+#load "Crafting.jai";
 #load "Trader.jai";
 #load "DebugTools.jai";
 #load "Maybe.jai";
