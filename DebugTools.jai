@@ -12,17 +12,7 @@ Debug: struct
 
     listCommands := false;
     commandList: [] string = .[
-        "SPAWN BASKET",
-        "SPAWN CHEST",
-        "SPAWN BUCKET",
-        "SPAWN AXE",
-        "SPAWN PICK",
-        "SPAWN SAW",
-        "SPAWN HAMMER",
-        "SPAWN SWORD",
-        "SPAWN WHIP",
-        "SPAWN TOOLBELT",
-        "SPAWN WEAPONBELT",
+        "SPAWN [ENTITY]",
         "TP",
         "GOTTAGOFAST",
         "DT",
