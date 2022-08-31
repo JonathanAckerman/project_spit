@@ -147,18 +147,16 @@ debug_player_info :: ()
     using Game;
     if !player.position.exists return;
 
-    ss_player := to_screen_space(player.position.value.xy);
+    ss_player := to_screen_space(player.position.value);
     drawpos := ss_player + xy(30 * camera.zoom, 0);
     fx := formatFloat(player.position.value.x, trailing_width=1, zero_removal=.YES);
     fy := formatFloat(player.position.value.y, trailing_width=1, zero_removal=.YES);
-    fz := formatFloat(player.position.value.z, trailing_width=1, zero_removal=.YES);
-    DrawText(to_c_string(tprint("pos: %, %, %", fx, fy, fz)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    DrawText(to_c_string(tprint("pos: %, %", fx, fy)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", player.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
 
     DrawCircleLines(xx ss_player.x, xx ss_player.y, player.interactRange * camera.zoom, PINK);
 
-    layer_size_modifier := 1.0 - (xx player.position.value.z - (camera.position.z + 1)) * 0.1;
     if player.textureInfo.texture != null
     {
         modified_size := player.textureInfo.size * camera.zoom;
@@ -182,17 +180,15 @@ debug_entity_info :: (e: Entity)
     using Game;
     if !e.position.exists return;
 
-    ss_entity := to_screen_space(e.position.value.xy);
+    ss_entity := to_screen_space(e.position.value);
     drawpos := ss_entity + xy(30 * camera.zoom, 0);
     fx := formatFloat(e.position.value.x, trailing_width=1, zero_removal=.YES);
     fy := formatFloat(e.position.value.y, trailing_width=1, zero_removal=.YES);
-    fz := formatFloat(e.position.value.z, trailing_width=1, zero_removal=.YES);
-    DrawText(to_c_string(tprint("pos: %, %, %", fx, fy, fz)), xx drawpos.x, xx drawpos.y, 16, PINK);
+    DrawText(to_c_string(tprint("pos: %, %", fx, fy)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
 
-    layer_size_modifier := 1.0 - (e.position.value.z - (camera.position.z + 1)) * 0.1;
     if e.textureInfo.texture != null
     {
         modified_size := e.textureInfo.size * camera.zoom;
@@ -218,13 +214,10 @@ debug_grid_info :: ()
     {
         for it.cells
         {
-            if it.z == 1 break;
-
-            punch := get_grid_punch(it.x, it.y);
-            for punch if it.type != .AIR
+            if it.type != .AIR
             {
-                drawpos := to_screen_space(grid_to_world(it).xy, .{4, 4});
-                str := tprint("%, %, %", it.x, it.y, it.z);
+                drawpos := to_screen_space(grid_to_world(it), .{4, 4});
+                str := tprint("%, %", it.x, it.y);
                 DrawText(to_c_string(str), xx drawpos.x, xx drawpos.y, 14, PINK);
                 break;
             }

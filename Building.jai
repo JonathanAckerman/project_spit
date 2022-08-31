@@ -25,26 +25,3 @@ make_block :: (type: Block_Type, orientation: float) -> Block
     block.textureInfo = info;
     return block;
 }
-
-// @TODO: for now this will only be responsible for drawing blocks, not cells in general, eventually it'll do both
-draw_cell :: (cell: GridCell)
-{
-    if cell.block.value.type == .STAIR_TOP return;
-    
-    layer_size_modifier := 1.0 - (xx cell.z - (Game.camera.position.z + 1)) * 0.1;
-    layer_size_modifier = clamp(layer_size_modifier, 0.0, 1.0);
-    // @TEMP: for now make resizing preserve aspect ratio
-    resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
-    base_size := xy(xx cell.block.value.textureInfo.width, xx cell.block.value.textureInfo.height);
-    modified_size := base_size * resize_ratio * Game.camera.zoom * layer_size_modifier;
-    ss_block := to_screen_space(grid_to_world(cell.x, cell.y, cell.z, true).xy);
-    drawpos := ss_block - modified_size / 2;
-    tint := cell.block.value.textureInfo.tint;
-    tint.r = xx (tint.r * layer_size_modifier);
-    tint.g = xx (tint.g * layer_size_modifier);
-    tint.b = xx (tint.b * layer_size_modifier);
-    if cell.block.value.orientation == 90.0  then drawpos += xy(0, 1) * Game.grid.cellSize;
-    if cell.block.value.orientation == 180.0 then drawpos += xy(1, 1) * Game.grid.cellSize;
-    if cell.block.value.orientation == 270.0 then drawpos += xy(1, 0) * Game.grid.cellSize;
-    DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, -cell.block.value.orientation, resize_ratio * Game.camera.zoom * layer_size_modifier, tint);
-}

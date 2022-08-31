@@ -8,8 +8,9 @@ Game: struct
     camera: struct
     {
         zoom := 1.0;
-        position: Vector3;
+        position: Vector2;
     }
+    dt: float;
 
     resources:  [..] *Resource;
     items:      [..] *Item;
@@ -25,7 +26,7 @@ Game: struct
 game_loop :: inline ()
 {
     using Game;
-    dt := GetFrameTime();
+    dt = GetFrameTime();
     if Debug.isActive then dt *= Debug.dtMultiplier;
 
     // Input
@@ -38,14 +39,11 @@ game_loop :: inline ()
         handle_collision(*player.entity);
         player.velocity = .{};
 
-        handle_physics(dt);
-
         update_current_chunk();
 
         if !Debug.freeCamera
         {
-            camera.position.xy = player.position.value.xy;
-            camera.position.z = player.position.value.z - 1;
+            camera.position = player.position.value;
         }
 
         equipItem :: ()
@@ -358,9 +356,8 @@ game_loop :: inline ()
             sorted_resources: [..] resource_info;
             for resources
             {
-                player_to_resource : Vector2 = it.position.value.xy - player.position.value.xy;
-                if it.position.value.z == player.position.value.z && 
-                   length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
+                player_to_resource : Vector2 = it.position.value - player.position.value;
+                if length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
                 {
                     info: resource_info;
                     info.resource = resources[it_index];
@@ -411,7 +408,7 @@ game_loop :: inline ()
                 by_product: *Item = null;
                 resource_pos := resource_to_harvest.value.resource.position.value;
                 direction_offset := unit_vector(resource_to_harvest.value.direction) * 15;
-                by_product_pos := xyz(resource_pos.xy + direction_offset, resource_pos.z);
+                by_product_pos := resource_pos + direction_offset;
                 if resource_to_harvest.value.resource.type ==
                 {
                     case .COPPER_VEIN;
@@ -608,7 +605,7 @@ game_loop :: inline ()
 
                     x := random_get_within_range(left_bound, right_bound);
                     y := random_get_within_range(top_bound, bottom_bound);
-                    npc.ai.value.goalPosition = xyz(x, y, 3);
+                    npc.ai.value.goalPosition = xy(x, y);
                     npc.ai.value.goalResetTimer = 0.0;
                     npc.ai.value.goalResetDuration = 0.0;
                     npc.ai.value.hasGoal = true;
@@ -649,10 +646,6 @@ game_loop :: inline ()
                 handle_collision(*npc.entity);
             }
         }
-
-        Textures.outlineSize += GetMouseWheelMove();
-        if (Textures.outlineSize < 1.0) Textures.outlineSize = 1.0;
-        SetShaderValue(Textures.outlineShader, Textures.outlineSizeLoc, *Textures.outlineSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_FLOAT);
     }
 
     // Draw
@@ -661,79 +654,31 @@ game_loop :: inline ()
         ClearBackground(WHITE);
 
         // draw grid
-        layer_index := (cast(int) camera.position.z + 1) * grid.chunkWidth * grid.chunkWidth;
-        for chunk: grid.loadedChunks
+        w := cast(float) WINDOW_WIDTH / 2.0;
+        h := cast(float) WINDOW_HEIGHT / 2.0;
+        left  := clamp(world_to_grid(camera.position.x - w / camera.zoom), 0, grid.chunkWidth * grid.gridWidth);
+        right := clamp(world_to_grid(camera.position.x + w / camera.zoom), 0, grid.chunkWidth * grid.gridWidth);
+        top   := clamp(world_to_grid(camera.position.y - h / camera.zoom), 0, grid.chunkWidth * grid.gridWidth);
+        bot   := clamp(world_to_grid(camera.position.y + h / camera.zoom), 0, grid.chunkWidth * grid.gridWidth);
+        for y: top..bot
         {
-            cells_below_camera := array_view(chunk.cells, layer_index);
-            drawn_flags : [grid.chunkWidth * grid.chunkWidth] bool;
-            for cell: cells_below_camera
+            for x: left..right
             {
-                offset_from_layer := (cell.y % grid.chunkWidth) * grid.chunkWidth + (cell.x % grid.chunkWidth);
-                if !drawn_flags[offset_from_layer]
+                cell := get_cell(x, y);
+                if cell != null
                 {
-                    if cell.type == .AIR continue;
-
-                    drawpos := to_screen_space(grid_to_world(cell.x, cell.y, 0).xy);
-                    size := xy(grid.cellSize * camera.zoom, grid.cellSize * camera.zoom);
-                    camera_dist_to_cell := (xx cell.z - (camera.position.z + 2));
-                    if camera_dist_to_cell < 0 then camera_dist_to_cell = 0;
-                    size_modifier := 1.0 - camera_dist_to_cell * 0.1;
-                    drawpos_offset_from_size := size - size * size_modifier;
-                    size *= size_modifier;
-                    if cell.type == {
-                        case .BEDROCK;
-                            info := get_texture_info(cell.type);
-                            scale := size.x / info.texture.width;
-                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
-                        case .DIRT;
-                            info := get_texture_info(cell.type);
-                            scale := size.x / info.texture.width;
-                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
-                        case .WATER;
-                            BeginShaderMode(Textures.waterShader);
-                            info := get_texture_info(cell.type);
-                            displacementTex := table_find_pointer(*Textures.table, "displacement_map");
-                            scale := size.x / info.texture.width;
-                            Textures.displacementOffset += xy(dt, dt);
-                            SetShaderValue(Textures.waterShader, Textures.displacementOffsetLoc, *Textures.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                            SetShaderValueTexture(Textures.waterShader, Textures.displacementTexLoc, <<displacementTex);
-                            draw_texture_centered(info, drawpos + size/2 + drawpos_offset_from_size/2, .{0, -1}, size, scale, size_modifier);
-                            EndShaderMode();
-                        case .BLOCK;
-                            draw_cell(cell);
-                    }
-                    if cell.type != .BLOCK || cell.block.value.type == .STAIR_BOTTOM
-                        drawn_flags[offset_from_layer] = true;
+                    draw_cell(cell);
                 }
             }
         }
 
-        BeginShaderMode(Textures.outlineShader);
-        for resources 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { 
-                textureSize : [2] float;
-                textureSize[0] = xx it.textureInfo.width; 
-                textureSize[1] = xx it.textureInfo.height;
-                textureSizeLoc := GetShaderLocation(Textures.outlineShader, "textureSize");
-                SetShaderValue(Textures.outlineShader, Textures.textureSizeLoc, *textureSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                draw_entity(it);
-        }
-        EndShaderMode();
-        for shop: shops for shop.area {
-            if is_in_loaded_chunk(it) && xx it.z > camera.position.z
-                draw_shop(shop); 
-        }
-        for items
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_entity(it); }
-        for containers 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_entity(it); }
-        for equipment 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_entity(it); }
-        for npcs 
-            if it.position.exists && is_in_loaded_chunk(it) && it.position.value.z > camera.position.z { draw_person(it); }
-        if is_in_loaded_chunk(player) && player.position.value.z > camera.position.z { 
-            draw_person(player); 
-        }
+        for shop: shops for shop.area { if is_in_loaded_chunk(it) then draw_shop(shop); }
+        for resources  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
+        for items      if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
+        for containers if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
+        for equipment  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
+        for npcs       if it.position.exists && is_in_loaded_chunk(it) { draw_person(it); }
+        if is_in_loaded_chunk(player) then draw_person(player); 
 
         // draw ui
         {
@@ -815,7 +760,7 @@ game_loop :: inline ()
                 dist := length(npc_to_player);
                 if dist < 150 
                 {
-                    pos := to_screen_space(npc.position.value.xy, .{30, -10});
+                    pos := to_screen_space(npc.position.value, .{30, -10});
                     if npc.ai.value.speakTimer > 0.0
                     {
                         DrawText("HI", xx pos.x, xx pos.y, 20, BLACK);
@@ -883,17 +828,9 @@ game_reset :: ()
                     cell := *chunk.cells[layer_offset + row_offset + j];
                     cell.x = x;
                     cell.y = y;
-                    cell.z = layer;
 
-                    if layer == grid.worldHeight - 1 then cell.type = .BEDROCK;
-                    else if layer == grid.worldHeight - 2 then cell.type = .DIRT;
-                    else if layer == grid.worldHeight - 3
-                    {
-                        if (x == 4 && y >= 15) || (x == 16 && y <= 15) || (y == 15 && x <= 15 && x > 4)
-                            cell.type = .WATER;
-                        // else if 
-                        else cell.type = .DIRT;
-                    }
+                    if cell.x == 5 || cell.y == 10 then cell.type = .WATER;
+                    else cell.type = .DIRT;
 
                     cell.block = Nothing(Block);
                 }
@@ -901,52 +838,9 @@ game_reset :: ()
         }
     }
 
-    // @TEMP: stairs testing
-    {
-        stair_bot := make_block(.STAIR_BOTTOM, 0.0);
-        bot_cell := get_cell(6, 2, 2);
-        bot_cell.type = .BLOCK;
-        bot_cell.block = NewMaybe(stair_bot);
-
-        stair_top := make_block(.STAIR_TOP, 0.0);
-        top_cell := get_cell(6, 2, 1);
-        top_cell.type = .BLOCK;
-        top_cell.block = NewMaybe(stair_top);
-    }
-    get_cell(7, 2, 2).type = .WATER;
-    get_cell(8, 2, 2).type = .WATER;
-    get_cell(8, 3, 2).type = .WATER;
-    get_cell(8, 1, 2).type = .WATER;
-    {
-        stair_bot := make_block(.STAIR_BOTTOM, 0.0);
-        bot_cell := get_cell(8, 2, 1);
-        bot_cell.type = .BLOCK;
-        bot_cell.block = NewMaybe(stair_bot);
-
-        stair_top := make_block(.STAIR_TOP, 0.0);
-        top_cell := get_cell(8, 2, 0);
-        top_cell.type = .BLOCK;
-        top_cell.block = NewMaybe(stair_top);
-    }
-    get_cell(9, 2, 2).type  = .WATER;
-    get_cell(9, 2, 1).type  = .WATER;
-    get_cell(10, 2, 2).type = .WATER;
-    get_cell(10, 2, 1).type = .WATER;
-    get_cell(10, 3, 2).type = .WATER;
-    get_cell(10, 3, 1).type = .WATER;
-    get_cell(10, 1, 2).type = .WATER;
-    get_cell(10, 1, 1).type = .WATER;
-    get_cell(11, 2, 3).type = .AIR;
-    get_cell(11, 2, 4).type = .AIR;
-    get_cell(11, 2, 5).type = .WATER;
-
-    // @TEMP: falling terrain
-    fall_cell_index := grid.chunkWidth * 2 + 3;
-    grid.chunks[grid.currentChunk].cells[fall_cell_index].type = .WATER;
-
     // init player
     noAI: Maybe(AI);
-    player.person = NewPerson(.{200, 200, 2}, noAI);
+    player.person = NewPerson(.{200, 200}, noAI);
 
     seed := random_get();
     if seed % 2 == 0 then seed += 1;
@@ -961,7 +855,7 @@ game_reset :: ()
     {
         x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
         y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-        pos := grid_to_world(cast(int) x, cast(int) y, 2);
+        pos := grid_to_world(cast(int) x, cast(int) y);
         ai: AI;
         npcAI := NewMaybe(ai);
         npc := NewPerson(pos, npcAI);
@@ -973,14 +867,14 @@ game_reset :: ()
     {
         no_block :: Maybe(Block).{};
         area := GridCell.[
-            .{0, 0, 2, .AIR, no_block}, .{1, 0, 2, .AIR, no_block}, .{2, 0, 2, .AIR, no_block},
-            .{0, 1, 2, .AIR, no_block}, .{1, 1, 2, .AIR, no_block}, .{2, 1, 2, .AIR, no_block},
+            .{0, 0, .AIR, no_block}, .{1, 0, .AIR, no_block}, .{2, 0, .AIR, no_block},
+            .{0, 1, .AIR, no_block}, .{1, 1, .AIR, no_block}, .{2, 1, .AIR, no_block},
         ];
 
         owner := npcs[0];
         basket_pos := grid_to_world(area[0], shouldGetCenter = true);
         basket_collider := NewCollider(.{20, 20});
-        basket_pos += xyz(-basket_collider.rect.x/2, -basket_collider.rect.y/2, 0);
+        basket_pos += xy(-basket_collider.rect.x/2, -basket_collider.rect.y/2);
         basket := NewContainer(.BASKET, basket_collider, basket_pos, owner);
         array_add(*containers, basket);
         basket_deal: Deal;
@@ -989,7 +883,7 @@ game_reset :: ()
 
         chest_pos := grid_to_world(area[1], shouldGetCenter = true);
         chest_collider := NewCollider(.{20, 20});
-        chest_pos += xyz(-chest_collider.rect.x/2, -chest_collider.rect.y/2, 0);
+        chest_pos += xy(-chest_collider.rect.x/2, -chest_collider.rect.y/2);
         chest := NewContainer(.CHEST, chest_collider, chest_pos, owner);
         array_add(*containers, chest);
         chest_deal: Deal;
@@ -1006,23 +900,23 @@ game_reset :: ()
 
     // init items on ground
     {
-        pos := player.position.value + .{100, -100, 0};
+        pos := player.position.value + .{100, -100};
         collider := NewCollider(10.0);
         lumberaxe := NewItem(.LUMBER_AXE, collider, pos);
         array_add(*items, lumberaxe);
 
-        pos = player.position.value + .{200, -100, 0};
+        pos = player.position.value + .{200, -100};
         sword := NewItem(.SWORD, collider, pos);
         array_add(*items, sword);
     }
     // init equipment on ground
     {
-        pos := player.position.value + .{0, -100, 0};
+        pos := player.position.value + .{0, -100};
         collider := NewCollider(.{60, 15});
         toolbelt := NewEquipment(.TOOL_BELT, collider, pos);
         array_add(*equipment, toolbelt);
 
-        pos = player.position.value + .{0, -200, 0};
+        pos = player.position.value + .{0, -200};
         weaponbelt := NewEquipment(.WEAPON_BELT, collider, pos);
         array_add(*equipment, weaponbelt);
     }
@@ -1036,10 +930,9 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
     info_list: [..] dist_info;
 
     for containers if it.position.exists && 
-                      (!it.owner.exists || it.owner.value == *player.person) &&
-                      it.position.value.z == player.position.value.z
+                      (!it.owner.exists || it.owner.value == *player.person)
     { 
-        dist := length(Game.player.position.value.xy - it.position.value.xy);
+        dist := length(Game.player.position.value - it.position.value);
         if dist < range
         {
             info: dist_info;
@@ -1050,10 +943,9 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
         }
     }
     for items if it.position.exists && 
-                 (!it.owner.exists || it.owner.value == *player.person) &&
-                 it.position.value.z == player.position.value.z
+                 (!it.owner.exists || it.owner.value == *player.person)
     {
-        dist := length(Game.player.position.value.xy - it.position.value.xy);
+        dist := length(Game.player.position.value - it.position.value);
         if dist < range
         {
             info: dist_info;
@@ -1064,10 +956,9 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
         }
     }
     for equipment if it.position.exists && 
-                     (!it.owner.exists || it.owner.value == *player.person) &&
-                     it.position.value.z == player.position.value.z
+                     (!it.owner.exists || it.owner.value == *player.person)
     {
-        dist := length(Game.player.position.value.xy - it.position.value.xy);
+        dist := length(Game.player.position.value - it.position.value);
         if dist < range
         {
             info: dist_info;
@@ -1136,7 +1027,7 @@ populate_resources :: ()
         {
             x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
             y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-            pos := grid_to_world(cast(int) x, cast(int) y, 2);
+            pos := grid_to_world(cast(int) x, cast(int) y);
             type := cast(Resource_Type)(random_get() % xx (enum_highest_value(Resource_Type) + 1));
             quantity := max(random_get() % 20, 10);
             r := NewResource(type, pos, xx quantity);

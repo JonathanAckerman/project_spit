@@ -8,11 +8,6 @@ TexturesReference :: struct
     table: Table(string, Texture2D);
     path_table: Table(string, string);
 
-    outlineShader: Shader;
-    outlineSize := 2.0;
-    outlineSizeLoc: s32;
-    textureSizeLoc: s32;
-
     waterShader: Shader;
     displacementOffset: Vector2;
     displacementOffsetLoc: s32;
@@ -93,17 +88,6 @@ load_all_textures :: ()
         key, value := it_index, it;
         table_add(*Textures.table, key, LoadTexture(to_c_string(value)));
     }
-
-    Textures.outlineShader = LoadShader(null, to_c_string("./assets/shaders/outlineShader.fs"));
-    outlineColor : [4] float = .[1.0, 0.0, 0.0, 1.0];
-    outlineColorLoc: s32;
-    // Get shader locations
-    Textures.outlineSizeLoc = GetShaderLocation(Textures.outlineShader, "outlineSize");
-    outlineColorLoc         = GetShaderLocation(Textures.outlineShader, "outlineColor");
-    Textures.textureSizeLoc = GetShaderLocation(Textures.outlineShader, "textureSize");
-    // Set shader values (they can be changed later)
-    SetShaderValue(Textures.outlineShader, Textures.outlineSizeLoc, *Textures.outlineSize, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_FLOAT);
-    SetShaderValue(Textures.outlineShader, outlineColorLoc, *outlineColor, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC4);
 
     Textures.waterShader = LoadShader(null, to_c_string("./assets/shaders/displacementMap.fs"));
     Textures.displacementOffsetLoc = GetShaderLocation(Textures.waterShader, "displacementOffset");

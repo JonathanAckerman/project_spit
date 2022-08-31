@@ -73,7 +73,7 @@ Sellable :: struct {
         #as container: *Container;
         #as equipment: *Equipment; 
     }
-    position: Vector3;
+    position: Vector2;
 }
 as_sellable :: (item: *Item) -> Sellable {
     concept: Sellable;
@@ -106,7 +106,7 @@ Containable :: struct {
         #as item:      *Item;
         #as equipment: *Equipment; 
     }
-    position: Vector3;
+    position: Vector2;
 }
 as_containable :: (item: *Item) -> Containable {
     concept: Containable;

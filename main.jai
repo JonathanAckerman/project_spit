@@ -25,7 +25,6 @@ main :: () {
 #load "Entity.jai";
 #load "Input.jai";
 #load "Collision.jai";
-#load "Physics.jai";
 #load "Graphics.jai";
 #load "Resource.jai";
 #load "Building.jai";

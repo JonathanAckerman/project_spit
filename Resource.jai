@@ -86,7 +86,7 @@ Equipment_Type :: enum
     WEAPON_BELT;
 }
 
-NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Container
+NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Container
 {
     container := New(Container);
     mass := ifx type == .CHEST then 1 else 0;
@@ -115,7 +115,7 @@ NewContainer :: (type: Container_Type, collider: *Collider, pos: Vector3 = .{0, 
     return container;
 }
 
-NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Item
+NewItem :: (type: Item_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Item
 {
     item := New(Item);
     mass := ifx type == .WOOD_LOG then 1 else 0;
@@ -157,7 +157,7 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, own
     return item;
 }
 
-NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 0, 0}, owner: *Person = null) -> *Equipment
+NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner: *Person = null) -> *Equipment
 {
     equipment := New(Equipment);
     equipment.entity = init_entity_data(pos, collider, owner);
@@ -181,7 +181,7 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector3 = .{0, 
     return equipment;
 }
 
-NewResource :: (type: Resource_Type, pos: Vector3, quantity: int) -> *Resource
+NewResource :: (type: Resource_Type, pos: Vector2, quantity: int) -> *Resource
 {
     resource := New(Resource);
     mass := ifx type == .BUSH then 0 else 999;

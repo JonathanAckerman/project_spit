@@ -45,72 +45,25 @@ handle_collision :: (using entity: *Entity)
     if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
     if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
-    if position.value.z < 0 then position.value.z = 0;
-    if position.value.z >= grid.worldHeight then position.value.z = grid.worldHeight - 1;
 
     cell := world_to_grid(entity.position.value);
 
-    // collision with grid
-    global_cell_index := cell.y * grid.chunkWidth * grid.gridWidth + cell.x;
-    for valid_neighboring_offsets(global_cell_index, grid.chunkWidth * grid.gridWidth)
-    {
-        global_check_cell_index := global_cell_index + it;
-        check_cell_x := global_check_cell_index % (grid.chunkWidth * grid.gridWidth);
-        check_cell_y := global_check_cell_index / (grid.chunkWidth * grid.gridWidth);
-        chunk_index := get_chunk_index(check_cell_x, check_cell_y);
-        relative_cell_index := global_to_relative_grid_index(global_check_cell_index, cell.z);
+    // // collision with grid
+    // global_cell_index := cell.y * grid.chunkWidth * grid.gridWidth + cell.x;
+    // for valid_neighboring_offsets(global_cell_index, grid.chunkWidth * grid.gridWidth)
+    // {
+    //     global_check_cell_index := global_cell_index + it;
+    //     check_cell_x := global_check_cell_index % (grid.chunkWidth * grid.gridWidth);
+    //     check_cell_y := global_check_cell_index / (grid.chunkWidth * grid.gridWidth);
+    //     chunk_index := get_chunk_index(check_cell_x, check_cell_y);
+    //     relative_cell_index := global_to_relative_grid_index(global_check_cell_index);
 
-        check_cell := *grid.chunks[chunk_index].cells[relative_cell_index];
-        if check_cell.type != .AIR && check_cell.type != .BLOCK
-        {
-            circle_gridcell(entity, check_cell, shouldResolve=true);
-        }
-    }
-    
-    // stairs
-    if cell.block.exists
-    {
-        if cell.block.value.type == .STAIR_BOTTOM
-        {
-            cell_center := grid_to_world(cell, true);
-            if cell.block.value.orientation == 0.0
-            {
-                if entity.position.value.x >= cell_center.x then entity.position.value.z = cast(float) cell.z - 1;
-            }
-            if cell.block.value.orientation == 90.0 
-            {
-
-            }
-            if cell.block.value.orientation == 180.0
-            {
-
-            }
-            if cell.block.value.orientation == 270.0
-            {
-
-            }
-        }
-        else if cell.block.value.type == .STAIR_TOP
-        {
-            cell_center := grid_to_world(cell, true);
-            if cell.block.value.orientation == 0.0
-            {
-                if entity.position.value.x < cell_center.x  then entity.position.value.z = cast(float) cell.z + 1;
-            }
-            if cell.block.value.orientation == 90.0 
-            {
-
-            }
-            if cell.block.value.orientation == 180.0
-            {
-
-            }
-            if cell.block.value.orientation == 270.0
-            {
-
-            }
-        }
-    }
+    //     check_cell := *grid.chunks[chunk_index].cells[relative_cell_index];
+    //     if check_cell.type != .AIR && check_cell.type != .BLOCK
+    //     {
+    //         circle_gridcell(entity, check_cell, shouldResolve=true);
+    //     }
+    // }
 
     if !rigidBody.exists return;
 
@@ -128,29 +81,27 @@ handle_collision :: (using entity: *Entity)
 
     circle_circle :: (c1: *Entity, c2: *Entity, shouldResolve: bool) -> bool
     {
-        if cast(int) c1.position.value.z != cast(int) c2.position.value.z then return false;
-
-        displacement := (c1.position.value - c2.position.value).xy;
+        displacement := c1.position.value - c2.position.value;
         dist := length(displacement);
         if dist < c1.collider.radius + c2.collider.radius
         {
             overlap_scalar := dist - (c1.collider.radius + c2.collider.radius);
             if c1.rigidBody.value.mass < c2.rigidBody.value.mass
             {
-                if shouldResolve then c1.position.value.xy += unit_vector(displacement) * -overlap_scalar;
+                if shouldResolve then c1.position.value += unit_vector(displacement) * -overlap_scalar;
                 return true;
             }
             else if c1.rigidBody.value.mass > c2.rigidBody.value.mass
             {
-                if shouldResolve then c2.position.value.xy += unit_vector(displacement) * overlap_scalar;
+                if shouldResolve then c2.position.value += unit_vector(displacement) * overlap_scalar;
                 return true;
             }
             else
             {
                 if shouldResolve
                 {
-                    c1.position.value.xy += unit_vector(displacement) * -overlap_scalar/2;
-                    c2.position.value.xy += unit_vector(displacement) * overlap_scalar/2;
+                    c1.position.value += unit_vector(displacement) * -overlap_scalar/2;
+                    c2.position.value += unit_vector(displacement) * overlap_scalar/2;
                 }
                 return true;
             }
@@ -160,20 +111,18 @@ handle_collision :: (using entity: *Entity)
 
     circle_rect :: (c: *Entity, r: *Entity, shouldResolve: bool) -> bool
     {
-        if cast(int) c.position.value.z != cast(int) r.position.value.z then return false;
-
         rect_modified_size := (r.collider.rect * 0.5)/2;
         displacement := c.position.value - r.position.value;
         closest_x := r.position.value.x + clamp(displacement.x, -rect_modified_size.x, rect_modified_size.x);
         closest_y := r.position.value.y + clamp(displacement.y, -rect_modified_size.y, rect_modified_size.y);
 
-        circle_to_closest := c.position.value.xy - xy(closest_x, closest_y);
+        circle_to_closest := c.position.value - xy(closest_x, closest_y);
         if length(circle_to_closest) < c.collider.radius
         {
             overlap_scalar := c.collider.radius - length(circle_to_closest);
             if c.rigidBody.value.mass < r.rigidBody.value.mass
             {
-                if shouldResolve then c.position.value.xy += unit_vector(circle_to_closest) * overlap_scalar;
+                if shouldResolve then c.position.value += unit_vector(circle_to_closest) * overlap_scalar;
                 return true;
             }
         }
@@ -189,11 +138,11 @@ handle_collision :: (using entity: *Entity)
         closest_x := gpos.x + clamp(displacement.x, -half_size.x, half_size.x);
         closest_y := gpos.y + clamp(displacement.y, -half_size.y, half_size.y);
 
-        circle_to_closest := c.position.value.xy - xy(closest_x, closest_y);
+        circle_to_closest := c.position.value - xy(closest_x, closest_y);
         if length(circle_to_closest) < c.collider.radius
         {
             overlap_scalar := c.collider.radius - length(circle_to_closest);
-            if shouldResolve then c.position.value.xy += unit_vector(circle_to_closest) * overlap_scalar;
+            if shouldResolve then c.position.value += unit_vector(circle_to_closest) * overlap_scalar;
             return true;
         }
         return false;
@@ -204,6 +153,4 @@ handle_collision :: (using entity: *Entity)
     if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
     if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
-    if position.value.z < 0 then position.value.z = 0;
-    if position.value.z >= grid.worldHeight then position.value.z = grid.worldHeight - 1;
 }

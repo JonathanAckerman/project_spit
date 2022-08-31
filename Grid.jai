@@ -29,7 +29,6 @@ GridCell :: struct
 {
     x: int;
     y: int;
-    z: int;
     type: Terrain_Type;
     block: Maybe(Block);
 }
@@ -45,7 +44,7 @@ Terrain_Type :: enum
 
 operator == :: (a: GridCell, b: GridCell) -> bool
 {
-    return a.x == b.x && a.y == b.y && a.z == b.z;
+    return a.x == b.x && a.y == b.y;
 }
 
 update_current_chunk :: ()
@@ -70,26 +69,24 @@ update_current_chunk :: ()
     for chunk_neighbor_offsets { array_add(*grid.loadedChunks, *grid.chunks[grid.currentChunk + it]); }
 }
 
-grid_to_world :: (x: int, y: int, z: int, shouldGetCenter: bool = false) -> Vector3
+grid_to_world :: (x: int, y: int, shouldGetCenter: bool = false) -> Vector2
 {
-    world: Vector3;
+    world: Vector2;
     if shouldGetCenter
     {
         world.x = x * Game.grid.cellSize + Game.grid.cellSize / 2.0;
         world.y = y * Game.grid.cellSize + Game.grid.cellSize / 2.0;
-        world.z = xx z;
     }
     else
     {
-        world = xyz(xx x, xx y, xx z) * Game.grid.cellSize;
-        world.z = xx z;
+        world = xy(xx x, xx y) * Game.grid.cellSize;
     }
     return world;
 }
 
-grid_to_world :: (g: GridCell, shouldGetCenter: bool = false) -> Vector3
+grid_to_world :: (g: GridCell, shouldGetCenter: bool = false) -> Vector2
 {
-    return grid_to_world(g.x, g.y, g.z, shouldGetCenter);
+    return grid_to_world(g.x, g.y, shouldGetCenter);
 }
 
 grid_to_world :: (c: int, shouldGetCenter: bool = false) -> float
@@ -100,69 +97,62 @@ grid_to_world :: (c: int, shouldGetCenter: bool = false) -> float
         return cast(float)(c * Game.grid.cellSize);
 }
 
-world_to_grid :: (p: Vector3) -> *GridCell
+world_to_grid :: (f: float) -> int
 {
-    using Game;
-    x := cast(int) round(p.x);
-    y := cast(int) round(p.y);
-    z := cast(int) round(p.z);
+    x := cast(int) round(f);
     // get coordinates of top-left corner of grid cell
     x -= x % 100;
-    y -= y % 100;
     // normalize grid coords
     x /= 100;
-    y /= 100;
+    return x;
+}
+
+world_to_grid :: (p: Vector2) -> *GridCell
+{
+    using Game;
+
+    x := world_to_grid(p.x);
+    y := world_to_grid(p.y);
+
+    if x < 0 || x >= grid.chunkWidth * grid.gridWidth ||
+       y < 0 || y >= grid.chunkWidth * grid.gridWidth
+       then return null;
     
     chunk_x := x / grid.chunkWidth;
     chunk_y := y / grid.chunkWidth;
     chunk_index := chunk_y * grid.gridWidth + chunk_x;
 
-    layer := z * grid.chunkWidth * grid.chunkWidth;
     row := (y % grid.chunkWidth) * grid.chunkWidth;
     col := x % grid.chunkWidth;
 
-    return *Game.grid.chunks[chunk_index].cells[layer + row + col];
+    return *Game.grid.chunks[chunk_index].cells[row + col];
 }
 
 to_screen_space :: (pos: Vector2, offset: Vector2 = .{0, 0}, scale: float = 1.0) -> Vector2
 {
-    to_ss_vector := WINDOW_CENTER - Game.camera.position.xy * Game.camera.zoom;
+    to_ss_vector := WINDOW_CENTER - Game.camera.position * Game.camera.zoom;
     return (pos + offset) * scale * Game.camera.zoom + to_ss_vector;
 }
 
-// Given an absolute (x,y,z) grid coordinate, return a pointer to the cell corresponding to that coordinate in the grid
-get_cell :: (x: int, y: int, z: int) -> *GridCell
+// Given an absolute (x,y) grid coordinate, return a pointer to the cell corresponding to that coordinate in the grid
+get_cell :: (x: int, y: int) -> *GridCell
 {
     using Game;
+
+    if x < 0 || x >= grid.chunkWidth * grid.gridWidth ||
+       y < 0 || y >= grid.chunkWidth * grid.gridWidth
+       then return null;
 
     chunk_x := x / grid.chunkWidth; // @@@: should this be: (x % chunkWidth) ?
     chunk_y := y / grid.chunkWidth;
     chunk_index := chunk_y * grid.gridWidth + chunk_x;
 
-    layer := z * grid.chunkWidth * grid.chunkWidth;
     row := (y % grid.chunkWidth) * grid.chunkWidth;
     col := x % grid.chunkWidth;
-    return *grid.chunks[chunk_index].cells[layer + row + col];
+    return *grid.chunks[chunk_index].cells[row + col];
 }
 
-get_grid_punch :: (x: int, y: int) -> [..] *GridCell
-{
-    using Game;
-    result: [..] *GridCell;
-    for z: 0..grid.worldHeight - 1
-    {
-        cell := get_cell(x, y, z);
-        array_add(*result, cell);
-    }
-    return result;
-}
-
-get_grid_punch :: (gc: GridCell) -> [..] *GridCell
-{
-    return get_grid_punch(gc.x, gc.y);
-}
-
-is_in_current_chunk :: (world: Vector3) -> bool
+is_in_current_chunk :: (world: Vector2) -> bool
 {
     coord := world_to_grid(world);
     current_chunk := Game.grid.chunks[Game.grid.currentChunk];
@@ -214,12 +204,11 @@ is_in_loaded_chunk :: (cell: GridCell) -> bool
 }
 
 // Given a cell, compute the index it's at for its chunk
-global_to_relative_grid_index :: (global_index: int, z: int) -> int
+global_to_relative_grid_index :: (global_index: int) -> int
 {
     x := global_index % Game.grid.chunkWidth;
     y := (global_index / (Game.grid.chunkWidth * Game.grid.gridWidth)) % Game.grid.chunkWidth;
-    layer := z * Game.grid.chunkWidth * Game.grid.chunkWidth;
-    return layer + y * Game.grid.chunkWidth + x;
+    return y * Game.grid.chunkWidth + x;
 }
 
 get_chunk_index :: (cell_x: int, cell_y: int) -> int

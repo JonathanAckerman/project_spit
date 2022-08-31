@@ -2,9 +2,9 @@ _Entity_ID: u64 = 0;
 
 Entity :: struct
 {
-    position: Maybe(Vector3);
-    velocity: Vector3;
-    forward: Vector3 = .{0, -1, 0};
+    position: Maybe(Vector2);
+    velocity: Vector2;
+    forward: Vector2 = .{0, -1};
 
     collider: *Collider;
     rigidBody: Maybe(RigidBody);
@@ -24,7 +24,7 @@ Entity_Type :: enum
     PERSON;
 }
 
-init_entity_data :: (pos: Vector3, collider: *Collider, owner: *Person = null, mass: int = 0) -> Entity
+init_entity_data :: (pos: Vector2, collider: *Collider, owner: *Person = null, mass: int = 0) -> Entity
 {
     e: Entity;
     e.position.value = pos;
