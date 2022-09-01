@@ -1,6 +1,5 @@
-Blueprint :: struct
+BlueprintData :: struct
 {
-    using #as item: Item;
     blueprint_type: Blueprint_Type;
     slots: [] BlueprintSlot;
 }
@@ -23,14 +22,9 @@ Slot_Type :: enum
     JOINT;
 }
 
-NewBlueprint :: (type: Blueprint_Type, pos: Maybe(Vector2)) -> *Blueprint
+NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 {
-    bp := New(Blueprint);
-
-    // @@@: this is a weird paradigm, fix this
-    if pos.exists then bp.item = NewItem(.BLUEPRINT, NewCollider(50.0), pos.value);
-    else bp.item = NewItem(.BLUEPRINT, NewCollider(50.0));
-
+    bp := New(BlueprintData);
     bp.blueprint_type = type;
 
     slot :: (v: Vector2, t: Slot_Type) -> BlueprintSlot #expand {

@@ -165,8 +165,3 @@ draw_cell :: (cell: GridCell)
         }
     }
 }
-
-draw_blueprint :: (bp: Blueprint)
-{
-    draw_entity(bp);
-}

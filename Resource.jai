@@ -32,6 +32,7 @@ Item :: struct
 {
     using #as entity: Entity;
     type: Item_Type;
+    blueprintData: Maybe(*BlueprintData);
 }
 Item_Type :: enum
 {
