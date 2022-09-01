@@ -1,6 +1,8 @@
 Input: struct
 {
     harvest := false;
+    craft := false;
+    craftIndex := 0;
     trade := false;
     pickup := false;
     drop := false;
@@ -51,14 +53,43 @@ handle_input :: inline ()
             Game.camera.position += unit_vector(camera_velocity) * Game.player.speed;
         }
 
-        // harvesting
+        // The Action Button
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            harvest = true;
+            if Game.player.held.exists && Game.player.held.value.tag == .ITEM &&
+               is_byproduct(Game.player.held.value.item.type)
+            {
+                craft = true;
+            }
+            else
+            {
+                harvest = true;
+            }
         }
         else
         {
-            harvest = false; 
+            harvest = false;
+            craft = false;
+        }
+
+        if craft
+        {
+            if IsKeyPressed(xx KeyboardKey.KEY_LEFT)
+            {
+                craftIndex = 1;
+            }
+            else
+            {
+                craftIndex = 0;
+            }
+            if IsKeyPressed(xx KeyboardKey.KEY_RIGHT)
+            {
+                craftIndex = -1;
+            }
+            else
+            {
+                craftIndex = 0;
+            }
         }
 
         // trading
@@ -71,6 +102,7 @@ handle_input :: inline ()
             trade = false; 
         }
 
+        // picking up / dropping items
         if IsKeyPressed(xx KeyboardKey.Y)
         {
             holdables := get_holdables_in_range(Game.player.interactRange);

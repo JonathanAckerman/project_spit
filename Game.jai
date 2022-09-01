@@ -355,6 +355,21 @@ game_loop :: inline ()
         }
         if Input.pickup then try_pickup();
 
+        // try_craft :: ()
+        // {
+        //     using Game;
+
+        //     // get nearest blueprint (or cell player is in?)
+        //     nearest_bp: *Blueprint;
+        //     nearest_bp = cast(*Blueprint) it;
+        //     for items if it.type == .BLUEPRINT
+        //     {
+        //     }
+        //     activeSlot := 0;
+        //     for 
+        // }
+        // if Input.craft then try_craft();
+
         harvestResource :: ()
         {
             using Game;

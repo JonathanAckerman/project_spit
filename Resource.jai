@@ -60,6 +60,10 @@ is_weapon :: (type: Item_Type) -> bool
 {
     return type == .SWORD || type == .WHIP;
 }
+is_byproduct :: (type: Item_Type) -> bool
+{
+    return type == .COPPER_NUGGET || type == .IRON_NUGGET || type == .WOOD_LOG || type == .FIBER;
+}
 
 Container :: struct
 {

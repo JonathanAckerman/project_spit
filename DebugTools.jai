@@ -321,7 +321,7 @@ debug_is_command_valid :: (cmd: string)
                     container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
                     array_add(*Game.containers, container);
                 case .ITEM;
-                    if cmd_array[1] == "BLUEPRINT"
+                    if cmd_array[1] == "BLUEPRINT" // @@@: This is awkward, fix this
                     {
                         bp := NewBlueprint(.BOXES, NewMaybe(pos));
                         array_add(*Game.items, *bp.item);
