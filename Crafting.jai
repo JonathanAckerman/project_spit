@@ -23,10 +23,14 @@ Slot_Type :: enum
     JOINT;
 }
 
-NewBlueprint :: (type: Blueprint_Type, pos: Maybe(Vector2)) -> Blueprint
+NewBlueprint :: (type: Blueprint_Type, pos: Maybe(Vector2)) -> *Blueprint
 {
-    bp: Blueprint;
-    bp.item = NewItem(.BLUEPRINT, NewCollider(50.0));
+    bp := New(Blueprint);
+
+    // @@@: this is a weird paradigm, fix this
+    if pos.exists then bp.item = NewItem(.BLUEPRINT, NewCollider(50.0), pos.value);
+    else bp.item = NewItem(.BLUEPRINT, NewCollider(50.0));
+
     bp.blueprint_type = type;
 
     slot :: (v: Vector2, t: Slot_Type) -> BlueprintSlot #expand {
@@ -49,6 +53,5 @@ NewBlueprint :: (type: Blueprint_Type, pos: Maybe(Vector2)) -> Blueprint
             bp.slots[6] = slot(.{0.0, 1.0}, .JOINT);
             bp.slots[7] = slot(.{0.0, 0.5}, .SPAN);
     }
-    
     return bp;
 }

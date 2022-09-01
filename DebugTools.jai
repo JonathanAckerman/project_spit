@@ -321,9 +321,17 @@ debug_is_command_valid :: (cmd: string)
                     container := NewContainer(container_type_from_string(cmd_array[1]).value, collider, pos);
                     array_add(*Game.containers, container);
                 case .ITEM;
-                    collider = NewCollider(10);
-                    item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
-                    array_add(*Game.items, item);
+                    if cmd_array[1] == "BLUEPRINT"
+                    {
+                        bp := NewBlueprint(.BOXES, NewMaybe(pos));
+                        array_add(*Game.items, *bp.item);
+                    }
+                    else
+                    {
+                        collider = NewCollider(10);
+                        item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
+                        array_add(*Game.items, item);
+                    }
                 case .EQUIPMENT;
                     collider = NewCollider(.{60, 15});
                     equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
