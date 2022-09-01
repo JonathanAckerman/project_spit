@@ -155,6 +155,7 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner:
         // other?
         case .BLUEPRINT;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "blueprint");
+            resize_ratio = 0.6;
         case;
             item.textureInfo.texture = *ERROR_TEXTURE;
     }

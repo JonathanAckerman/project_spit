@@ -145,7 +145,14 @@ game_loop :: inline ()
             {
                 case .ITEM;
                     held.item.position.exists = true;
-                    held.item.position.value = player.position.value + player.forward;
+                    if held.item.type == .BLUEPRINT
+                    {
+                        held.item.position.value = grid_to_world(world_to_grid(player.position.value), shouldGetCenter=true);
+                    }
+                    else
+                    {
+                        held.item.position.value = player.position.value + player.forward;
+                    }
                 case .CONTAINER;
                     held.container.position.exists = true;
                     held.container.position.value = player.position.value + player.forward;
