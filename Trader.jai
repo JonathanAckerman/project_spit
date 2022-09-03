@@ -45,6 +45,7 @@ Person :: struct
     toolBelt: Maybe(*Equipment);
     weaponBelt: Maybe(*Equipment);
     ai: Maybe(AI);
+    canCraft := false;
 }
 
 NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Person

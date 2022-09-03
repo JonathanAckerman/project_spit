@@ -65,6 +65,17 @@ is_byproduct :: (type: Item_Type) -> bool
 {
     return type == .COPPER_NUGGET || type == .IRON_NUGGET || type == .WOOD_LOG || type == .FIBER;
 }
+get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
+{
+    if type == 
+    {
+        case .FIBER; #through;
+        case .WOOD_LOG;
+            return .SPAN;
+        case;
+            return .INVALID;
+    }
+}
 
 Container :: struct
 {

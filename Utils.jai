@@ -29,9 +29,32 @@ valid_neighboring_offsets :: (cur_index: int, width: int) -> [] int
     return result;
 }
 
-rad2deg :: (radians) => radians*180/PI;
+rad2deg :: (radians) => radians * 180/PI;
+deg2rad :: (degrees) => degrees * PI/180;
 
 rotate_vector :: (v: Vector2, radians: float) -> Vector2
 {
     return xy(v.x * cos(radians) - v.y * sin(radians), v.x * sin(radians) + v.y * cos(radians));
+}
+
+// @Note: end is one past the end ala C++
+array_rotate :: (first: *$T, new_first: *T, end: *T) -> *T
+{
+    if first == new_first then return end;
+    if new_first == end then return first;
+
+    read := new_first;
+    write := first;
+    next_read := first;
+
+    while (read != end)
+    {
+        if write == next_read then next_read = read;
+        Swap(write, read);
+        read += 1;
+        write += 1;
+    }
+
+    array_rotate(write, next_read, end);
+    return write;
 }

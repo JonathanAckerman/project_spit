@@ -1,8 +1,8 @@
 Input: struct
 {
     harvest := false;
+    craftIndexDirection := 1;
     craft := false;
-    craftIndex := 0;
     trade := false;
     pickup := false;
     drop := false;
@@ -56,41 +56,28 @@ handle_input :: inline ()
         // The Action Button
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            if Game.player.held.exists && Game.player.held.value.tag == .ITEM &&
-               is_byproduct(Game.player.held.value.item.type)
-            {
-                craft = true;
-            }
-            else
-            {
-                harvest = true;
-            }
+            harvest = true;
         }
         else
         {
             harvest = false;
-            craft = false;
         }
 
-        if craft
+        // crafting
+        if Game.player.canCraft
         {
             if IsKeyPressed(xx KeyboardKey.KEY_LEFT)
             {
-                craftIndex = 1;
-            }
-            else
-            {
-                craftIndex = 0;
+                craftIndexDirection = -1;
+                Game.craftIndex -= 1;
             }
             if IsKeyPressed(xx KeyboardKey.KEY_RIGHT)
             {
-                craftIndex = -1;
-            }
-            else
-            {
-                craftIndex = 0;
+                craftIndexDirection = 1;
+                Game.craftIndex += 1;
             }
         }
+        else craftIndexDirection = 1;
 
         // trading
         if IsKeyPressed(xx KeyboardKey.T)
@@ -105,11 +92,18 @@ handle_input :: inline ()
         // picking up / dropping items
         if IsKeyPressed(xx KeyboardKey.Y)
         {
-            holdables := get_holdables_in_range(Game.player.interactRange);
-            if holdables.count > 0
-                pickup = true;
-            else if Game.player.held.exists
-                drop = true;
+            if Game.player.canCraft && Game.player.held.exists
+            {
+                craft = true;
+            }
+            else
+            {
+                holdables := get_holdables_in_range(Game.player.interactRange);
+                if holdables.count > 0
+                    pickup = true;
+                else if Game.player.held.exists
+                    drop = true;
+            }
         }
 
         if IsKeyPressed(xx KeyboardKey.ONE) then equipSlot = 0;

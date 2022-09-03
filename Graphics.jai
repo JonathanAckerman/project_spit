@@ -12,8 +12,18 @@ draw_texture_centered :: (info: TextureInfo, center: Vector2, forward: Vector2, 
     }
 
     // for some reason 'size' & 'scale' need to be separate concepts, thanks ray
-    tint := info.tint;
-    DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, tint);
+    DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, info.tint);
+}
+
+// Since raylib is such a pain in the ass to work with I need all these methods to fix it "easily"
+draw_orthagonal_texture_centered :: (info: TextureInfo, center: Vector2, rotation: float, scale: float)
+{
+    drawpos := center;
+    if rotation == 0.0   then drawpos -= info.size/2 * scale;
+    if rotation == 90.0  then drawpos -= xy(info.size.y, -info.size.x)/2 * scale;
+    if rotation == 180.0 then drawpos += info.size/2 * scale;
+    if rotation == 270.0 then drawpos += xy(info.size.y, -info.size.x)/2 * scale;
+    DrawTextureEx(info.texture, drawpos, -rotation, scale, info.tint);
 }
 
 // @JAY: is there a way to make this generic for any texture lookup? polymorph?
@@ -52,6 +62,7 @@ get_texture_info :: (type: Item_Type) -> TextureInfo
         case;
             info.texture = *ERROR_TEXTURE;
     }
+    info.size = xy(xx info.texture.width, xx info.texture.height);
     return info;
 }
 get_texture_info :: (type: Equipment_Type) -> TextureInfo
@@ -103,10 +114,22 @@ get_texture_info :: (type: Terrain_Type) -> TextureInfo
     return info;
 }
 
-draw_ui_representation  :: (pos: Vector2, scale: float, info: TextureInfo)
+UI_Representation :: struct
 {
-    drawpos := pos;
-    DrawTextureEx(info.texture, xx drawpos, 0.0, scale, info.tint);
+    position: Vector2;
+    rotation: float;
+    scale: float;
+    info: TextureInfo;
+    isHUD := true;
+}
+
+draw_ui_representation  :: (rep: UI_Representation)
+{
+    draw_ui_representation(rep.position, rep.scale, rep.info, rep.rotation);
+}
+draw_ui_representation  :: (pos: Vector2, scale: float, info: TextureInfo, rotation: float = 0.0)
+{
+    DrawTextureEx(info.texture, pos, rotation, scale, info.tint);
 }
 
 draw_entity :: (entity: Entity)
@@ -119,6 +142,34 @@ draw_entity :: (entity: Entity)
     center_pos := to_screen_space(entity.position.value);
     drawpos := center_pos - modified_size / 2;
     DrawTextureEx(entity.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * scale, entity.textureInfo.tint);
+}
+
+draw_item :: (item: Item)
+{
+    if item.blueprintData.exists
+    {
+        draw_entity(item);
+        for item.blueprintData.value.slots if it.item.exists
+        {
+            texInfo: TextureInfo;
+            position: Vector2;
+            scale: float;
+            rotation: float;
+            texInfo, position, scale, rotation = get_blueprint_slot_draw_info(item, it_index);
+            
+            // @@@: since I need to draw this item differently than normal I need to duplicate this code,
+            // However, there's no reason draw_entity couldn't have an overload maybe to specify how to draw an item
+            base_size := xy(xx texInfo.width, xx texInfo.height) * scale;
+            modified_size := base_size * Game.camera.zoom;
+            // center_pos := to_screen_space(it.item.value.position.value);
+            // drawpos := center_pos - modified_size / 2;
+            DrawTextureEx(texInfo.texture, position, rotation, Game.camera.zoom * scale, texInfo.tint);
+        }
+    }
+    else
+    {
+        draw_entity(item);
+    }
 }
 
 draw_cell :: (cell: GridCell)

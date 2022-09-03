@@ -4,6 +4,8 @@ Game: struct
     paused: bool;
 
     player: Player;
+    craftIndex := 0;
+    craftTarget: Maybe(CraftTarget);
     grid: Grid;
     camera: struct
     {
@@ -19,8 +21,7 @@ Game: struct
     npcs:       [..] *Person;
     shops:      [..] *Shop;
 
-    // ui state
-    // highlightedItem: *Entity = ---;
+    ui: [..] UI_Representation;
 }
 
 game_loop :: inline ()
@@ -355,20 +356,117 @@ game_loop :: inline ()
         }
         if Input.pickup then try_pickup();
 
-        // try_craft :: ()
-        // {
-        //     using Game;
+        if player.held.exists && 
+           player.held.value.tag == .ITEM &&
+           is_byproduct(player.held.value.item.type)
+        {
+            blueprint_and_distance :: struct { blueprint: *Item; distance: float; }
+            blueprints_in_range: [..] blueprint_and_distance;
+            for items if it.blueprintData.exists && it.position.exists
+            {
+                dist := length(it.position.value - player.position.value);
+                if dist < player.interactRange
+                {
+                    info: blueprint_and_distance;
+                    info.blueprint = it;
+                    info.distance = dist;
+                    array_add(*blueprints_in_range, info);
+                }
+            }
+            nearer :: (a, b) => cast(s64) (a.distance < b.distance);
+            bubble_sort(blueprints_in_range, nearer);
 
-        //     // get nearest blueprint (or cell player is in?)
-        //     nearest_bp: *Blueprint;
-        //     nearest_bp = cast(*Blueprint) it;
-        //     for items if it.type == .BLUEPRINT
-        //     {
-        //     }
-        //     activeSlot := 0;
-        //     for 
-        // }
-        // if Input.craft then try_craft();
+            // highlight the active crafting slot
+            if blueprints_in_range.count > 0
+            {
+                player.canCraft = true;
+                bp := blueprints_in_range[0].blueprint;
+                numSlots := bp.blueprintData.value.slots.count;
+                // loop indices
+                if craftIndex == -1 then craftIndex = numSlots - 1;
+                if craftIndex == numSlots then craftIndex = 0;
+                slot := bp.blueprintData.value.slots[craftIndex];
+                // the slot is taken or of the wrong type so we need to find the next valid
+                if slot.item.exists || slot.slotType != get_byproduct_slot_type(player.held.value.item.type)
+                {
+                    rotatedIndices: [] int;
+                    if Input.craftIndexDirection == 1
+                    {
+                        craftIndex += 1;
+                        if craftIndex == numSlots then craftIndex = 0;
+
+                        array_resize(*rotatedIndices, numSlots);
+                        for 0..numSlots - 1 { rotatedIndices[it] = it; }
+                        array_rotate(*rotatedIndices[0], *rotatedIndices[craftIndex], *rotatedIndices[numSlots - 1] + 1);
+                        array_resize(*rotatedIndices, numSlots + 1);
+                        rotatedIndices[numSlots] = -1;
+                    }
+                    else if Input.craftIndexDirection == -1
+                    {
+                        craftIndex -= 1;
+                        if craftIndex == -1 then craftIndex = numSlots - 1;
+
+                        array_resize(*rotatedIndices, numSlots);
+                        for < (numSlots - 1)..0 { rotatedIndices[it] = it; }
+                        array_rotate(*rotatedIndices[0], *rotatedIndices[craftIndex], *rotatedIndices[numSlots - 1] + 1);
+                        array_resize(*rotatedIndices, numSlots + 1);
+                        rotatedIndices[numSlots] = -1;
+                    }
+
+                    for rotatedIndices
+                    {
+                        if it == -1 { craftTarget.exists = false; break; }
+                        slot = bp.blueprintData.value.slots[it];
+                        if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                        {
+                            craftIndex = it;
+                            craftTarget.exists = true;
+                            ct: CraftTarget;
+                            ct.blueprint = bp;
+                            ct.slot = *slot;
+                            craftTarget.value = ct;
+                            break;
+                        }
+                    }
+                }
+
+                if craftTarget.exists // craftTarget needs to hold onto position
+                {
+                    ui_rep: UI_Representation;
+                    ui_rep.info, ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, craftIndex);
+                    ui_rep.info.tint.a = 200;
+                    ui_rep.isHUD = false;
+                    array_add(*ui, ui_rep);
+                }
+            }
+            else player.canCraft = false;
+        }
+        if !player.canCraft then craftIndex = 0;
+
+        try_add_item_to_blueprint :: ()
+        {
+            using Game;
+            if craftTarget.exists
+            {
+                craftTarget.value.slot.item = NewMaybe(player.held.value.item);
+                player.held.exists = false;
+                
+                texInfo: TextureInfo;
+                position: Vector2;
+                scale: float;
+                rotation: float;
+                texInfo, position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
+                forward := xy(cos(rotation), sin(rotation));
+
+                craftTarget.value.slot.item.value.position.exists = true;
+                craftTarget.value.slot.item.value.position.value = position;
+                craftTarget.value.slot.item.value.forward = forward;
+
+                craftTarget.exists = false;
+            }
+            Input.craft = false;
+        }
+        if Input.craft then try_add_item_to_blueprint();
 
         harvestResource :: ()
         {
@@ -703,6 +801,18 @@ game_loop :: inline ()
 
         // draw ui
         {
+            for *ui
+            {
+                // if !it.isHUD 
+                // {
+                //     it.scale *= camera.zoom;
+                //     it.info.size *= camera.zoom;
+                //     // @@@: position still gets messed up by zooming
+                // }
+                draw_orthagonal_texture_centered(it.info, it.position, it.rotation, it.scale);
+                remove it;
+            }
+
             // draw held
             xpos := 20.0;
             ypos := WINDOW_HEIGHT - 80;
@@ -1032,20 +1142,6 @@ compute_container_weight :: (c: Container) -> int
     total := 0;
     for c.contents { total += 1; }
     return total;
-}
-
-Get_Nearest_To_Player :: (arr: [..] *Entity) #expand
-{
-    for arr
-    {
-        dist := length(Game.player.position.value - it.position.value);
-        if dist < `min_dist
-        {
-            `min_dist = dist;
-            `nearest_index = it_index;
-            `nearest_source = arr;
-        }
-    }
 }
 
 populate_resources :: ()

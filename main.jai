@@ -37,6 +37,7 @@ main :: () {
 #load "Utils.jai";
 #load "TextureLoader.jai";
 
+Simp :: #import "Simp";
 #import "Basic";
 #import "Math";
 #import "Random";
