@@ -18,7 +18,7 @@ draw_texture_centered :: (info: TextureInfo, center: Vector2, forward: Vector2, 
 // Since raylib is such a pain in the ass to work with I need all these methods to fix it "easily"
 draw_orthagonal_texture_centered :: (info: TextureInfo, center: Vector2, rotation: float, scale: float)
 {
-    drawpos := center;
+    drawpos := to_screen_space(center);
     if rotation == 0.0   then drawpos -= info.size/2 * scale;
     if rotation == 90.0  then drawpos -= xy(info.size.y, -info.size.x)/2 * scale;
     if rotation == 180.0 then drawpos += info.size/2 * scale;
@@ -157,18 +157,21 @@ draw_item :: (item: Item)
             rotation: float;
             texInfo, position, scale, rotation = get_blueprint_slot_draw_info(item, it_index);
             
-            // @@@: since I need to draw this item differently than normal I need to duplicate this code,
-            // However, there's no reason draw_entity couldn't have an overload maybe to specify how to draw an item
             base_size := xy(xx texInfo.width, xx texInfo.height) * scale;
             modified_size := base_size * Game.camera.zoom;
-            // center_pos := to_screen_space(it.item.value.position.value);
-            // drawpos := center_pos - modified_size / 2;
-            DrawTextureEx(texInfo.texture, position, rotation, Game.camera.zoom * scale, texInfo.tint);
+            drawpos: Vector2;
+            if rotation == 90.0 || rotation == 270.0 
+            {
+                modified_size = xy(-modified_size.y, modified_size.x);
+                drawpos = position - modified_size / 2;
+            }
+            else drawpos = position - modified_size / 2;
+            DrawTextureEx(texInfo.texture, drawpos, rotation, Game.camera.zoom * scale, texInfo.tint);
         }
     }
     else
     {
-        draw_entity(item);
+        if !item.onSlot.exists then draw_entity(item);
     }
 }
 

@@ -447,7 +447,7 @@ game_loop :: inline ()
                 if craftTarget.exists // craftTarget needs to hold onto position
                 {
                     ui_rep: UI_Representation;
-                    ui_rep.info, ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, craftIndex);
+                    ui_rep.info, ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, craftIndex, false);
                     ui_rep.info.tint.a = 200;
                     ui_rep.isHUD = false;
                     array_add(*ui, ui_rep);
@@ -469,13 +469,13 @@ game_loop :: inline ()
                 position: Vector2;
                 scale: float;
                 rotation: float;
-                texInfo, position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
+                texInfo, position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex, false);
                 forward := xy(cos(deg2rad(rotation)), sin(deg2rad(rotation)));
 
                 craftTarget.value.slot.item.value.position.exists = true;
-                craftTarget.value.slot.item.value.onSlot = NewMaybe(craftTarget.value.slot); // the item needs to know which slot it belongs to so we can break that bond if we pick it up later
                 craftTarget.value.slot.item.value.position.value = position;
-                craftTarget.value.slot.item.value.forward = forward;
+                craftTarget.value.slot.item.value.onSlot = NewMaybe(craftTarget.value.slot); // the item needs to know which slot it belongs to so we can break that bond if we pick it up later
+                craftTarget.value.slot.item.value.forward = forward; // @Jay: ugh, why does this have a forward, i think it's used for drawing or something
 
                 craftTarget.exists = false;
             }
@@ -808,7 +808,7 @@ game_loop :: inline ()
 
         for shop: shops for shop.area { if is_in_loaded_chunk(it) then draw_shop(shop); }
         for resources  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
-        for items      if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
+        for items      if it.position.exists && is_in_loaded_chunk(it) { draw_item(it); }
         for containers if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
         for equipment  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
         for npcs       if it.position.exists && is_in_loaded_chunk(it) { draw_person(it); }
@@ -818,12 +818,7 @@ game_loop :: inline ()
         {
             for *ui
             {
-                // if !it.isHUD 
-                // {
-                //     it.scale *= camera.zoom;
-                //     it.info.size *= camera.zoom;
-                //     // @@@: position still gets messed up by zooming
-                // }
+                if !it.isHUD then it.scale *= camera.zoom;
                 draw_orthagonal_texture_centered(it.info, it.position, it.rotation, it.scale);
                 remove it;
             }

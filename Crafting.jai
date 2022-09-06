@@ -58,11 +58,13 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 }
 
 // @Note: it is the caller's responsibility to make sure the slot index is valid
-get_blueprint_slot_draw_info :: (bp: Item, slotIndex: int) -> TextureInfo, Vector2, float, float
+get_blueprint_slot_draw_info :: (bp: Item, slotIndex: int, isScreenSpace: bool = true) -> TextureInfo, Vector2, float, float
 {
     using Game;
     slot := bp.blueprintData.value.slots[slotIndex];
-    bp_base_pos := to_screen_space(bp.position.value - bp.textureInfo.size/2);
+    bp_base_pos: Vector2;
+    if isScreenSpace then bp_base_pos = to_screen_space(bp.position.value - bp.textureInfo.size/2);
+    else bp_base_pos = bp.position.value - bp.textureInfo.size/2;
     texInfo := get_texture_info(player.held.value.item.type);
     scale := 0.4;
     offsetFromTexture: Vector2;
