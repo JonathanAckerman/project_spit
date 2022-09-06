@@ -56,6 +56,8 @@ get_texture_info :: (type: Item_Type) -> TextureInfo
             info.texture = table_find_pointer(*Textures.table, "iron_nugget");
         case .FIBER;
             info.texture = table_find_pointer(*Textures.table, "fiber");
+        case .NAILS;
+            info.texture = table_find_pointer(*Textures.table, "nails");
         // others
         case .BLUEPRINT;
             info.texture = table_find_pointer(*Textures.table, "blueprint");

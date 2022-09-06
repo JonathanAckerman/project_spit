@@ -50,6 +50,7 @@ Item_Type :: enum
     IRON_NUGGET;
     WOOD_LOG;
     FIBER;
+    NAILS;
     // other?
     BLUEPRINT;
 }
@@ -64,7 +65,7 @@ is_weapon :: (type: Item_Type) -> bool
 }
 is_byproduct :: (type: Item_Type) -> bool
 {
-    return type == .COPPER_NUGGET || type == .IRON_NUGGET || type == .WOOD_LOG || type == .FIBER;
+    return type == .COPPER_NUGGET || type == .IRON_NUGGET || type == .WOOD_LOG || type == .FIBER || type == .NAILS;
 }
 get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
 {
@@ -73,6 +74,8 @@ get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
         case .FIBER; #through;
         case .WOOD_LOG;
             return .SPAN;
+        case .NAILS;
+            return .JOINT;
         case;
             return .INVALID;
     }
@@ -169,6 +172,8 @@ NewItem :: (type: Item_Type, collider: *Collider, pos: Vector2 = .{0, 0}, owner:
             item.textureInfo.texture = table_find_pointer(*Textures.table, "iron_nugget");
         case .FIBER;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "fiber");
+        case .NAILS;
+            item.textureInfo.texture = table_find_pointer(*Textures.table, "nails");
         // other?
         case .BLUEPRINT;
             item.textureInfo.texture = table_find_pointer(*Textures.table, "blueprint");

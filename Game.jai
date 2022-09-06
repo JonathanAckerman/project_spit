@@ -213,7 +213,7 @@ game_loop :: inline ()
                         else // player is already holding an item
                         {
                             if it.item.onSlot.exists return;
-                            
+
                             held := player.held.value;
                             dest_inv: *Equipment = null;
                             if is_tool(it.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
