@@ -151,11 +151,11 @@ draw_item :: (item: Item)
         draw_entity(item);
         for item.blueprintData.value.slots if it.item.exists
         {
-            texInfo: TextureInfo;
+            texInfo := get_texture_info(it.item.value.type);
             position: Vector2;
             scale: float;
             rotation: float;
-            texInfo, position, scale, rotation = get_blueprint_slot_draw_info(item, it_index, false);
+            position, scale, rotation = get_blueprint_slot_draw_info(item, texInfo.size, it_index);
             
             base_size := xy(xx texInfo.width, xx texInfo.height);
             modified_size := base_size * scale * Game.camera.zoom;

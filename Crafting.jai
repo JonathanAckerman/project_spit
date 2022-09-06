@@ -58,37 +58,34 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 }
 
 // @Note: it is the caller's responsibility to make sure the slot index is valid
-get_blueprint_slot_draw_info :: (bp: Item, slotIndex: int, isScreenSpace: bool = true) -> TextureInfo, Vector2, float, float
+get_blueprint_slot_draw_info :: (bp: Item, item_size: Vector2, slot_index: int) -> Vector2, float, float
 {
     using Game;
-    slot := bp.blueprintData.value.slots[slotIndex];
-    bp_base_pos: Vector2;
-    if isScreenSpace then bp_base_pos = to_screen_space(bp.position.value - bp.textureInfo.size/2);
-    else bp_base_pos = bp.position.value - bp.textureInfo.size/2;
-    texInfo := get_texture_info(player.held.value.item.type);
+    slot := bp.blueprintData.value.slots[slot_index];
+    bp_base_pos := bp.position.value - bp.textureInfo.size/2;
     scale := 0.4;
     offsetFromTexture: Vector2;
     if slot.rotation == 90.0
     {
-        if slot.offset.x == 0.0 then offsetFromTexture.x =  texInfo.size.y/2;
-        if slot.offset.x == 1.0 then offsetFromTexture.x = -texInfo.size.y/2;
-        if slot.offset.y == 0.0 then offsetFromTexture.y =  texInfo.size.x/2;
-        if slot.offset.y == 1.0 then offsetFromTexture.y = -texInfo.size.x/2;
+        if slot.offset.x == 0.0 then offsetFromTexture.x =  item_size.y/2;
+        if slot.offset.x == 1.0 then offsetFromTexture.x = -item_size.y/2;
+        if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.x/2;
+        if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.x/2;
     }
     else if slot.rotation == 270.0
     {
-        if slot.offset.x == 0.0 then offsetFromTexture.x = -texInfo.size.y/2;
-        if slot.offset.x == 1.0 then offsetFromTexture.x =  texInfo.size.y/2;
-        if slot.offset.y == 0.0 then offsetFromTexture.y =  texInfo.size.x/2;
-        if slot.offset.y == 1.0 then offsetFromTexture.y = -texInfo.size.x/2;
+        if slot.offset.x == 0.0 then offsetFromTexture.x = -item_size.y/2;
+        if slot.offset.x == 1.0 then offsetFromTexture.x =  item_size.y/2;
+        if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.x/2;
+        if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.x/2;
     }
     else
     {
-        if slot.offset.x == 0.0 then offsetFromTexture.x =  texInfo.size.x/2;
-        if slot.offset.x == 1.0 then offsetFromTexture.x = -texInfo.size.x/2;
-        if slot.offset.y == 0.0 then offsetFromTexture.y =  texInfo.size.y/2;
-        if slot.offset.y == 1.0 then offsetFromTexture.y = -texInfo.size.y/2;
+        if slot.offset.x == 0.0 then offsetFromTexture.x =  item_size.x/2;
+        if slot.offset.x == 1.0 then offsetFromTexture.x = -item_size.x/2;
+        if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.y/2;
+        if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.y/2;
     }
     pos := bp_base_pos + bp.textureInfo.size * slot.offset + offsetFromTexture * scale;
-    return texInfo, pos, scale, slot.rotation;
+    return pos, scale, slot.rotation;
 }

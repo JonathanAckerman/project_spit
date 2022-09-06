@@ -447,7 +447,8 @@ game_loop :: inline ()
                 if craftTarget.exists // craftTarget needs to hold onto position
                 {
                     ui_rep: UI_Representation;
-                    ui_rep.info, ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, craftIndex, false);
+                    ui_rep.info = get_texture_info(player.held.value.item.type);
+                    ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, ui_rep.info.size, craftIndex);
                     ui_rep.info.tint.a = 200;
                     ui_rep.isHUD = false;
                     array_add(*ui, ui_rep);
@@ -465,11 +466,11 @@ game_loop :: inline ()
                 craftTarget.value.slot.item = NewMaybe(player.held.value.item);
                 player.held.exists = false;
                 
-                texInfo: TextureInfo;
+                texInfo := get_texture_info(craftTarget.value.slot.item.value.type);
                 position: Vector2;
                 scale: float;
                 rotation: float;
-                texInfo, position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex, false);
+                position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, texInfo.size, craftIndex);
                 forward := xy(cos(deg2rad(rotation)), sin(deg2rad(rotation)));
 
                 craftTarget.value.slot.item.value.position.exists = true;
