@@ -479,6 +479,7 @@ game_loop :: inline ()
                 craftTarget.value.slot.item.value.forward = forward; // @Jay: ugh, why does this have a forward, i think it's used for drawing or something
 
                 craftTarget.exists = false;
+                player.canCraft = false;
             }
             Input.craft = false;
         }
