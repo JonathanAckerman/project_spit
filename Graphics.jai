@@ -155,17 +155,18 @@ draw_item :: (item: Item)
             position: Vector2;
             scale: float;
             rotation: float;
-            texInfo, position, scale, rotation = get_blueprint_slot_draw_info(item, it_index);
+            texInfo, position, scale, rotation = get_blueprint_slot_draw_info(item, it_index, false);
             
-            base_size := xy(xx texInfo.width, xx texInfo.height) * scale;
-            modified_size := base_size * Game.camera.zoom;
+            base_size := xy(xx texInfo.width, xx texInfo.height);
+            modified_size := base_size * scale * Game.camera.zoom;
+            ss_position := to_screen_space(position);
             drawpos: Vector2;
             if rotation == 90.0 || rotation == 270.0 
             {
                 modified_size = xy(-modified_size.y, modified_size.x);
-                drawpos = position - modified_size / 2;
+                drawpos = ss_position - modified_size / 2;
             }
-            else drawpos = position - modified_size / 2;
+            else drawpos = ss_position - modified_size / 2;
             DrawTextureEx(texInfo.texture, drawpos, rotation, Game.camera.zoom * scale, texInfo.tint);
         }
     }
