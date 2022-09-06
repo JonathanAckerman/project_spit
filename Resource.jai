@@ -33,6 +33,7 @@ Item :: struct
     using #as entity: Entity;
     type: Item_Type;
     blueprintData: Maybe(*BlueprintData);
+    onSlot: Maybe(*BlueprintSlot);
 }
 Item_Type :: enum
 {

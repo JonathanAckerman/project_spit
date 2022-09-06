@@ -199,6 +199,12 @@ game_loop :: inline ()
                     case .ITEM;
                         if !player.held.exists
                         {
+                            if it.item.onSlot.exists
+                            {
+                                it.item.onSlot.value.item.exists = false;
+                                it.item.onSlot.exists = false;
+                            }
+
                             player.held.value = it;
                             player.held.exists = true;
                             player.held.value.item.position.exists = false;
@@ -422,7 +428,7 @@ game_loop :: inline ()
                             craftIndex = it;
                             ct: CraftTarget;
                             ct.blueprint = bp;
-                            ct.slot = *slot;
+                            ct.slot = slot;
                             craftTarget.value = ct;
                             craftTarget.exists = true;
                             break;
@@ -433,7 +439,7 @@ game_loop :: inline ()
                 {
                     ct: CraftTarget;
                     ct.blueprint = bp;
-                    ct.slot = *slot;
+                    ct.slot = slot;
                     craftTarget.value = ct;
                     craftTarget.exists = true;
                 }
@@ -467,7 +473,8 @@ game_loop :: inline ()
                 forward := xy(cos(deg2rad(rotation)), sin(deg2rad(rotation)));
 
                 craftTarget.value.slot.item.value.position.exists = true;
-                // craftTarget.value.slot.item.value.position.value = position;
+                craftTarget.value.slot.item.value.onSlot = NewMaybe(craftTarget.value.slot); // the item needs to know which slot it belongs to so we can break that bond if we pick it up later
+                craftTarget.value.slot.item.value.position.value = position;
                 craftTarget.value.slot.item.value.forward = forward;
 
                 craftTarget.exists = false;
@@ -1090,14 +1097,22 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
             array_add(*info_list, info);
         }
     }
-    for items if it.position.exists && 
-                 (!it.owner.exists || it.owner.value == *player.person)
+    for item: items if item.position.exists && 
+                 (!item.owner.exists || item.owner.value == *player.person)
     {
-        dist := length(Game.player.position.value - it.position.value);
+        if item.blueprintData.exists
+        {
+            for slot: item.blueprintData.value.slots
+            {
+                if slot.item.exists continue item;
+            }
+        }
+
+        dist := length(Game.player.position.value - item.position.value);
         if dist < range
         {
             info: dist_info;
-            info.holdable.item = it;
+            info.holdable.item = item;
             info.holdable.tag = .ITEM;
             info.dist = dist;
             array_add(*info_list, info);

@@ -1,7 +1,7 @@
 BlueprintData :: struct
 {
     blueprint_type: Blueprint_Type;
-    slots: [] BlueprintSlot;
+    slots: [] *BlueprintSlot;
 }
 Blueprint_Type :: enum
 {
@@ -33,8 +33,8 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
     bp := New(BlueprintData);
     bp.blueprint_type = type;
 
-    slot :: (v: Vector2, r: float, t: Slot_Type) -> BlueprintSlot #expand {
-        slot: BlueprintSlot;
+    slot :: (v: Vector2, r: float, t: Slot_Type) -> *BlueprintSlot #expand {
+        slot := New(BlueprintSlot);
         slot.offset = v;
         slot.rotation = r;
         slot.item = Nothing(*Item);
