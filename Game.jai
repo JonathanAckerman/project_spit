@@ -196,7 +196,7 @@ game_loop :: inline ()
                                 }
                         }
 
-                    case .ITEM; // @@@: this doesnt account for picking up byproducts
+                    case .ITEM;
                         if !player.held.exists
                         {
                             player.held.value = it;
@@ -420,14 +420,22 @@ game_loop :: inline ()
                         if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
                         {
                             craftIndex = it;
-                            craftTarget.exists = true;
                             ct: CraftTarget;
                             ct.blueprint = bp;
                             ct.slot = *slot;
                             craftTarget.value = ct;
+                            craftTarget.exists = true;
                             break;
                         }
                     }
+                }
+                if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                {
+                    ct: CraftTarget;
+                    ct.blueprint = bp;
+                    ct.slot = *slot;
+                    craftTarget.value = ct;
+                    craftTarget.exists = true;
                 }
 
                 if craftTarget.exists // craftTarget needs to hold onto position
@@ -456,10 +464,10 @@ game_loop :: inline ()
                 scale: float;
                 rotation: float;
                 texInfo, position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
-                forward := xy(cos(rotation), sin(rotation));
+                forward := xy(cos(deg2rad(rotation)), sin(deg2rad(rotation)));
 
                 craftTarget.value.slot.item.value.position.exists = true;
-                craftTarget.value.slot.item.value.position.value = position;
+                // craftTarget.value.slot.item.value.position.value = position;
                 craftTarget.value.slot.item.value.forward = forward;
 
                 craftTarget.exists = false;
