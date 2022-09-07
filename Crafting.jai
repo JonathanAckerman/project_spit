@@ -10,6 +10,7 @@ Blueprint_Type :: enum
 
 BlueprintSlot :: struct
 {
+    index: int;
     offset: Vector2;
     rotation: float;
     item: Maybe(*Item);
@@ -54,6 +55,7 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
             bp.slots[6] = slot(.{0.0, 1.0}, 0.0,  .JOINT);
             bp.slots[7] = slot(.{0.0, 0.5}, 0.0,  .SPAN);
     }
+    for bp.slots it.index = it_index;
     return bp;
 }
 

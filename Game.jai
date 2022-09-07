@@ -201,6 +201,7 @@ game_loop :: inline ()
                         {
                             if it.item.onSlot.exists
                             {
+                                craftIndex = it.item.onSlot.value.index;
                                 it.item.onSlot.value.item.exists = false;
                                 it.item.onSlot.exists = false;
                             }
@@ -364,28 +365,30 @@ game_loop :: inline ()
         }
         if Input.pickup then try_pickup();
 
-        if player.held.exists && 
-           player.held.value.tag == .ITEM &&
-           is_byproduct(player.held.value.item.type)
+        //
+        // Highlight the active crafting slot
+        //
+        blueprint_and_distance :: struct { blueprint: *Item; distance: float; }
+        blueprints_in_range: [..] blueprint_and_distance;
+        for items if it.blueprintData.exists && it.position.exists
         {
-            blueprint_and_distance :: struct { blueprint: *Item; distance: float; }
-            blueprints_in_range: [..] blueprint_and_distance;
-            for items if it.blueprintData.exists && it.position.exists
+            dist := length(it.position.value - player.position.value);
+            if dist < player.interactRange
             {
-                dist := length(it.position.value - player.position.value);
-                if dist < player.interactRange
-                {
-                    info: blueprint_and_distance;
-                    info.blueprint = it;
-                    info.distance = dist;
-                    array_add(*blueprints_in_range, info);
-                }
+                info: blueprint_and_distance;
+                info.blueprint = it;
+                info.distance = dist;
+                array_add(*blueprints_in_range, info);
             }
-            nearer :: (a, b) => cast(s64) (a.distance < b.distance);
-            bubble_sort(blueprints_in_range, nearer);
+        }
+        nearer :: (a, b) => cast(s64) (a.distance < b.distance);
+        bubble_sort(blueprints_in_range, nearer);
 
-            // highlight the active crafting slot
-            if blueprints_in_range.count > 0
+        if blueprints_in_range.count > 0
+        {
+            if player.held.exists && 
+            player.held.value.tag == .ITEM &&
+            is_byproduct(player.held.value.item.type)
             {
                 player.canCraft = true;
                 bp := blueprints_in_range[0].blueprint;
@@ -415,8 +418,9 @@ game_loop :: inline ()
                         if craftIndex == -1 then craftIndex = numSlots - 1;
 
                         array_resize(*rotatedIndices, numSlots);
-                        for < (numSlots - 1)..0 { rotatedIndices[it] = it; }
-                        array_rotate(*rotatedIndices[0], *rotatedIndices[craftIndex], *rotatedIndices[numSlots - 1] + 1);
+                        maxIndex := numSlots - 1;
+                        for < maxIndex..0 { rotatedIndices[maxIndex - it] = it; }
+                        array_rotate(*rotatedIndices[0], *rotatedIndices[maxIndex - craftIndex], *rotatedIndices[maxIndex] + 1);
                         array_resize(*rotatedIndices, numSlots + 1);
                         rotatedIndices[numSlots] = -1;
                     }
@@ -456,9 +460,12 @@ game_loop :: inline ()
                     array_add(*ui, ui_rep);
                 }
             }
-            else player.canCraft = false;
         }
-        if !player.canCraft then craftIndex = 0;
+        else 
+        {
+            player.canCraft = false;
+            craftIndex = 0;
+        }
 
         try_add_item_to_blueprint :: ()
         {
