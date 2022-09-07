@@ -27,7 +27,17 @@ generate_textures_struct :: ()
     {
         if info.is_directory
         {
-            array_add(data, copy_string(info.short_name));
+            folder_name_size := info.full_name.count - TEXTURES_PATH.count;
+            folder_name := slice(info.full_name, TEXTURES_PATH.count + 1, folder_name_size);
+
+            hasSlash, left, right := split_from_left(folder_name, #char "/");
+            if hasSlash
+            {
+                found, index := array_find(data[0], left);
+                if found then array_ordered_remove_by_index(*data[0], index);
+            }
+            
+            array_add(data, copy_string(folder_name));
         }
         else
         {
@@ -39,7 +49,7 @@ generate_textures_struct :: ()
 
     data: [..][..] string; // [0]: directory names, [1]: first dir textures, ...
     array_resize(*data, 1);
-    visit_files(TEXTURES_PATH, false, *data[0], get_data, false, true);
+    visit_files(TEXTURES_PATH, true, *data[0], get_data, false, true);
     
     for 1..data[0].count
     {
