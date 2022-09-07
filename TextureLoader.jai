@@ -76,16 +76,6 @@ generate_textures_struct :: ()
             table_add(*Textures.path_table, key = t, value = path);
         }
     }
-
-    builder: String_Builder;
-    for d, d_index: data[0]
-    {
-        for t, t_index: data[d_index + 1]
-        {
-            print_to_builder(*builder, "%/%/%.png\n", TEXTURES_PATH, d, t);
-        }
-    }
-    result := builder_to_string(*builder);
 }
 
 load_all_textures :: ()

@@ -58,3 +58,9 @@ array_rotate :: (first: *$T, new_first: *T, end: *T) -> *T
     array_rotate(write, next_read, end);
     return write;
 }
+
+xprint :: (args: ..Any) -> string {
+    builder: String_Builder; defer free_buffers(*builder); // pretty sure you don't need to free_buffers anymore?
+    for args print_to_builder(*builder, tprint("%", it));
+    return builder_to_string(*builder);
+}
