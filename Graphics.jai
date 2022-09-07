@@ -20,10 +20,10 @@ draw_orthagonal_texture_centered :: (info: TextureInfo, center: Vector2, rotatio
 {
     drawpos := to_screen_space(center);
     if rotation == 0.0   then drawpos -= info.size/2 * scale;
-    if rotation == 90.0  then drawpos -= xy(info.size.y, -info.size.x)/2 * scale;
+    if rotation == 90.0  then drawpos += xy(info.size.y, -info.size.x)/2 * scale;
     if rotation == 180.0 then drawpos += info.size/2 * scale;
-    if rotation == 270.0 then drawpos += xy(info.size.y, -info.size.x)/2 * scale;
-    DrawTextureEx(info.texture, drawpos, -rotation, scale, info.tint);
+    if rotation == 270.0 then drawpos -= xy(info.size.y, -info.size.x)/2 * scale;
+    DrawTextureEx(info.texture, drawpos, rotation, scale, info.tint);
 }
 
 // @JAY: is there a way to make this generic for any texture lookup? polymorph?
