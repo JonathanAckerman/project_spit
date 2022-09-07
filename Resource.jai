@@ -36,9 +36,8 @@ Item :: struct
     onSlot: Maybe(*BlueprintSlot);
 }
 
-#insert #run -> string // Item_Types
+#insert -> string
 {
-
     get_data :: (info: *File_Visit_Info, data: *[..] string) 
     {
         if info.is_directory
@@ -84,42 +83,61 @@ Item :: struct
         visit_files(path, false, *data[it_index + 1], get_data, true, true);
     }
 
-    builder: String_Builder; defer reset(*builder);
-    
-    preamble :: #string DONE
-        Item_Type :: enum {
-    DONE;
-    print_to_builder(*builder, preamble);
-
+    // @Generated: Item_Type
+    item_type_builder: String_Builder; defer reset(*item_type_builder);
+    item_type_preamble :: "Item_Type :: enum {\n";
+    print_to_builder(*item_type_builder, item_type_preamble);
     for d, d_index: data[0]
     {
         for t, t_index: data[d_index + 1]
         {
             if begins_with(d, "Items")
             {
-                print_to_builder(*builder, tprint("%;\n", to_upper_copy(t)));
-                print("%\n", to_upper_copy(t));
+                print_to_builder(*item_type_builder, tprint("\t%;\n", to_upper_copy(t)));
             }
         }
     }
-    postamble :: "\n}";
-    print_to_builder(*builder, postamble);
+    postamble :: "}\n";
+    print_to_builder(*item_type_builder, postamble);
 
-    return builder_to_string(*builder);
+    // @Generated: is_tool(), is_weapon(), is_byproduct(), etc.
+    is_a_builder: String_Builder; defer reset(*is_a_builder);
+    for d, d_index: data[0]
+    {
+        for t, t_index: data[d_index + 1]
+        {
+            if begins_with(d, "Items")
+            {
+                if t_index == 0 
+                {
+                    success, left, right := split_from_left(d, #char "/");
+                    name := to_lower_copy(right);
+                    name.count -= 1; // make the noun singular
+                    print_to_builder(*is_a_builder, tprint("is_% :: (type: Item_Type) -> bool {\n", name));
+                    print_to_builder(*is_a_builder, "\treturn ");
+                }
+                print_to_builder(*is_a_builder, tprint("type == .%", to_upper_copy(t)));
+
+                if t_index != data[d_index + 1].count - 1
+                {
+                    print_to_builder(*is_a_builder, "\n\t\t|| ");
+                }
+                else
+                {
+                    print_to_builder(*is_a_builder, ";\n}\n\n");
+                }
+            }
+        }
+    }
+
+    meta_builder: String_Builder;
+    print_to_builder(*meta_builder, builder_to_string(*item_type_builder));
+    print_to_builder(*meta_builder, "\n");
+    print_to_builder(*meta_builder, builder_to_string(*is_a_builder));
+
+    return builder_to_string(*meta_builder);
 };
 
-is_tool :: (type: Item_Type) -> bool
-{
-    return type == .CARPENTERS_HAMMER || type == .LUMBER_AXE || type == .HEWING_SAW || type == .PICK_AXE;
-}
-is_weapon :: (type: Item_Type) -> bool
-{
-    return type == .SWORD || type == .WHIP;
-}
-is_byproduct :: (type: Item_Type) -> bool
-{
-    return type == .COPPER_NUGGET || type == .IRON_NUGGET || type == .WOOD_LOG || type == .FIBER || type == .NAILS;
-}
 get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
 {
     if type == 
