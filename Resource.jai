@@ -35,25 +35,78 @@ Item :: struct
     blueprintData: Maybe(*BlueprintData);
     onSlot: Maybe(*BlueprintSlot);
 }
-Item_Type :: enum
+
+#insert #run -> string // Item_Types
 {
-    // tools
-    CARPENTERS_HAMMER;
-    LUMBER_AXE;
-    HEWING_SAW;
-    PICK_AXE;
-    // weapons
-    SWORD;
-    WHIP;
-    // byproducts
-    COPPER_NUGGET;
-    IRON_NUGGET;
-    WOOD_LOG;
-    FIBER;
-    NAILS;
-    // other?
-    BLUEPRINT;
-}
+
+    get_data :: (info: *File_Visit_Info, data: *[..] string) 
+    {
+        if info.is_directory
+        {
+            folder_name_size := info.full_name.count - TEXTURES_PATH.count;
+            folder_name := slice(info.full_name, TEXTURES_PATH.count + 1, folder_name_size);
+
+            hasSlash, left, right := split_from_left(folder_name, #char "/");
+            if hasSlash
+            {
+                found, index := array_find(data[0], left);
+                if found then array_ordered_remove_by_index(*data[0], index);
+            }
+            
+            array_add(data, copy_string(folder_name));
+        }
+        else
+        {
+            s := copy_string(info.short_name);
+            s.count -= 4;
+            array_add(data, s);
+        }
+    }
+
+    data: [..][..] string; // [0]: directory names, [1]: first dir textures, ...
+    array_resize(*data, 1);
+    visit_files(TEXTURES_PATH, true, *data[0], get_data, false, true);
+    
+    for 1..data[0].count
+    {
+        arr: [..] string;
+        array_add(*data, arr);
+    }
+
+    for data[0]
+    {
+        sb: String_Builder;
+        print_to_builder(*sb, TEXTURES_PATH);
+        print_to_builder(*sb, "/");
+        s: string = copy_string(it);
+        print_to_builder(*sb, s);
+        path := builder_to_string(*sb);
+        visit_files(path, false, *data[it_index + 1], get_data, true, true);
+    }
+
+    builder: String_Builder; defer reset(*builder);
+    
+    preamble :: #string DONE
+        Item_Type :: enum {
+    DONE;
+    print_to_builder(*builder, preamble);
+
+    for d, d_index: data[0]
+    {
+        for t, t_index: data[d_index + 1]
+        {
+            if begins_with(d, "Items")
+            {
+                print_to_builder(*builder, tprint("%;\n", to_upper_copy(t)));
+                print("%\n", to_upper_copy(t));
+            }
+        }
+    }
+    postamble :: "\n}";
+    print_to_builder(*builder, postamble);
+
+    return builder_to_string(*builder);
+};
 
 is_tool :: (type: Item_Type) -> bool
 {
