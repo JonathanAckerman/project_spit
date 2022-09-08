@@ -35,6 +35,7 @@ main :: () {
 #load "Concepts.jai";
 #load "Grid.jai";
 #load "Utils.jai";
+#load "Generated.jai";
 #load "TextureLoader.jai";
 
 Simp :: #import "Simp";
