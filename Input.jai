@@ -183,7 +183,6 @@ handle_input :: inline ()
             {
                 Debug.historyIndex -= 1;
                 if Debug.historyIndex < 0 then Debug.historyIndex = Debug.history.count - 1;
-                print("%, %\n", Debug.historyIndex, Debug.history);
                 Debug.line = Debug.history[Debug.historyIndex];
                 Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
             }
@@ -194,7 +193,6 @@ handle_input :: inline ()
             {
                 Debug.historyIndex += 1;
                 if Debug.historyIndex >= Debug.history.count then Debug.historyIndex = 0;
-                print("%, %\n", Debug.historyIndex, Debug.history);
                 Debug.line = Debug.history[Debug.historyIndex];
                 Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
             }

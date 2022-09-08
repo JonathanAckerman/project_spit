@@ -12,17 +12,17 @@ Debug: struct
 
     listCommands := false;
     commandList: [] string = .[
-        "SPAWN [ENTITY]",
-        "TP",
-        "GOTTAGOFAST",
-        "DT",
-        "SPEED",
-        "ZOOM",
-        "PRINT PLAYER",
-        "REPOP RESOURCES",
-        "RESET",
-        "DEBUG INFO 0/1",
-        "FREECAM 0/1"
+        "spawn [ENTITY]",
+        "tp [X] [Y]",
+        "fast",
+        "dt",
+        "speed [N]",
+        "zoom [N]",
+        "print player",
+        "repop",
+        "reset",
+        "debug info (db) [0/1]",
+        "freecam (fc) [0/1]"
     ];
 
     showEntityInfo := false;
@@ -287,9 +287,10 @@ debug_console :: (dt: float)
 debug_is_command_valid :: (cmd: string)
 {
     cmd_array := split(cmd, " ");
+    for cmd_array to_lower_in_place(it);
     if cmd_array.count > 0
     {
-        if begins_with(cmd, "SPAWN")
+        if begins_with(cmd, "spawn")
         {
             Nicknames :: struct {
                 name: string;
@@ -297,19 +298,11 @@ debug_is_command_valid :: (cmd: string)
             }
 
             nicknames: [] Nicknames = .[
-                .{name="LUMBER_AXE", alt="AXE"},
-                .{name="CARPENTERS_HAMMER", alt="HAMMER"},
-                .{name="PICK_AXE", alt="PICK"},
-                .{name="HEWING_SAW", alt="SAW"},
-                .{name="WOOD_LOG", alt="LOG"},
-                .{name="TOOL_BELT", alt="TOOLBELT"},
-                .{name="WEAPON_BELT", alt="WEAPONBELT"},
-                .{name="COPPER_VEIN", alt="COPPERORE"},
-                .{name="COPPER_NUGGET", alt="COPPERNUG"},
-                .{name="IRON_VEIN", alt="IRONORE"},
-                .{name="IRON_NUGGET", alt="IRONNUG"},
-                .{name="SILVER_VEIN", alt="SILVERORE"},
-                .{name="SILVER_NUGGET", alt="SILVERNUG"},
+                .{name="lumber_axe", alt="axe"},
+                .{name="carpenters_hammer", alt="hammer"},
+                .{name="pick_axe", alt="pick"},
+                .{name="hewing_saw", alt="saw"},
+                .{name="wood_log", alt="log"},
             ];
             for nicknames if cmd_array[1] == it.alt then cmd_array[1] = it.name;
 
@@ -325,7 +318,7 @@ debug_is_command_valid :: (cmd: string)
                 case .ITEM;
                     bp := Nothing(*BlueprintData);
                     collider = NewCollider(10);
-                    if cmd_array[1] == "BLUEPRINT"
+                    if cmd_array[1] == "blueprint"
                     {
                         collider = NewCollider(50);
                         bp = NewMaybe(NewBlueprintData(.BOXES));
@@ -343,22 +336,22 @@ debug_is_command_valid :: (cmd: string)
             }
         }
 
-        if begins_with(cmd, "SPEED")
+        if begins_with(cmd, "speed")
         {
             Game.player.speed = string_to_float(cmd_array[1]);
         }
 
-        if begins_with(cmd, "ZOOM")
+        if begins_with(cmd, "zoom")
         {
             Game.camera.zoom = string_to_float(cmd_array[1]);
         }
 
-        if begins_with(cmd, "PRINT")
+        if begins_with(cmd, "print")
         {
-            if cmd_array[1] == "PLAYER" then print("%\n", Game.player);
+            if cmd_array[1] == "player" then print("%\n", Game.player);
         }
 
-        if begins_with(cmd, "TP")
+        if begins_with(cmd, "tp")
         {
             for cmd_array
             {
@@ -367,7 +360,7 @@ debug_is_command_valid :: (cmd: string)
             }
         }
 
-        if begins_with(cmd, "DT")
+        if begins_with(cmd, "dt")
         {
             for cmd_array
             {
@@ -378,33 +371,33 @@ debug_is_command_valid :: (cmd: string)
     }
 
 
-    if cmd == "GOTTAGOFAST"
+    if cmd == "fast"
     {
         Game.player.person.speed = 50;
     }
-    if cmd == "REPOP RESOURCES"
+    if cmd == "repop"
     {
         array_reset(*Game.resources);
         populate_resources();
     }
-    if cmd == "RESET"
+    if cmd == "reset"
     {
         game_reset();
     }
-    if cmd == "DEBUG INFO 0" || cmd == "DB0"
+    if cmd == "debug info 0" || cmd == "db0"
     {
         Debug.showEntityInfo = false;
     }
-    if cmd == "DEBUG INFO 1" || cmd == "DB1"
+    if cmd == "debug info 1" || cmd == "db1"
     {
         Debug.showEntityInfo = true;
     }
 
-    if cmd == "FREECAM 1" || cmd == "FC1"
+    if cmd == "freecam 1" || cmd == "fc1"
     {
         Debug.freeCamera = true;
     }
-    if cmd == "FREECAM 0" || cmd == "FC0"
+    if cmd == "freecam 0" || cmd == "fc0"
     {
         Debug.freeCamera = false;
     }
@@ -412,9 +405,10 @@ debug_is_command_valid :: (cmd: string)
 
 item_type_from_string :: (s: string) -> Maybe(Item_Type)
 {
+    str := to_upper_copy(s);
     for enum_names(Item_Type)
     {
-        if s == it
+        if str == it
         {
             m := NewMaybe(cast(Item_Type) enum_values_as_s64(Item_Type)[it_index]);
             return m;
@@ -425,9 +419,10 @@ item_type_from_string :: (s: string) -> Maybe(Item_Type)
 
 container_type_from_string :: (s: string) -> Maybe(Container_Type)
 {
+    str := to_upper_copy(s);
     for enum_names(Container_Type)
     {
-        if s == it
+        if str == it
         {
             m := NewMaybe(cast(Container_Type) enum_values_as_s64(Container_Type)[it_index]);
             return m;
@@ -438,9 +433,10 @@ container_type_from_string :: (s: string) -> Maybe(Container_Type)
 
 equipment_type_from_string :: (s: string) -> Maybe(Equipment_Type)
 {
+    str := to_upper_copy(s);
     for enum_names(Equipment_Type)
     {
-        if s == it
+        if str == it
         {
             m := NewMaybe(cast(Equipment_Type) enum_values_as_s64(Equipment_Type)[it_index]);
             return m;
@@ -451,9 +447,10 @@ equipment_type_from_string :: (s: string) -> Maybe(Equipment_Type)
 
 resource_type_from_string :: (s: string) -> Maybe(Resource_Type)
 {
+    str := to_upper_copy(s);
     for enum_names(Resource_Type)
     {
-        if s == it
+        if str == it
         {
             m := NewMaybe(cast(Resource_Type) enum_values_as_s64(Resource_Type)[it_index]);
             return m;
@@ -464,9 +461,10 @@ resource_type_from_string :: (s: string) -> Maybe(Resource_Type)
 
 entity_type_from_string :: (s: string) -> Maybe(Entity_Type)
 {
-    for enum_names(Item_Type)      if s == it then return NewMaybe(Entity_Type.ITEM);
-    for enum_names(Container_Type) if s == it then return NewMaybe(Entity_Type.CONTAINER);
-    for enum_names(Equipment_Type) if s == it then return NewMaybe(Entity_Type.EQUIPMENT);
-    for enum_names(Resource_Type)  if s == it then return NewMaybe(Entity_Type.RESOURCE);
+    str := to_upper_copy(s);
+    for enum_names(Item_Type)      if str == it then return NewMaybe(Entity_Type.ITEM);
+    for enum_names(Container_Type) if str == it then return NewMaybe(Entity_Type.CONTAINER);
+    for enum_names(Equipment_Type) if str == it then return NewMaybe(Entity_Type.EQUIPMENT);
+    for enum_names(Resource_Type)  if str == it then return NewMaybe(Entity_Type.RESOURCE);
     return Nothing(Entity_Type);
 }
