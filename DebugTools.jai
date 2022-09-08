@@ -308,6 +308,8 @@ debug_is_command_valid :: (cmd: string)
                 .{name="COPPER_NUGGET", alt="COPPERNUG"},
                 .{name="IRON_VEIN", alt="IRONORE"},
                 .{name="IRON_NUGGET", alt="IRONNUG"},
+                .{name="SILVER_VEIN", alt="SILVERORE"},
+                .{name="SILVER_NUGGET", alt="SILVERNUG"},
             ];
             for nicknames if cmd_array[1] == it.alt then cmd_array[1] = it.name;
 

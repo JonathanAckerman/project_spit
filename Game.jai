@@ -572,7 +572,9 @@ game_loop :: inline ()
                 array_unordered_remove_by_index(*resources, resource_to_harvest.value.index);
             }
         }
-        if Input.harvest then harvestResource();
+        if Input.interact then harvestResource();
+        // else processByproduct();
+        // idk, I think maybe interacting should be a general thing that is context dependent
 
         buyFromShop :: ()
         {

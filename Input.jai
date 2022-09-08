@@ -1,11 +1,11 @@
 Input: struct
 {
-    harvest := false;
+    interact := false;
+    craft    := false;
+    trade    := false;
+    pickup   := false;
+    drop     := false;
     craftIndexDirection := 1;
-    craft := false;
-    trade := false;
-    pickup := false;
-    drop := false;
     equipSlot := -1;
 }
 
@@ -56,11 +56,11 @@ handle_input :: inline ()
         // The Action Button
         if IsKeyPressed(xx KeyboardKey.SPACE)
         {
-            harvest = true;
+            interact = true;
         }
         else
         {
-            harvest = false;
+            interact = false;
         }
 
         // crafting
