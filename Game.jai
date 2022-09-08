@@ -960,6 +960,8 @@ game_reset :: ()
 
     Game  = .{};
     Input = .{};
+    Debug = .{};
+    Debug.font = LoadFont("./assets/fonts/cour.ttf");
 
     // init grid
     chunk_neighbor_offsets := valid_neighboring_offsets(0, grid.chunkWidth);

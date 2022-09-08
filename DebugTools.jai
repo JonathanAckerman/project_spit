@@ -4,7 +4,7 @@ Debug: struct
     c: DebugCursor;
     line: string;
     history: [..] string;
-    historyIndex := -1;
+    historyIndex := 0;
 
     font: Font;
     fontSize := 28.0;

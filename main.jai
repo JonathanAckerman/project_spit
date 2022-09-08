@@ -7,7 +7,6 @@ main :: () {
     window_title := to_c_string("project_spit");
     InitWindow(xx WINDOW_WIDTH, xx WINDOW_HEIGHT, window_title);
     SetTargetFPS(60);
-    Debug.font = LoadFont("./assets/fonts/cour.ttf");
     SetTraceLogLevel(xx TraceLogLevel.LOG_NONE);
 
     Game.resetting = true;

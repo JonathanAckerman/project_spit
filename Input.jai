@@ -141,6 +141,8 @@ handle_input :: inline ()
             array_add(*Debug.history, Debug.line);
             // reset current line
             Debug.line = "";
+            // reset the historyindex to the most recent command
+            Debug.historyIndex = Debug.history.count;
         }
 
         // delete character
@@ -159,9 +161,21 @@ handle_input :: inline ()
         {
             if Debug.history.count > 0
             {
+                Debug.historyIndex -= 1;
+                if Debug.historyIndex < 0 then Debug.historyIndex = Debug.history.count - 1;
+                print("%, %\n", Debug.historyIndex, Debug.history);
+                Debug.line = Debug.history[Debug.historyIndex];
+                Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
+            }
+        }
+        if IsKeyPressed(xx KeyboardKey.KEY_DOWN)
+        {
+            if Debug.history.count > 0
+            {
                 Debug.historyIndex += 1;
-                if Debug.historyIndex == Debug.history.count then Debug.historyIndex = 0;
-                Debug.line = Debug.history[(Debug.history.count - 1) - Debug.historyIndex];
+                if Debug.historyIndex >= Debug.history.count then Debug.historyIndex = 0;
+                print("%, %\n", Debug.historyIndex, Debug.history);
+                Debug.line = Debug.history[Debug.historyIndex];
                 Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
             }
         }
