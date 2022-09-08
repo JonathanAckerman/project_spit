@@ -122,16 +122,12 @@ handle_input :: inline ()
     {
         // write character
         key := GetCharPressed();
-        if key > 0 && key < 255 // sizeof u8
-           && key != 92 // '\'
-           && key != 45 // '-'
-           && key != 61 // '='
+        if key != 0 && key != #char "\\"
         {
             if !Debug.line then Debug.line = sprint("%", to_string(*(cast(u8) key), 1));
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
             Debug.c.charNumber += 1;
         }
-
 
         // submit command
         if IsKeyPressed(xx KeyboardKey.ENTER)
@@ -217,12 +213,12 @@ handle_input :: inline ()
         }
 
         // zoom in camera
-        if IsKeyDown(xx KeyboardKey.EQUAL)
+        if IsKeyDown(xx KeyboardKey.EQUAL) && IsKeyDown(xx KeyboardKey.KEY_LEFT_CONTROL)
         {
             Game.camera.zoom *= 1.02;   
         }
         // zoom out camera
-        if IsKeyDown(xx KeyboardKey.MINUS)
+        if IsKeyDown(xx KeyboardKey.MINUS) && IsKeyDown(xx KeyboardKey.KEY_LEFT_CONTROL)
         {
             Game.camera.zoom *= 0.98;   
         }
