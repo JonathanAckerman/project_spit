@@ -7,6 +7,11 @@ Input: struct
     drop     := false;
     craftIndexDirection := 1;
     equipSlot := -1;
+
+    backspaceTimer := 0.0;
+    backspaceDelay := 0.1;
+    backspaceSpeedBoostCounter := 5;
+    backspaceSpeedBoostDelay := 5;
 }
 
 handle_input :: inline () 
@@ -116,13 +121,12 @@ handle_input :: inline ()
     else // debug on
     {
         // write character
-        key := GetKeyPressed();
+        key := GetCharPressed();
         if key > 0 && key < 255 // sizeof u8
            && key != 92 // '\'
            && key != 45 // '-'
            && key != 61 // '='
         {
-
             if !Debug.line then Debug.line = sprint("%", to_string(*(cast(u8) key), 1));
             else Debug.line = sprint("%0%", Debug.line, to_string(*(cast(u8) key), 1));
             Debug.c.charNumber += 1;
@@ -146,14 +150,30 @@ handle_input :: inline ()
         }
 
         // delete character
-        if IsKeyPressed(xx KeyboardKey.BACKSPACE)
+        if IsKeyDown(xx KeyboardKey.BACKSPACE)
         {
-            if Debug.line
+            if backspaceTimer <= 0.0
             {
-                Debug.line.count -= 1;
-                Debug.c.charNumber -= 1;
-                Debug.c.curPos.x -= (Debug.fontSize/2) + Debug.fontSpacing;
+                if backspaceSpeedBoostCounter > 0
+                {
+                    backspaceSpeedBoostCounter -= 1;
+                    backspaceTimer = backspaceDelay;
+                }
+                else backspaceTimer = backspaceDelay / 4.0;
+
+                if Debug.line
+                {
+                    Debug.line.count -= 1;
+                    Debug.c.charNumber -= 1;
+                    Debug.c.curPos.x -= (Debug.fontSize/2) + Debug.fontSpacing;
+                }
             }
+            else backspaceTimer -= Game.dt;
+        }
+        else 
+        {
+            backspaceTimer = 0.0;
+            backspaceSpeedBoostCounter = backspaceSpeedBoostDelay;
         }
 
         // cycle through history
