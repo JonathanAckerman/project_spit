@@ -14,7 +14,7 @@ void main()
     float grayValue = displacementTexel.x / 255.0; // assumes r=g=b
     float scale = 20.0;
     float offsetScalar = (2 * grayValue - 1) * scale;
-    vec2 offset = vec2(20.0, 20.0) + vec2(offsetScalar, offsetScalar);
+    vec2 offset = vec2(0.0, 0.0) + vec2(offsetScalar, offsetScalar);
     vec2 directionOffset = vec2(displacementOffset.x/600, -displacementOffset.y/600);
     finalColor = texture(waterSampler, fragTexCoord + directionOffset + offset);
 }

@@ -55,7 +55,7 @@ handle_collision :: (using entity: *Entity)
     {
         if entity.collider.type == .CIRCLE && circle_gridcell(entity, cell, shouldResolve=false)
         {
-            water_speed :: 300;
+            water_speed :: 200;
             entity.velocity += cell.forward * water_speed * dt;
         }
     }

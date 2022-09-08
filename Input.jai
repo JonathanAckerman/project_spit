@@ -46,7 +46,7 @@ handle_input :: inline ()
                 new_forward += .{1, 0};
             }
             if length(new_forward) != 0 then Game.player.forward = unit_vector(new_forward);
-            Game.player.velocity = unit_vector(new_velocity) * Game.player.speed;
+            Game.player.velocity = unit_vector(new_velocity) * Game.player.speed * Game.dt;
         }
         else
         {

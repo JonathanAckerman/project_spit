@@ -39,7 +39,7 @@ draw_shop :: (shop : *Shop)
 Person :: struct
 {
     using #as entity: Entity;
-    speed: float = 6.0;
+    speed: float = 400.0;
 
     held: Maybe(Holdable);
     toolBelt: Maybe(*Equipment);
