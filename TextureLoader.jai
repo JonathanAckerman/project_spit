@@ -90,6 +90,7 @@ load_all_textures :: ()
     }
 
     Textures.waterShader = LoadShader(null, to_c_string("./assets/shaders/displacementMap.fs"));
+    table_add(*Textures.table, "displacement_map", LoadTexture(to_c_string("./assets/shaders/displacement_map.png")));
     Textures.displacementOffsetLoc = GetShaderLocation(Textures.waterShader, "displacementOffset");
     Textures.displacementTexLoc    = GetShaderLocation(Textures.waterShader, "displacementSampler");
 }
