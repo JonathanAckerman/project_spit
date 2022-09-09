@@ -517,59 +517,59 @@ game_loop :: inline ()
         }
         if Input.interact then harvestResource();
 
-        // processByproduct :: ()
-        // {
-        //     using Game;
-        //     // compile list of resources in range, sort by distance to player
-        //     byproduct_info :: struct { item: *Item; direction: Vector2; index: int; }
-        //     sorted_byproducts: [..] byproduct_info;
-        //     for items if is_byproduct(it.type)
-        //     {
-        //         player_to_byproduct : Vector2 = it.position.value - player.position.value;
-        //         if length(player_to_byproduct) < player.interactRange // @TODO: Make this take tool range into account
-        //         {
-        //             info: byproduct_info;
-        //             info.item = items[it_index];
-        //             info.direction = player_to_byproduct;
-        //             info.index = it_index;
-        //             array_add(*sorted_byproducts, info);
-        //         }
-        //     }
+        processByproduct :: ()
+        {
+            using Game;
+            // compile list of resources in range, sort by distance to player
+            byproduct_info :: struct { item: *Item; direction: Vector2; index: int; }
+            sorted_byproducts: [..] byproduct_info;
+            for items if is_byproduct(it.type)
+            {
+                player_to_byproduct : Vector2 = it.position.value - player.position.value;
+                if length(player_to_byproduct) < player.interactRange // @TODO: Make this take tool range into account
+                {
+                    info: byproduct_info;
+                    info.item = items[it_index];
+                    info.direction = player_to_byproduct;
+                    info.index = it_index;
+                    array_add(*sorted_byproducts, info);
+                }
+            }
 
-        //     less_than :: (a, b) => cast(s64) (length(a.direction) - length(b.direction));
-        //     bubble_sort(sorted_byproducts, less_than);
+            less_than :: (a, b) => cast(s64) (length(a.direction) - length(b.direction));
+            bubble_sort(sorted_byproducts, less_than);
 
-        //     // find the first resource we are able to harvest
-        //     byproduct_to_process: Maybe(byproduct_info);
-        //     for sorted_byproducts
-        //     {
-        //         if it.item.onSlot.exists continue;
-        //         can_process, tool_type := get_item_processing_tool(it.item.type);
-        //         if !can_process continue;
-        //         if !player.held.exists || player.held.value.item.type != tool_type continue;
+            // find the first resource we are able to harvest
+            byproduct_to_process: Maybe(byproduct_info);
+            for sorted_byproducts
+            {
+                if it.item.onSlot.exists continue;
+                can_process, tool_type := get_item_processing_tool(it.item.type);
+                if !can_process continue;
+                if !player.held.exists || player.held.value.item.type != tool_type continue;
 
-        //         byproduct_to_process.value = it;
-        //         byproduct_to_process.exists = true;
-        //         break;
-        //     }
+                byproduct_to_process.value = it;
+                byproduct_to_process.exists = true;
+                break;
+            }
 
-        //     if byproduct_to_process.exists
-        //     {
-        //         new_byproduct: *Item = null;
-        //         pos := byproduct_to_process.value.item.position.value;
-        //         direction_offset := unit_vector(byproduct_to_process.value.direction) * 15;
-        //         new_byproduct_pos := pos + direction_offset;
-        //         if byproduct_to_process.value.item.type ==
-        //         {
-        //             case .WOOD_LOG;
-        //                 new_byproduct = NewItem(.PLANK, NewCollider(10.0), new_byproduct_pos);
-        //         }
+            if byproduct_to_process.exists
+            {
+                new_byproduct: *Item = null;
+                pos := byproduct_to_process.value.item.position.value;
+                direction_offset := unit_vector(byproduct_to_process.value.direction) * 15;
+                new_byproduct_pos := pos + direction_offset;
+                if byproduct_to_process.value.item.type ==
+                {
+                    case .WOOD_LOG;
+                        new_byproduct = NewItem(.PLANK, NewCollider(10.0), new_byproduct_pos);
+                }
 
-        //         array_add(*items, new_byproduct);
-        //         array_unordered_remove_by_index(*items, byproduct_to_process.value.index);
-        //     }
-        // }
-        // if Input.interact then processByproduct(); // @Note: For now these are mutually exclusive so I can just check both
+                array_add(*items, new_byproduct);
+                array_unordered_remove_by_index(*items, byproduct_to_process.value.index);
+            }
+        }
+        if Input.interact then processByproduct(); // @Note: For now these are mutually exclusive so I can just check both
 
         buyFromShop :: ()
         {
