@@ -170,7 +170,7 @@ game_loop :: inline ()
         try_pickup :: ()
         {
             using Game;
-            holdables := get_holdables_in_range(player.interactRange);
+            holdables := get_interactible_holdables();
             for holdables
             {
                 if it.tag ==
@@ -368,103 +368,105 @@ game_loop :: inline ()
         //
         // Highlight the active crafting slot
         //
-        blueprint_and_distance :: struct { blueprint: *Item; distance: float; }
-        blueprints_in_range: [..] blueprint_and_distance;
-        for items if it.blueprintData.exists && it.position.exists
         {
-            dist := length(it.position.value - player.position.value);
-            if dist < player.interactRange
+            blueprint_and_distance :: struct { blueprint: *Item; distance: float; }
+            blueprints_in_range: [..] blueprint_and_distance;
+            for items if it.blueprintData.exists && it.position.exists
             {
-                info: blueprint_and_distance;
-                info.blueprint = it;
-                info.distance = dist;
-                array_add(*blueprints_in_range, info);
-            }
-        }
-        nearer :: (a, b) => cast(s64) (a.distance < b.distance);
-        bubble_sort(blueprints_in_range, nearer);
-
-        if blueprints_in_range.count > 0
-        {
-            if player.held.exists && 
-            player.held.value.tag == .ITEM &&
-            is_byproduct(player.held.value.item.type)
-            {
-                player.canCraft = true;
-                bp := blueprints_in_range[0].blueprint;
-                numSlots := bp.blueprintData.value.slots.count;
-                // loop indices
-                if craftIndex == -1 then craftIndex = numSlots - 1;
-                if craftIndex == numSlots then craftIndex = 0;
-                slot := bp.blueprintData.value.slots[craftIndex];
-                // the slot is taken or of the wrong type so we need to find the next valid
-                if slot.item.exists || slot.slotType != get_byproduct_slot_type(player.held.value.item.type)
+                dist := length(it.position.value - player.position.value);
+                if dist < player.interactRange
                 {
-                    rotatedIndices: [] int;
-                    if Input.craftIndexDirection == 1
-                    {
-                        craftIndex += 1;
-                        if craftIndex == numSlots then craftIndex = 0;
+                    info: blueprint_and_distance;
+                    info.blueprint = it;
+                    info.distance = dist;
+                    array_add(*blueprints_in_range, info);
+                }
+            }
+            nearer :: (a, b) => cast(s64) (a.distance < b.distance);
+            bubble_sort(blueprints_in_range, nearer);
 
-                        array_resize(*rotatedIndices, numSlots);
-                        for 0..numSlots - 1 { rotatedIndices[it] = it; }
-                        array_rotate(*rotatedIndices[0], *rotatedIndices[craftIndex], *rotatedIndices[numSlots - 1] + 1);
-                        array_resize(*rotatedIndices, numSlots + 1);
-                        rotatedIndices[numSlots] = -1;
-                    }
-                    else if Input.craftIndexDirection == -1
+            if blueprints_in_range.count > 0
+            {
+                if player.held.exists && 
+                player.held.value.tag == .ITEM &&
+                is_byproduct(player.held.value.item.type)
+                {
+                    player.canCraft = true;
+                    bp := blueprints_in_range[0].blueprint;
+                    numSlots := bp.blueprintData.value.slots.count;
+                    // loop indices
+                    if craftIndex == -1 then craftIndex = numSlots - 1;
+                    if craftIndex == numSlots then craftIndex = 0;
+                    slot := bp.blueprintData.value.slots[craftIndex];
+                    // the slot is taken or of the wrong type so we need to find the next valid
+                    if slot.item.exists || slot.slotType != get_byproduct_slot_type(player.held.value.item.type)
                     {
-                        craftIndex -= 1;
-                        if craftIndex == -1 then craftIndex = numSlots - 1;
-
-                        array_resize(*rotatedIndices, numSlots);
-                        maxIndex := numSlots - 1;
-                        for < maxIndex..0 { rotatedIndices[maxIndex - it] = it; }
-                        array_rotate(*rotatedIndices[0], *rotatedIndices[maxIndex - craftIndex], *rotatedIndices[maxIndex] + 1);
-                        array_resize(*rotatedIndices, numSlots + 1);
-                        rotatedIndices[numSlots] = -1;
-                    }
-
-                    for rotatedIndices
-                    {
-                        if it == -1 { craftTarget.exists = false; break; }
-                        slot = bp.blueprintData.value.slots[it];
-                        if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                        rotatedIndices: [] int;
+                        if Input.craftIndexDirection == 1
                         {
-                            craftIndex = it;
-                            ct: CraftTarget;
-                            ct.blueprint = bp;
-                            ct.slot = slot;
-                            craftTarget.value = ct;
-                            craftTarget.exists = true;
-                            break;
+                            craftIndex += 1;
+                            if craftIndex == numSlots then craftIndex = 0;
+
+                            array_resize(*rotatedIndices, numSlots);
+                            for 0..numSlots - 1 { rotatedIndices[it] = it; }
+                            array_rotate(*rotatedIndices[0], *rotatedIndices[craftIndex], *rotatedIndices[numSlots - 1] + 1);
+                            array_resize(*rotatedIndices, numSlots + 1);
+                            rotatedIndices[numSlots] = -1;
+                        }
+                        else if Input.craftIndexDirection == -1
+                        {
+                            craftIndex -= 1;
+                            if craftIndex == -1 then craftIndex = numSlots - 1;
+
+                            array_resize(*rotatedIndices, numSlots);
+                            maxIndex := numSlots - 1;
+                            for < maxIndex..0 { rotatedIndices[maxIndex - it] = it; }
+                            array_rotate(*rotatedIndices[0], *rotatedIndices[maxIndex - craftIndex], *rotatedIndices[maxIndex] + 1);
+                            array_resize(*rotatedIndices, numSlots + 1);
+                            rotatedIndices[numSlots] = -1;
+                        }
+
+                        for rotatedIndices
+                        {
+                            if it == -1 { craftTarget.exists = false; break; }
+                            slot = bp.blueprintData.value.slots[it];
+                            if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                            {
+                                craftIndex = it;
+                                ct: CraftTarget;
+                                ct.blueprint = bp;
+                                ct.slot = slot;
+                                craftTarget.value = ct;
+                                craftTarget.exists = true;
+                                break;
+                            }
                         }
                     }
-                }
-                if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
-                {
-                    ct: CraftTarget;
-                    ct.blueprint = bp;
-                    ct.slot = slot;
-                    craftTarget.value = ct;
-                    craftTarget.exists = true;
-                }
+                    if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                    {
+                        ct: CraftTarget;
+                        ct.blueprint = bp;
+                        ct.slot = slot;
+                        craftTarget.value = ct;
+                        craftTarget.exists = true;
+                    }
 
-                if craftTarget.exists // craftTarget needs to hold onto position
-                {
-                    ui_rep: UI_Representation;
-                    ui_rep.info = get_texture_info(player.held.value.item.type);
-                    ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, ui_rep.info.size, craftIndex);
-                    ui_rep.info.tint.a = 200;
-                    ui_rep.isHUD = false;
-                    array_add(*ui, ui_rep);
+                    if craftTarget.exists // craftTarget needs to hold onto position
+                    {
+                        ui_rep: UI_Representation;
+                        ui_rep.info = get_texture_info(player.held.value.item.type);
+                        ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, ui_rep.info.size, craftIndex);
+                        ui_rep.info.tint.a = 200;
+                        ui_rep.isHUD = false;
+                        array_add(*ui, ui_rep);
+                    }
                 }
             }
-        }
-        else 
-        {
-            player.canCraft = false;
-            craftIndex = 0;
+            else 
+            {
+                player.canCraft = false;
+                craftIndex = 0;
+            }
         }
 
         try_add_item_to_blueprint :: ()
@@ -1032,11 +1034,7 @@ game_reset :: ()
 }
 
 // Given a list of ptrs to game objects return a sorted list which are in the player's interact range in the forward halfplane
-get_interactibles :: (array: [..] $T) -> [..] T
-{
-    return get_interactibles(array, (T) => T.entity);
-}
-
+get_interactibles :: (array: [..] $T) -> [..] T { return get_interactibles(array, (T) => T.entity); }
 get_interactibles :: (array: [..] $T, get_entity: (T) -> Entity) -> [..] T
 {
     using Game;
@@ -1072,63 +1070,44 @@ get_interactibles :: (array: [..] $T, get_entity: (T) -> Entity) -> [..] T
             }
         }
     }
-
     return result;
 }
 
-get_holdables_in_range :: (range: float) -> [..] Holdable
+get_interactible_holdables :: () -> [..] Holdable
 {
     using Game;
-
     dist_info :: struct { holdable: Holdable; dist: float; }
     info_list: [..] dist_info;
 
-    for containers if it.position.exists && 
-                      (!it.owner.exists || it.owner.value == *player.person)
-    { 
-        dist := length(Game.player.position.value - it.position.value);
-        if dist < range
-        {
-            info: dist_info;
-            info.holdable.container = it;
-            info.holdable.tag = .CONTAINER;
-            info.dist = dist;
-            array_add(*info_list, info);
-        }
-    }
-    for item: items if item.position.exists && 
-                 (!item.owner.exists || item.owner.value == *player.person)
+    for get_interactibles(containers) if !it.owner.exists || it.owner.value == *player.person
     {
-        if item.blueprintData.exists
-        {
-            for slot: item.blueprintData.value.slots
-            {
-                if slot.item.exists continue item;
+        info: dist_info;
+        info.holdable.container = it;
+        info.holdable.tag = .CONTAINER;
+        info.dist = length(it.position.value - player.position.value);
+        array_add(*info_list, info);
+    }
+    for get_interactibles(items) if !it.owner.exists || it.owner.value == *player.person
+    {
+        if it.blueprintData.exists {
+            for slot: it.blueprintData.value.slots {
+                if slot.item.exists continue;
             }
         }
 
-        dist := length(Game.player.position.value - item.position.value);
-        if dist < range
-        {
-            info: dist_info;
-            info.holdable.item = item;
-            info.holdable.tag = .ITEM;
-            info.dist = dist;
-            array_add(*info_list, info);
-        }
+        info: dist_info;
+        info.holdable.item = it;
+        info.holdable.tag = .ITEM;
+        info.dist = length(it.position.value - player.position.value);
+        array_add(*info_list, info);
     }
-    for equipment if it.position.exists && 
-                     (!it.owner.exists || it.owner.value == *player.person)
+    for get_interactibles(equipment) if !it.owner.exists || it.owner.value == *player.person
     {
-        dist := length(Game.player.position.value - it.position.value);
-        if dist < range
-        {
-            info: dist_info;
-            info.holdable.equipment = it;
-            info.holdable.tag = .EQUIPMENT;
-            info.dist = dist;
-            array_add(*info_list, info);
-        }
+        info: dist_info;
+        info.holdable.equipment = it;
+        info.holdable.tag = .EQUIPMENT;
+        info.dist = length(it.position.value - player.position.value);
+        array_add(*info_list, info);
     }
 
     less_than :: (a, b) => cast(s64) (a.dist - b.dist);

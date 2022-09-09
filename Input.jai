@@ -103,7 +103,7 @@ handle_input :: inline ()
             }
             else
             {
-                holdables := get_holdables_in_range(Game.player.interactRange);
+                holdables := get_interactible_holdables();
                 if holdables.count > 0
                     pickup = true;
                 else if Game.player.held.exists
