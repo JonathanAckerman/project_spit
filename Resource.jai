@@ -28,6 +28,16 @@ get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
     }
 }
 
+get_item_processing_tool :: (type: Item_Type) -> bool, Item_Type
+{
+    if type == {
+        case .WOOD_LOG;
+            return true, .HEWING_SAW;
+    }
+    dummy: Item_Type;
+    return false, dummy;
+}
+
 Container :: struct
 {
     using #as entity: Entity;
