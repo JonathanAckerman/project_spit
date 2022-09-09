@@ -170,89 +170,125 @@ game_loop :: inline ()
         try_pickup :: ()
         {
             using Game;
-            holdables := get_interactible_holdables();
-            for holdables
-            {
-                if it.tag ==
-                {
-                    case .EQUIPMENT;
-                        if it.equipment.type ==
-                        {
-                            case .TOOL_BELT;
-                                if !player.toolBelt.exists // @TODO: Eventually swap between belts if the player is already wearing one?
-                                {
-                                    it.equipment.position.exists = false;
-                                    m := NewMaybe(it.equipment);
-                                    player.toolBelt = m;
-                                    break;
-                                }
-                            case .WEAPON_BELT;
-                                if !player.weaponBelt.exists
-                                {
-                                    it.equipment.position.exists = false;
-                                    m := NewMaybe(it.equipment);
-                                    player.weaponBelt = m;
-                                    break;
-                                }
-                        }
-
-                    case .ITEM;
-                        if !player.held.exists
-                        {
-                            if it.item.onSlot.exists
+            for get_interactible_holdables() if it.tag == {
+                case .EQUIPMENT;
+                    if it.equipment.type ==
+                    {
+                        case .TOOL_BELT;
+                            if !player.toolBelt.exists // @TODO: Eventually swap between belts if the player is already wearing one?
                             {
-                                craftIndex = it.item.onSlot.value.index;
-                                it.item.onSlot.value.item.exists = false;
-                                it.item.onSlot.exists = false;
+                                it.equipment.position.exists = false;
+                                m := NewMaybe(it.equipment);
+                                player.toolBelt = m;
+                                break;
                             }
-
-                            player.held.value = it;
-                            player.held.exists = true;
-                            player.held.value.item.position.exists = false;
-                            break;
-                        }
-                        else // player is already holding an item
-                        {
-                            if it.item.onSlot.exists return;
-
-                            held := player.held.value;
-                            dest_inv: *Equipment = null;
-                            if is_tool(it.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
-                            else if is_weapon(it.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
-                            if dest_inv == null // item on ground has no place to go but held
+                        case .WEAPON_BELT;
+                            if !player.weaponBelt.exists
                             {
-                                if held.tag ==
-                                {
-                                    case .ITEM;
-                                        sheath_inv : *Equipment = null;
-                                        if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
-                                        else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
+                                it.equipment.position.exists = false;
+                                m := NewMaybe(it.equipment);
+                                player.weaponBelt = m;
+                                break;
+                            }
+                    }
 
-                                        if sheath_inv != null
+                case .ITEM;
+                    if it.item.type == .BLUEPRINT
+                    {
+                        for slot: it.item.blueprintData.value.slots if slot.item.exists
+                        {
+                            continue it;
+                        }
+                    }
+
+                    if !player.held.exists
+                    {
+                        if it.item.onSlot.exists
+                        {
+                            craftIndex = it.item.onSlot.value.index;
+                            it.item.onSlot.value.item.exists = false;
+                            it.item.onSlot.exists = false;
+                        }
+
+                        player.held.value = it;
+                        player.held.exists = true;
+                        player.held.value.item.position.exists = false;
+                        break;
+                    }
+                    else // player is already holding an item
+                    {
+                        if it.item.onSlot.exists return;
+
+                        held := player.held.value;
+                        dest_inv: *Equipment = null;
+                        if is_tool(it.item.type) && player.toolBelt.exists then dest_inv = player.toolBelt.value;
+                        else if is_weapon(it.item.type) && player.weaponBelt.exists then dest_inv = player.weaponBelt.value;
+                        if dest_inv == null // item on ground has no place to go but held
+                        {
+                            if held.tag ==
+                            {
+                                case .ITEM;
+                                    sheath_inv : *Equipment = null;
+                                    if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
+                                    else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
+
+                                    if sheath_inv != null
+                                    {
+                                        has_sheathed := false;
+                                        for sheath_inv.contents // look for the first available slot
                                         {
-                                            has_sheathed := false;
-                                            for sheath_inv.contents // look for the first available slot
+                                            if !it.exists
                                             {
-                                                if !it.exists
-                                                {
-                                                    sheath_inv.contents[it_index].value = held.item;
-                                                    sheath_inv.contents[it_index].exists = true;
-                                                    has_sheathed = true;
-                                                    break;
-                                                }
-                                            }
-
-                                            if !has_sheathed
-                                            {
-                                                held.item.position.value = it.item.position.value;
-                                                held.item.position.exists = true;
+                                                sheath_inv.contents[it_index].value = held.item;
+                                                sheath_inv.contents[it_index].exists = true;
+                                                has_sheathed = true;
+                                                break;
                                             }
                                         }
-                                        else // swap with item on ground
+
+                                        if !has_sheathed
                                         {
                                             held.item.position.value = it.item.position.value;
                                             held.item.position.exists = true;
                                         }
+                                    }
+                                    else // swap with item on ground
+                                    {
+                                        held.item.position.value = it.item.position.value;
+                                        held.item.position.exists = true;
+                                    }
+                                case .CONTAINER;
+                                    held.container.position.value = it.item.position.value;
+                                    held.container.position.exists = true;
+                                case .EQUIPMENT;
+                                    held.equipment.position.value = it.item.position.value;
+                                    held.equipment.position.exists = true;
+                            }
+                            it.item.position.exists = false;
+                            player.held.value = it;
+                            break;
+                        }
+                        else
+                        {
+                            has_sheathed := false;
+                            for slot, slot_index : dest_inv.contents // look for first available slot
+                            {
+                                if !slot.exists
+                                {
+                                    dest_inv.contents[slot_index].value = it.item;
+                                    dest_inv.contents[slot_index].exists = true;
+                                    has_sheathed = true;
+                                    break;
+                                }
+                            }
+
+                            if !has_sheathed // there was no available slot, drop held on the ground
+                            {
+                                if held.tag ==
+                                {
+                                    case .ITEM;
+                                        held.item.position.value = it.item.position.value;
+                                        held.item.position.exists = true;
                                     case .CONTAINER;
                                         held.container.position.value = it.item.position.value;
                                         held.container.position.exists = true;
@@ -260,106 +296,73 @@ game_loop :: inline ()
                                         held.equipment.position.value = it.item.position.value;
                                         held.equipment.position.exists = true;
                                 }
-                                it.item.position.exists = false;
-                                player.held.value = it;
-                                break;
                             }
-                            else
-                            {
-                                has_sheathed := false;
-                                for slot, slot_index : dest_inv.contents // look for first available slot
-                                {
-                                    if !slot.exists
-                                    {
-                                        dest_inv.contents[slot_index].value = it.item;
-                                        dest_inv.contents[slot_index].exists = true;
-                                        has_sheathed = true;
-                                        break;
-                                    }
-                                }
 
-                                if !has_sheathed // there was no available slot, drop held on the ground
-                                {
-                                    if held.tag ==
-                                    {
-                                        case .ITEM;
-                                            held.item.position.value = it.item.position.value;
-                                            held.item.position.exists = true;
-                                        case .CONTAINER;
-                                            held.container.position.value = it.item.position.value;
-                                            held.container.position.exists = true;
-                                        case .EQUIPMENT;
-                                            held.equipment.position.value = it.item.position.value;
-                                            held.equipment.position.exists = true;
-                                    }
-                                }
-
-                                it.item.position.exists = false;
-                                break;
-                            }
-                        }
-
-                    case .CONTAINER;
-                        if !player.held.exists
-                        {
-                            it.container.position.exists = false;
-                            newHeld: = NewMaybe(it);
-                            player.held = newHeld;
+                            it.item.position.exists = false;
                             break;
                         }
-                        else
+                    }
+
+                case .CONTAINER;
+                    if !player.held.exists
+                    {
+                        it.container.position.exists = false;
+                        newHeld: = NewMaybe(it);
+                        player.held = newHeld;
+                        break;
+                    }
+                    else
+                    {
+                        found, index := array_find(containers, it.container);
+                        if found
                         {
-                            found, index := array_find(containers, it.container);
-                            if found
+                            held := player.held.value;
+                            if held.tag ==
                             {
-                                held := player.held.value;
-                                if held.tag ==
-                                {
-                                    case .ITEM;
-                                        sheath_inv : *Equipment = null;
-                                        if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
-                                        else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
+                                case .ITEM;
+                                    sheath_inv : *Equipment = null;
+                                    if is_tool(held.item.type) && player.toolBelt.exists then sheath_inv = player.toolBelt.value;
+                                    else if is_weapon(held.item.type) && player.weaponBelt.exists then sheath_inv = player.weaponBelt.value;
 
-                                        if sheath_inv != null
+                                    if sheath_inv != null
+                                    {
+                                        has_sheathed := false;
+                                        for sheath_inv.contents // look for the first available slot
                                         {
-                                            has_sheathed := false;
-                                            for sheath_inv.contents // look for the first available slot
+                                            if !it.exists
                                             {
-                                                if !it.exists
-                                                {
-                                                    sheath_inv.contents[it_index].value = held.item;
-                                                    sheath_inv.contents[it_index].exists = true;
-                                                    has_sheathed = true;
-                                                    break;
-                                                }
-                                            }
-
-                                            if !has_sheathed
-                                            {
-                                                held.item.position.value = it.container.position.value;
-                                                held.item.position.exists = true;
+                                                sheath_inv.contents[it_index].value = held.item;
+                                                sheath_inv.contents[it_index].exists = true;
+                                                has_sheathed = true;
+                                                break;
                                             }
                                         }
-                                        else // swap with item on ground
+
+                                        if !has_sheathed
                                         {
-                                            held.item.position.value = it.item.position.value;
+                                            held.item.position.value = it.container.position.value;
                                             held.item.position.exists = true;
                                         }
+                                    }
+                                    else // swap with item on ground
+                                    {
+                                        held.item.position.value = it.item.position.value;
+                                        held.item.position.exists = true;
+                                    }
 
-                                    case .CONTAINER;
-                                        held.container.position.exists = true;
-                                        held.container.position.value = containers[index].position.value;
-                                    case .EQUIPMENT;
-                                        held.equipment.position.exists = true;
-                                        held.equipment.position.value = containers[index].position.value;
-                                }
-
-                                it.container.position.exists = false;
-                                player.held.value = it;
-                                break;
+                                case .CONTAINER;
+                                    held.container.position.exists = true;
+                                    held.container.position.value = containers[index].position.value;
+                                case .EQUIPMENT;
+                                    held.equipment.position.exists = true;
+                                    held.equipment.position.value = containers[index].position.value;
                             }
+
+                            it.container.position.exists = false;
+                            player.held.value = it;
+                            break;
                         }
-                }
+                    }
             }
             Input.pickup = false;
         }
@@ -369,8 +372,11 @@ game_loop :: inline ()
         // Highlight the active crafting slot
         //
         {
-            for get_interactibles(items) if it.blueprintData.exists
+            for items if it.blueprintData.exists
             {
+                if world_to_grid(player.position.value) != world_to_grid(it.position.value) continue;
+                print("in cell");
+
                 if player.held.exists && 
                 player.held.value.tag == .ITEM && is_byproduct(player.held.value.item.type)
                 {
@@ -1029,7 +1035,8 @@ get_interactibles :: (array: [..] $T, get_entity: (T) -> Entity) -> [..] T
         {
             displacement := entity.position.value - player.position.value;
             dist := length(displacement);
-            if dist < player.interactRange && dot_product(displacement, player.forward) > 0
+            if (dist < player.interactRange && dot_product(displacement, player.forward) > 0)
+                || circle_circle(player.entity, entity)
             {
                 assert(result.count == result_distances.count);
                 inserted := false;
