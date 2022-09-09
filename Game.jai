@@ -689,23 +689,14 @@ game_loop :: inline ()
 
         talkToNearestNPC :: ()
         {
-            using Game;
-            nearest_index := 0;
-            min_dist := length(npcs[0].position.value - player.position.value);
-            for npcs
+            for get_interactibles(Game.npcs)
             {
-                dist := length(it.position.value - player.position.value);
-                if dist < min_dist
+                if !it.ai.value.isSpeaking
                 {
-                    min_dist = dist;
-                    nearest_index = it_index;
+                    it.ai.value.isSpeaking = true;
+                    it.ai.value.speakTimer = it.ai.value.speakDuration;
+                    break;
                 }
-            }
-            nearest := npcs[nearest_index];
-            if min_dist <= player.interactRange
-            {
-                nearest.ai.value.isSpeaking = true;
-                nearest.ai.value.speakTimer = nearest.ai.value.speakDuration;
             }
         }
         if Input.trade then talkToNearestNPC();
