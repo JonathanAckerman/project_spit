@@ -92,8 +92,6 @@ draw_cell :: (cell: GridCell)
 {
     if cell.block.exists
     {
-        if cell.block.value.type == .STAIR_TOP return;
-
         // @TEMP: for now make resizing preserve aspect ratio
         resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
         base_size := xy(xx cell.block.value.textureInfo.width, xx cell.block.value.textureInfo.height);
