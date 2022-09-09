@@ -14,7 +14,7 @@ Debug: struct
     commandList: [] string = .[
         "spawn [ENTITY]",
         "tp [X] [Y]",
-        "fast",
+        "faster / slower / normal",
         "dt",
         "speed [N]",
         "zoom [N]",
@@ -371,9 +371,17 @@ debug_is_command_valid :: (cmd: string)
     }
 
 
-    if cmd == "fast"
+    if cmd == "faster"
     {
-        Game.player.person.speed = 50;
+        Game.player.person.speed *= 10.0;
+    }
+    if cmd == "slower"
+    {
+        Game.player.person.speed /= 10.0;
+    }
+    if cmd == "normal"
+    {
+        Game.player.person.speed = 400.0; // maybe there should be default data to reference and active state
     }
     if cmd == "repop"
     {

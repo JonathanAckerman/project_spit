@@ -90,8 +90,7 @@ draw_item :: (item: Item)
 
 draw_texture_centered_with_rotation :: (info: TextureInfo, pos: Vector2, rotation: float)
 {
-    center := pos + info.size/2;
-    pos_to_center := center - pos;
+    pos_to_center := info.size/2;
     rotated_pos_to_center := rotate_vector(pos_to_center, deg2rad(-rotation));
     drawpos := pos - rotated_pos_to_center;
     scale := info.size.x / info.texture.width;
