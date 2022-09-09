@@ -32,8 +32,8 @@ init_entity_data :: (pos: Vector2, collider: *Collider, owner: *Person = null, m
     e.collider = collider;
     rb: RigidBody;
     rb.mass = mass;
-    if mass > 0 then e.rigidBody = NewMaybe(rb);
-    if owner != null then e.owner = NewMaybe(owner);
+    if mass > 0 then e.rigidBody  = maybe(rb);
+    if owner != null then e.owner = maybe(owner);
     else e.owner = Nothing(*Person);
     e.id = _Entity_ID;
     _Entity_ID += 1;

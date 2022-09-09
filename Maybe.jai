@@ -4,7 +4,7 @@ Maybe :: struct(T: Type)
     exists: bool;
 }
 
-NewMaybe :: (thing: $T) -> Maybe(T)
+maybe :: (thing: $T) -> Maybe(T)
 {
     m: Maybe(T);
     m.exists = true;

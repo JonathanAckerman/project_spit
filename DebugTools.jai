@@ -321,7 +321,7 @@ debug_is_command_valid :: (cmd: string)
                     if cmd_array[1] == "blueprint"
                     {
                         collider = NewCollider(50);
-                        bp = NewMaybe(NewBlueprintData(.BOXES));
+                        bp = maybe(NewBlueprintData(.BOXES));
                     }
                     item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
                     item.blueprintData = bp;
@@ -418,7 +418,7 @@ item_type_from_string :: (s: string) -> Maybe(Item_Type)
     {
         if str == it
         {
-            m := NewMaybe(cast(Item_Type) enum_values_as_s64(Item_Type)[it_index]);
+            m := maybe(cast(Item_Type) enum_values_as_s64(Item_Type)[it_index]);
             return m;
         }
     }
@@ -432,7 +432,7 @@ container_type_from_string :: (s: string) -> Maybe(Container_Type)
     {
         if str == it
         {
-            m := NewMaybe(cast(Container_Type) enum_values_as_s64(Container_Type)[it_index]);
+            m := maybe(cast(Container_Type) enum_values_as_s64(Container_Type)[it_index]);
             return m;
         }
     }
@@ -446,7 +446,7 @@ equipment_type_from_string :: (s: string) -> Maybe(Equipment_Type)
     {
         if str == it
         {
-            m := NewMaybe(cast(Equipment_Type) enum_values_as_s64(Equipment_Type)[it_index]);
+            m := maybe(cast(Equipment_Type) enum_values_as_s64(Equipment_Type)[it_index]);
             return m;
         }
     }
@@ -460,7 +460,7 @@ resource_type_from_string :: (s: string) -> Maybe(Resource_Type)
     {
         if str == it
         {
-            m := NewMaybe(cast(Resource_Type) enum_values_as_s64(Resource_Type)[it_index]);
+            m := maybe(cast(Resource_Type) enum_values_as_s64(Resource_Type)[it_index]);
             return m;
         }
     }
@@ -470,9 +470,9 @@ resource_type_from_string :: (s: string) -> Maybe(Resource_Type)
 entity_type_from_string :: (s: string) -> Maybe(Entity_Type)
 {
     str := to_upper_copy(s);
-    for enum_names(Item_Type)      if str == it then return NewMaybe(Entity_Type.ITEM);
-    for enum_names(Container_Type) if str == it then return NewMaybe(Entity_Type.CONTAINER);
-    for enum_names(Equipment_Type) if str == it then return NewMaybe(Entity_Type.EQUIPMENT);
-    for enum_names(Resource_Type)  if str == it then return NewMaybe(Entity_Type.RESOURCE);
+    for enum_names(Item_Type)      if str == it then return maybe(Entity_Type.ITEM);
+    for enum_names(Container_Type) if str == it then return maybe(Entity_Type.CONTAINER);
+    for enum_names(Equipment_Type) if str == it then return maybe(Entity_Type.EQUIPMENT);
+    for enum_names(Resource_Type)  if str == it then return maybe(Entity_Type.RESOURCE);
     return Nothing(Entity_Type);
 }

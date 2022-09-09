@@ -13,6 +13,22 @@ Item :: struct
     onSlot: Maybe(*BlueprintSlot);
 }
 
+Container :: struct
+{
+    using #as entity: Entity;
+    type: Container_Type;
+    capacity: int;
+    contents: [..] Containable;
+}
+
+Equipment :: struct
+{
+    using #as entity: Entity;
+    type: Equipment_Type;
+    capacity: int;
+    contents: [] Maybe(*Item);
+}
+
 get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
 {
     if type == 
@@ -59,13 +75,13 @@ get_harvest_requirement :: (type: Resource_Type) -> Maybe(Item_Type)
 {
     if type == {
         case .TREE;
-            return NewMaybe(Item_Type.LUMBER_AXE);
+            return maybe(Item_Type.LUMBER_AXE);
         case .BUSH;
-            return NewMaybe(Item_Type.SWORD);
+            return maybe(Item_Type.SWORD);
         case .IRON_VEIN;   #through;
         case .COPPER_VEIN; #through;
         case .SILVER_VEIN;
-            return NewMaybe(Item_Type.PICK_AXE);
+            return maybe(Item_Type.PICK_AXE);
     }
     return Nothing(Item_Type);
 }
@@ -78,20 +94,4 @@ get_item_processing_tool :: (type: Item_Type) -> bool, Item_Type
     }
     dummy: Item_Type;
     return false, dummy;
-}
-
-Container :: struct
-{
-    using #as entity: Entity;
-    type: Container_Type;
-    capacity: int;
-    contents: [..] Containable;
-}
-
-Equipment :: struct
-{
-    using #as entity: Entity;
-    type: Equipment_Type;
-    capacity: int;
-    contents: [] Maybe(*Item);
 }

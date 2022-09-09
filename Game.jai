@@ -85,7 +85,7 @@ game_loop :: inline ()
                                 {
                                     temp := held.value;
                                     held.value = as_holdable(belt_inventory.value.contents[slot].value);
-                                    belt_inventory.value.contents[slot] = NewMaybe(temp.item);
+                                    belt_inventory.value.contents[slot] = maybe(temp.item);
                                     Input.equipSlot = -1;
                                     return;
                                 }
@@ -178,7 +178,7 @@ game_loop :: inline ()
                             if !player.toolBelt.exists // @TODO: Eventually swap between belts if the player is already wearing one?
                             {
                                 it.equipment.position.exists = false;
-                                m := NewMaybe(it.equipment);
+                                m := maybe(it.equipment);
                                 player.toolBelt = m;
                                 break;
                             }
@@ -186,7 +186,7 @@ game_loop :: inline ()
                             if !player.weaponBelt.exists
                             {
                                 it.equipment.position.exists = false;
-                                m := NewMaybe(it.equipment);
+                                m := maybe(it.equipment);
                                 player.weaponBelt = m;
                                 break;
                             }
@@ -271,14 +271,21 @@ game_loop :: inline ()
                         else
                         {
                             has_sheathed := false;
-                            for slot, slot_index : dest_inv.contents // look for first available slot
+                            if dest_inv.contents.count < dest_inv.capacity
                             {
-                                if !slot.exists
+                                dest_inv.contents[dest_inv.contents.count] = maybe(it.item);
+                            }
+                            else
+                            {
+                                for slot, slot_index : dest_inv.contents // look for first available slot
                                 {
-                                    dest_inv.contents[slot_index].value = it.item;
-                                    dest_inv.contents[slot_index].exists = true;
-                                    has_sheathed = true;
-                                    break;
+                                    if !slot.exists
+                                    {
+                                        dest_inv.contents[slot_index].value = it.item;
+                                        dest_inv.contents[slot_index].exists = true;
+                                        has_sheathed = true;
+                                        break;
+                                    }
                                 }
                             }
 
@@ -307,7 +314,7 @@ game_loop :: inline ()
                     if !player.held.exists
                     {
                         it.container.position.exists = false;
-                        newHeld: = NewMaybe(it);
+                        newHeld: = maybe(it);
                         player.held = newHeld;
                         break;
                     }
@@ -462,7 +469,7 @@ game_loop :: inline ()
             using Game;
             if craftTarget.exists
             {
-                craftTarget.value.slot.item = NewMaybe(player.held.value.item);
+                craftTarget.value.slot.item = maybe(player.held.value.item);
                 player.held.exists = false;
                 
                 texInfo := get_texture_info(craftTarget.value.slot.item.value.type);
@@ -474,7 +481,7 @@ game_loop :: inline ()
 
                 craftTarget.value.slot.item.value.position.exists = true;
                 craftTarget.value.slot.item.value.position.value = position;
-                craftTarget.value.slot.item.value.onSlot = NewMaybe(craftTarget.value.slot); // the item needs to know which slot it belongs to so we can break that bond if we pick it up later
+                craftTarget.value.slot.item.value.onSlot = maybe(craftTarget.value.slot); // the item needs to know which slot it belongs to so we can break that bond if we pick it up later
                 craftTarget.value.slot.item.value.forward = forward; // @Jay: ugh, why does this have a forward, i think it's used for drawing or something
 
                 craftTarget.exists = false;
@@ -958,7 +965,7 @@ game_reset :: ()
         y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
         pos := grid_to_world(cast(int) x, cast(int) y);
         ai: AI;
-        npcAI := NewMaybe(ai);
+        npcAI := maybe(ai);
         npc := NewPerson(pos, npcAI);
         npc.speed = 0.5;
         array_add(*npcs, npc);

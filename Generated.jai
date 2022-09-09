@@ -382,6 +382,7 @@ generate_instancers :: (data: [..][..] string) -> string
         print_to_builder(*builder, "\t}\n");
         print_to_builder(*builder, "\tresize_ratio := 0.2;\n");
         print_to_builder(*builder, "\tequipment.capacity = 3;\n");
+        print_to_builder(*builder, "\tarray_resize(*equipment.contents, 3);\n");
         print_to_builder(*builder, "\tequipment.textureInfo.size = xy(xx equipment.textureInfo.texture.width, xx equipment.textureInfo.texture.height) * resize_ratio;\n");
         print_to_builder(*builder, "\treturn equipment;\n");
         print_to_builder(*builder, "}\n");
