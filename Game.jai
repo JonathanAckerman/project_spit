@@ -369,35 +369,17 @@ game_loop :: inline ()
         // Highlight the active crafting slot
         //
         {
-            blueprint_and_distance :: struct { blueprint: *Item; distance: float; }
-            blueprints_in_range: [..] blueprint_and_distance;
-            for items if it.blueprintData.exists && it.position.exists
-            {
-                dist := length(it.position.value - player.position.value);
-                if dist < player.interactRange
-                {
-                    info: blueprint_and_distance;
-                    info.blueprint = it;
-                    info.distance = dist;
-                    array_add(*blueprints_in_range, info);
-                }
-            }
-            nearer :: (a, b) => cast(s64) (a.distance < b.distance);
-            bubble_sort(blueprints_in_range, nearer);
-
-            if blueprints_in_range.count > 0
+            for get_interactibles(items) if it.blueprintData.exists
             {
                 if player.held.exists && 
-                player.held.value.tag == .ITEM &&
-                is_byproduct(player.held.value.item.type)
+                player.held.value.tag == .ITEM && is_byproduct(player.held.value.item.type)
                 {
                     player.canCraft = true;
-                    bp := blueprints_in_range[0].blueprint;
-                    numSlots := bp.blueprintData.value.slots.count;
+                    numSlots := it.blueprintData.value.slots.count;
                     // loop indices
                     if craftIndex == -1 then craftIndex = numSlots - 1;
                     if craftIndex == numSlots then craftIndex = 0;
-                    slot := bp.blueprintData.value.slots[craftIndex];
+                    slot := it.blueprintData.value.slots[craftIndex];
                     // the slot is taken or of the wrong type so we need to find the next valid
                     if slot.item.exists || slot.slotType != get_byproduct_slot_type(player.held.value.item.type)
                     {
@@ -426,15 +408,15 @@ game_loop :: inline ()
                             rotatedIndices[numSlots] = -1;
                         }
 
-                        for rotatedIndices
+                        for i: rotatedIndices
                         {
-                            if it == -1 { craftTarget.exists = false; break; }
-                            slot = bp.blueprintData.value.slots[it];
+                            if i == -1 { craftTarget.exists = false; break; }
+                            slot = it.blueprintData.value.slots[i];
                             if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
                             {
-                                craftIndex = it;
+                                craftIndex = i;
                                 ct: CraftTarget;
-                                ct.blueprint = bp;
+                                ct.blueprint = it;
                                 ct.slot = slot;
                                 craftTarget.value = ct;
                                 craftTarget.exists = true;
@@ -445,7 +427,7 @@ game_loop :: inline ()
                     if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
                     {
                         ct: CraftTarget;
-                        ct.blueprint = bp;
+                        ct.blueprint = it;
                         ct.slot = slot;
                         craftTarget.value = ct;
                         craftTarget.exists = true;
@@ -455,7 +437,7 @@ game_loop :: inline ()
                     {
                         ui_rep: UI_Representation;
                         ui_rep.info = get_texture_info(player.held.value.item.type);
-                        ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(bp, ui_rep.info.size, craftIndex);
+                        ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(it, ui_rep.info.size, craftIndex);
                         ui_rep.info.tint.a = 200;
                         ui_rep.isHUD = false;
                         array_add(*ui, ui_rep);
