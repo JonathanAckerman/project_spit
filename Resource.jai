@@ -27,6 +27,23 @@ get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
     }
 }
 
+get_resource_byproduct :: (type: Resource_Type) -> *Item
+{
+    if #complete type ==
+    {
+        case .COPPER_VEIN;
+            return NewItem(.COPPER_NUGGET, NewCollider(10.0));
+        case .IRON_VEIN;
+            return NewItem(.IRON_NUGGET, NewCollider(10.0));
+        case .SILVER_VEIN;
+            return NewItem(.SILVER_NUGGET, NewCollider(10.0));
+        case .TREE;
+            return NewItem(.WOOD_LOG, NewCollider(.{10, 10}));
+        case .BUSH;
+            return NewItem(.FIBER, NewCollider(10.0));
+    }
+}
+
 get_harvest_requirement :: (type: Resource_Type) -> Maybe(Item_Type)
 {
     if type == {

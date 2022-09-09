@@ -78,7 +78,7 @@ game_loop :: inline ()
                                 if !belt_inventory.value.contents[slot].exists
                                 {
                                     Input.equipSlot = -1;
-                                    return; // @FIX: not a fan of this
+                                    return;
                                 }
 
                                 if sheath_inv == belt_inventory.value
@@ -87,7 +87,7 @@ game_loop :: inline ()
                                     held.value = as_holdable(belt_inventory.value.contents[slot].value);
                                     belt_inventory.value.contents[slot] = NewMaybe(temp.item);
                                     Input.equipSlot = -1;
-                                    return; // @FIX: not a fan of this
+                                    return;
                                 }
                                 else
                                 {
@@ -497,138 +497,79 @@ game_loop :: inline ()
         harvestResource :: ()
         {
             using Game;
-
-            // compile list of resources in range, sort by distance to player
-            resource_info :: struct { resource: *Resource; direction: Vector2; index: int; }
-            sorted_resources: [..] resource_info;
-            for resources
+            for get_interactibles(resources)
             {
-                player_to_resource : Vector2 = it.position.value - player.position.value;
-                if length(player_to_resource) < player.interactRange // @TODO: Make this take tool range into account
-                {
-                    info: resource_info;
-                    info.resource = resources[it_index];
-                    info.direction = player_to_resource;
-                    info.index = it_index;
-                    array_add(*sorted_resources, info);
-                }
-            }
-
-            less_than :: (a, b) => cast(s64) (length(a.direction) - length(b.direction));
-            bubble_sort(sorted_resources, less_than);
-
-            // find the first resource we are able to harvest
-            resource_to_harvest: Maybe(resource_info);
-            for sorted_resources
-            {
-                harvestRequirement := get_harvest_requirement(it.resource.type);
+                harvestRequirement := get_harvest_requirement(it.type);
                 if harvestRequirement.exists
                 {
-                    if !player.held.exists || player.held.value.item.type != harvestRequirement.value
-                    {
+                    if !player.held.exists || player.held.value.item.type != harvestRequirement.value 
                         continue;
-                    }
                 }
 
-                if it.resource.type ==
-                {
-                    // trees require the lumber axe equipped
-                    case .TREE;
-                        if player.held.exists && player.held.value.tag == .ITEM
-                        {
-                            if player.held.value.item.type == .LUMBER_AXE
-                            {
-                                resource_to_harvest.value = it;
-                                resource_to_harvest.exists = true;
-                                break;
-                            }
-                        }
-                    case;
-                        resource_to_harvest.value = it;
-                        resource_to_harvest.exists = true;
-                        break;
-                }
-            }
-
-            // Drop by-product of harvest on the ground. Some resources like water will instead be loaded directly into an inventory
-            if resource_to_harvest.exists
-            {
-                by_product: *Item = null;
-                resource_pos := resource_to_harvest.value.resource.position.value;
-                direction_offset := unit_vector(resource_to_harvest.value.direction) * 15;
-                by_product_pos := resource_pos + direction_offset;
-                if resource_to_harvest.value.resource.type ==
-                {
-                    case .COPPER_VEIN;
-                        by_product = NewItem(.COPPER_NUGGET, NewCollider(10.0), by_product_pos);
-                    case .IRON_VEIN;
-                        by_product = NewItem(.IRON_NUGGET, NewCollider(10.0), by_product_pos);
-                    case .TREE;
-                        by_product = NewItem(.WOOD_LOG, NewCollider(.{10, 10}), by_product_pos);
-                    case .BUSH;
-                        by_product = NewItem(.FIBER, NewCollider(10.0), by_product_pos);
-                }
-
-                array_add(*items, by_product);
-                array_unordered_remove_by_index(*resources, resource_to_harvest.value.index);
+                // Drop by-product of harvest on the ground. Some resources like water will instead be loaded directly into an inventory
+                byproduct := get_resource_byproduct(it.type);
+                direction_offset := unit_vector(it.position.value - player.position.value) * 15;
+                byproduct.position.value = it.position.value + direction_offset;
+                array_add(*items, byproduct);
+                array_unordered_remove_by_value(*resources, it);
+                break;
             }
         }
         if Input.interact then harvestResource();
 
-        processByproduct :: ()
-        {
-            using Game;
+        // processByproduct :: ()
+        // {
+        //     using Game;
+        //     // compile list of resources in range, sort by distance to player
+        //     byproduct_info :: struct { item: *Item; direction: Vector2; index: int; }
+        //     sorted_byproducts: [..] byproduct_info;
+        //     for items if is_byproduct(it.type)
+        //     {
+        //         player_to_byproduct : Vector2 = it.position.value - player.position.value;
+        //         if length(player_to_byproduct) < player.interactRange // @TODO: Make this take tool range into account
+        //         {
+        //             info: byproduct_info;
+        //             info.item = items[it_index];
+        //             info.direction = player_to_byproduct;
+        //             info.index = it_index;
+        //             array_add(*sorted_byproducts, info);
+        //         }
+        //     }
 
-            // compile list of resources in range, sort by distance to player
-            byproduct_info :: struct { item: *Item; direction: Vector2; index: int; }
-            sorted_byproducts: [..] byproduct_info;
-            for items if is_byproduct(it.type)
-            {
-                player_to_byproduct : Vector2 = it.position.value - player.position.value;
-                if length(player_to_byproduct) < player.interactRange // @TODO: Make this take tool range into account
-                {
-                    info: byproduct_info;
-                    info.item = items[it_index];
-                    info.direction = player_to_byproduct;
-                    info.index = it_index;
-                    array_add(*sorted_byproducts, info);
-                }
-            }
+        //     less_than :: (a, b) => cast(s64) (length(a.direction) - length(b.direction));
+        //     bubble_sort(sorted_byproducts, less_than);
 
-            less_than :: (a, b) => cast(s64) (length(a.direction) - length(b.direction));
-            bubble_sort(sorted_byproducts, less_than);
+        //     // find the first resource we are able to harvest
+        //     byproduct_to_process: Maybe(byproduct_info);
+        //     for sorted_byproducts
+        //     {
+        //         if it.item.onSlot.exists continue;
+        //         can_process, tool_type := get_item_processing_tool(it.item.type);
+        //         if !can_process continue;
+        //         if !player.held.exists || player.held.value.item.type != tool_type continue;
 
-            // find the first resource we are able to harvest
-            byproduct_to_process: Maybe(byproduct_info);
-            for sorted_byproducts
-            {
-                if it.item.onSlot.exists continue;
-                can_process, tool_type := get_item_processing_tool(it.item.type);
-                if !can_process continue;
-                if !player.held.exists || player.held.value.item.type != tool_type continue;
+        //         byproduct_to_process.value = it;
+        //         byproduct_to_process.exists = true;
+        //         break;
+        //     }
 
-                byproduct_to_process.value = it;
-                byproduct_to_process.exists = true;
-                break;
-            }
+        //     if byproduct_to_process.exists
+        //     {
+        //         new_byproduct: *Item = null;
+        //         pos := byproduct_to_process.value.item.position.value;
+        //         direction_offset := unit_vector(byproduct_to_process.value.direction) * 15;
+        //         new_byproduct_pos := pos + direction_offset;
+        //         if byproduct_to_process.value.item.type ==
+        //         {
+        //             case .WOOD_LOG;
+        //                 new_byproduct = NewItem(.PLANK, NewCollider(10.0), new_byproduct_pos);
+        //         }
 
-            if byproduct_to_process.exists
-            {
-                new_byproduct: *Item = null;
-                pos := byproduct_to_process.value.item.position.value;
-                direction_offset := unit_vector(byproduct_to_process.value.direction) * 15;
-                new_byproduct_pos := pos + direction_offset;
-                if byproduct_to_process.value.item.type ==
-                {
-                    case .WOOD_LOG;
-                        new_byproduct = NewItem(.PLANK, NewCollider(10.0), new_byproduct_pos);
-                }
-
-                array_add(*items, new_byproduct);
-                array_unordered_remove_by_index(*items, byproduct_to_process.value.index);
-            }
-        }
-        if Input.interact then processByproduct(); // @Note: For now these are mutually exclusive so I can just check both
+        //         array_add(*items, new_byproduct);
+        //         array_unordered_remove_by_index(*items, byproduct_to_process.value.index);
+        //     }
+        // }
+        // if Input.interact then processByproduct(); // @Note: For now these are mutually exclusive so I can just check both
 
         buyFromShop :: ()
         {
