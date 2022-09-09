@@ -10,7 +10,7 @@ Deal :: struct
     price: struct 
     {
         amount: int;
-        item: Item_Type;
+        itemType: Item_Type;
     }
     ware: Sellable;
 }

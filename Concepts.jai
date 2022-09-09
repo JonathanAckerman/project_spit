@@ -73,27 +73,27 @@ Sellable :: struct {
         #as container: *Container;
         #as equipment: *Equipment; 
     }
-    position: Vector2;
+    position: Maybe(Vector2);
 }
 as_sellable :: (item: *Item) -> Sellable {
     concept: Sellable;
     concept.item     = item;
     concept.tag      = .ITEM;
-    concept.position = item.position.value;
+    concept.position = item.position;
     return concept;
 }
 as_sellable :: (container: *Container) -> Sellable {
     concept: Sellable;
     concept.container = container;
     concept.tag       = .CONTAINER;
-    concept.position  = container.position.value;
+    concept.position  = container.position;
     return concept;
 }
 as_sellable :: (equipment: *Equipment) -> Sellable {
     concept: Sellable;
     concept.equipment = equipment;
     concept.tag       = .EQUIPMENT;
-    concept.position  = equipment.position.value;
+    concept.position  = equipment.position;
     return concept;
 }
 

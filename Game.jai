@@ -497,7 +497,7 @@ game_loop :: inline ()
         harvestResource :: ()
         {
             using Game;
-            for get_interactibles(resources)
+            for get_interactibles(resources) if !it.owner.exists || it.owner.value == *player.person
             {
                 harvestRequirement := get_harvest_requirement(it.type);
                 if harvestRequirement.exists
@@ -524,7 +524,7 @@ game_loop :: inline ()
             byproduct_info :: struct { item: *Item; direction: Vector2; index: int; }
             sorted_byproducts: [..] byproduct_info;
 
-            for get_interactibles(items)
+            for get_interactibles(items) if !it.owner.exists || it.owner.value == *player.person
             {
                 can_process, tool_type := get_item_processing_tool(it.type);
                 if can_process
@@ -565,28 +565,14 @@ game_loop :: inline ()
             if !shop.exists || shop.value.deals.count == 0 then return;
 
             // get the nearest deal to the player
-            nearest_deal := shop.value.deals[0];
-            nearest_deal_dist := length(nearest_deal.ware.position - player.position.value);
-            for shop.value.deals
+            for get_interactibles(shop.value.deals, (deal) => deal.ware.item.entity)
             {
-                dist := length(it.ware.position - player.position.value);
-                if dist < nearest_deal_dist
-                {
-                    nearest_deal = it;
-                    nearest_deal_dist = dist;
-                }
-            }
-
-            if nearest_deal_dist < player.interactRange
-            {
-                price_amount := nearest_deal.price.amount;
-                price_type   := nearest_deal.price.item;
                 payment_buffer : [..] *Item;
 
                 if player.held.exists
                 {
                     // player is holding some of the payment
-                    if player.held.value.tag == .ITEM && player.held.value.item.type == price_type
+                    if player.held.value.tag == .ITEM && player.held.value.item.type == it.price.itemType
                     {
                         array_add(*payment_buffer, player.held.value.item);
                     }
@@ -595,47 +581,45 @@ game_loop :: inline ()
                     {
                         // ...which could contain some of the payment
                         basket := player.held.value.container;
-                        for basket.contents if it.tag == .ITEM && it.item.type == price_type
+                        for in_basket: basket.contents if in_basket.tag == .ITEM && in_basket.item.type == it.price.itemType
                         {
-                            array_add(*payment_buffer, it.item);
+                            array_add(*payment_buffer, in_basket.item);
                         }
                     }
                 }
                 // any items inside the shop
-                for items if it.position.exists && 
-                             it.type == price_type && 
-                             (!it.owner.exists ||
-                             it.owner.exists && 
-                             it.owner.value == *player)
+                for item: items if item.position.exists && 
+                             item.type == it.price.itemType && 
+                             (!item.owner.exists || item.owner.exists && item.owner.value == *player)
                 {
-                    item_cell := world_to_grid(it.position.value);
+                    item_cell := world_to_grid(item.position.value);
                     for shop_cell: shop.value.area
                     {
                         if shop_cell == <<item_cell 
                         {
-                            array_add(*payment_buffer, it); 
+                            array_add(*payment_buffer, item);
                             break;
                         }
                     }
                 }
                 // any items in containers inside the shop
-                for c: containers if c.position.exists && c.owner.exists && c.owner.value == *player
+                for container: containers if container.position.exists && container.owner.exists && container.owner.value == *player
                 {
-                    container_cell := world_to_grid(c.position.value);
+                    container_cell := world_to_grid(container.position.value);
                     for shop_cell: shop.value.area if shop_cell == <<container_cell
                     {
-                        for c.contents if it.tag == .ITEM && it.item.type == price_type
+                        for in_container: container.contents if in_container.tag == .ITEM && in_container.item.type == it.price.itemType
                         {
-                            array_add(*payment_buffer, it.item);
+                            array_add(*payment_buffer, in_container.item);
                         }
                         break;
                     }
                 }
 
-                if payment_buffer.count >= price_amount
+                if payment_buffer.count >= it.price.amount
                 {
                     // remove those items from the game
-                    for i: 0..price_amount - 1
+                    for i: 0..it.price.amount - 1
                     {
                         // Maybe make a method for removing items from the game
                         free(payment_buffer[i]);
@@ -674,8 +658,7 @@ game_loop :: inline ()
                         }
                     }
 
-                    ware := as_concept(nearest_deal.ware);
-                    player.held.value = as_holdable(ware);
+                    player.held.value = as_holdable(as_concept(it.ware));
                     player.held.exists = true;
 
                     held := get_holdable_entity(player.held.value);
@@ -683,6 +666,7 @@ game_loop :: inline ()
                     held.owner.exists = true;
                     held.position.exists = false;
                 }
+
             }
         }
         if Input.trade then buyFromShop();
@@ -1050,33 +1034,41 @@ game_reset :: ()
 // Given a list of ptrs to game objects return a sorted list which are in the player's interact range in the forward halfplane
 get_interactibles :: (array: [..] $T) -> [..] T
 {
-    using Game;
+    return get_interactibles(array, (T) => T.entity);
+}
 
+get_interactibles :: (array: [..] $T, get_entity: (T) -> Entity) -> [..] T
+{
+    using Game;
     result: [..] T;
     result_distances: [..] float;
-    for array if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
+    for array
     {
-        displacement := it.position.value - player.position.value;
-        dist := length(displacement);
-        if dist < player.interactRange && dot_product(displacement, player.forward) > 0
+        entity := get_entity(it);
+        if entity.position.exists
         {
-            assert(result.count == result_distances.count);
-            inserted := false;
-            for i: 0..result.count - 1
+            displacement := entity.position.value - player.position.value;
+            dist := length(displacement);
+            if dist < player.interactRange && dot_product(displacement, player.forward) > 0
             {
-                if dist < result_distances[i]
+                assert(result.count == result_distances.count);
+                inserted := false;
+                for i: 0..result.count - 1
                 {
-                    array_insert_at(*result, it, i);
-                    array_insert_at(*result_distances, dist, i);
-                    inserted = true;
-                    break i;
+                    if dist < result_distances[i]
+                    {
+                        array_insert_at(*result, it, i);
+                        array_insert_at(*result_distances, dist, i);
+                        inserted = true;
+                        break i;
+                    }
                 }
-            }
 
-            if !inserted
-            {
-                array_add(*result, it);
-                array_add(*result_distances, dist);
+                if !inserted
+                {
+                    array_add(*result, it);
+                    array_add(*result_distances, dist);
+                }
             }
         }
     }
