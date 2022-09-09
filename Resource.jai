@@ -44,6 +44,17 @@ get_resource_byproduct :: (type: Resource_Type) -> *Item
     }
 }
 
+get_item_byproduct :: (type: Item_Type) -> *Item
+{
+    if type ==
+    {
+        case .WOOD_LOG;
+            return NewItem(.PLANK, NewCollider(10.0));
+        case;
+            return null;
+    }
+}
+
 get_harvest_requirement :: (type: Resource_Type) -> Maybe(Item_Type)
 {
     if type == {
