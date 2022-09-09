@@ -1141,6 +1141,43 @@ game_reset :: ()
     }
 }
 
+// Given a list of ptrs to game objects return a sorted list which are in the player's interact range in the forward halfplane
+get_interactibles :: (array: [..] $T) -> [..] T
+{
+    using Game;
+
+    result: [..] T;
+    result_distances: [..] float;
+    for array if it.position.exists && (!it.owner.exists || it.owner.value == *player.person)
+    {
+        displacement := it.position.value - player.position.value;
+        dist := length(displacement);
+        if dist < player.interactRange && dot_product(displacement, player.forward) > 0
+        {
+            assert(result.count == result_distances.count);
+            inserted := false;
+            for i: 0..result.count - 1
+            {
+                if dist < result_distances[i]
+                {
+                    array_insert_at(*result, it, i);
+                    array_insert_at(*result_distances, dist, i);
+                    inserted = true;
+                    break i;
+                }
+            }
+
+            if !inserted
+            {
+                array_add(*result, it);
+                array_add(*result_distances, dist);
+            }
+        }
+    }
+
+    return result;
+}
+
 get_holdables_in_range :: (range: float) -> [..] Holdable
 {
     using Game;
@@ -1201,26 +1238,6 @@ get_holdables_in_range :: (range: float) -> [..] Holdable
 
     result: [..] Holdable;
     for info_list array_add(*result, it.holdable);
-    return result;
-}
-
-get_nearby_containers :: () -> [..] *Container
-{
-    using Game;
-    result: [..] *Container;
-
-    if player.held.exists && player.held.value.tag == .CONTAINER
-    {
-        basket := player.held.value.container;
-        if basket.type == .BASKET
-            array_add(*result, basket);
-    }
-
-    for containers
-    {
-        if length(player.position.value - it.position.value) < 50.0
-            array_add(*result, it);
-    }
     return result;
 }
 
