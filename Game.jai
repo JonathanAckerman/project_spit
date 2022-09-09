@@ -521,9 +521,10 @@ game_loop :: inline ()
             resource_to_harvest: Maybe(resource_info);
             for sorted_resources
             {
-                if it.resource.harvestRequirement.exists
+                harvestRequirement := get_harvest_requirement(it.resource.type);
+                if harvestRequirement.exists
                 {
-                    if !player.held.exists || player.held.value.item.type != it.resource.harvestRequirement.value
+                    if !player.held.exists || player.held.value.item.type != harvestRequirement.value
                     {
                         continue;
                     }

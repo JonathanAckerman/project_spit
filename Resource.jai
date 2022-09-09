@@ -3,7 +3,6 @@ Resource :: struct
     using #as entity: Entity;
     type: Resource_Type;
     quantity: int;
-    harvestRequirement: Maybe(Item_Type);
 }
 
 Item :: struct
@@ -26,6 +25,21 @@ get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
         case;
             return .INVALID;
     }
+}
+
+get_harvest_requirement :: (type: Resource_Type) -> Maybe(Item_Type)
+{
+    if type == {
+        case .TREE;
+            return NewMaybe(Item_Type.LUMBER_AXE);
+        case .BUSH;
+            return NewMaybe(Item_Type.SWORD);
+        case .IRON_VEIN;   #through;
+        case .COPPER_VEIN; #through;
+        case .SILVER_VEIN;
+            return NewMaybe(Item_Type.PICK_AXE);
+    }
+    return Nothing(Item_Type);
 }
 
 get_item_processing_tool :: (type: Item_Type) -> bool, Item_Type

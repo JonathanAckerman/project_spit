@@ -424,12 +424,6 @@ generate_instancers :: (data: [..][..] string) -> string
                     name := to_upper_copy(t);
                     print_to_builder(*builder, tprint("\t\tcase .%;\n", name));
                     print_to_builder(*builder, tprint("\t\t\tresource.textureInfo.texture = table_find_pointer(*Textures.table, \"%\");\n", t));
-                    harvestRequirement := ""; // @Jay: maybe this indicates a category for Resources?
-                    if t == "copper_vein" then harvestRequirement = "PICK_AXE";
-                    if t == "iron_vein"   then harvestRequirement = "PICK_AXE";
-                    if t == "bush"        then harvestRequirement = "SWORD";
-                    if t == "tree"        then harvestRequirement = "LUMBER_AXE";
-                    if harvestRequirement != "" then print_to_builder(*builder, tprint("\t\t\tresource.harvestRequirement = NewMaybe(Item_Type.%);\n", harvestRequirement));
                 }
             }
         }
