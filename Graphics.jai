@@ -88,6 +88,16 @@ draw_item :: (item: Item)
     }
 }
 
+draw_texture_centered_with_rotation :: (info: TextureInfo, pos: Vector2, rotation: float)
+{
+    center := pos + info.size/2;
+    pos_to_center := center - pos;
+    rotated_pos_to_center := rotate_vector(pos_to_center, deg2rad(-rotation));
+    drawpos := pos - rotated_pos_to_center;
+    scale := info.size.x / info.texture.width;
+    DrawTextureEx(info.texture, drawpos, -rotation, scale, info.tint);
+}
+
 draw_cell :: (cell: GridCell)
 {
     if cell.block.exists
