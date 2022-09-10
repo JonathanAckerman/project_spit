@@ -29,6 +29,18 @@ CraftTarget :: struct
     slot: *BlueprintSlot;
 }
 
+Recipe :: struct
+{
+    blueprint_type: Blueprint_Type;
+
+    definition_info :: struct { item: Item_Type; slot: Slot_Type; }
+    definition: [] definition_info;
+}
+Recipes := Recipe.[
+    /* Crate: */ .{.BOXES, .[.{.NAILS, .JOINT}, .{.PLANK, .SPAN}, .{.NAILS, .JOINT}, .{.PLANK, .SPAN}, .{.NAILS, .JOINT}, .{.PLANK, .SPAN}, .{.NAILS, .JOINT}, .{.PLANK, .SPAN}]}
+]; // @Jay: maybe make this data driven one day, this definintion sucks
+
+
 NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 {
     bp := New(BlueprintData);

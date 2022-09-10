@@ -491,7 +491,7 @@ game_loop :: inline ()
         }
         if Input.craft then try_add_item_to_blueprint();
 
-        harvestResource :: ()
+        harvest_resource :: ()
         {
             using Game;
             for get_interactibles(resources) if !it.owner.exists || it.owner.value == *player.person
@@ -512,9 +512,9 @@ game_loop :: inline ()
                 break;
             }
         }
-        if Input.interact then harvestResource();
+        if Input.interact then harvest_resource();
 
-        processByproduct :: ()
+        process_byproduct :: ()
         {
             using Game;
             // compile list of resources in range, sort by distance to player
@@ -540,7 +540,13 @@ game_loop :: inline ()
                 }
             }
         }
-        if Input.interact then processByproduct(); // @Note: For now these are mutually exclusive so I can just check both
+        if Input.interact then process_byproduct(); // @Note: For now these are mutually exclusive so I can just check both
+
+        try_craft :: ()
+        {
+
+        }
+        if Input.interact then try_craft(); // @Note: For now these are mutually exclusive so I can just check both
 
         buyFromShop :: ()
         {
