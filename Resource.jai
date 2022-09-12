@@ -34,6 +34,7 @@ get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
     if type == 
     {
         case .FIBER; #through;
+        case .PLANK; #through;
         case .WOOD_LOG;
             return .SPAN;
         case .NAILS;

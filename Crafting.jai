@@ -33,13 +33,17 @@ Recipe :: struct
 {
     blueprint_type: Blueprint_Type;
 
-    definition_info :: struct { item: Item_Type; slot: Slot_Type; }
+    definition_info :: struct { item_type: Item_Type; index: int; }
     definition: [] definition_info;
 }
 Recipes := Recipe.[
-    /* Crate: */ .{.BOXES, .[.{.NAILS, .JOINT}, .{.PLANK, .SPAN}, .{.NAILS, .JOINT}, .{.PLANK, .SPAN}, .{.NAILS, .JOINT}, .{.PLANK, .SPAN}, .{.NAILS, .JOINT}, .{.PLANK, .SPAN}]}
-]; // @Jay: maybe make this data driven one day, this definintion sucks
-
+    /* Crate: */ .{.BOXES, .[
+        .{.NAILS, 0}, .{.PLANK, 1}, .{.NAILS, 2}, 
+        .{.PLANK, 7},               .{.PLANK, 3}, 
+        .{.NAILS, 6}, .{.PLANK, 5}, .{.NAILS, 4}
+    ]}
+];
+#run { for Recipes bubble_sort(it.definition, (a, b) => a.index - b.index); };
 
 NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 {

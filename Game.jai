@@ -379,11 +379,9 @@ game_loop :: inline ()
         // Highlight the active crafting slot
         //
         {
-            for items if it.blueprintData.exists
+            interactible_blueprints := get_interactibles(items);
+            for interactible_blueprints if it.blueprintData.exists
             {
-                if world_to_grid(player.position.value) != world_to_grid(it.position.value) continue;
-                print("in cell");
-
                 if player.held.exists && 
                 player.held.value.tag == .ITEM && is_byproduct(player.held.value.item.type)
                 {
@@ -456,8 +454,14 @@ game_loop :: inline ()
                         array_add(*ui, ui_rep);
                     }
                 }
+                else 
+                {
+                    player.canCraft = false;
+                    craftIndex = 0;
+                }
             }
-            else 
+
+            if interactible_blueprints.count == 0
             {
                 player.canCraft = false;
                 craftIndex = 0;
@@ -544,9 +548,31 @@ game_loop :: inline ()
 
         try_craft :: ()
         {
-
+            using Game;
+            for get_interactibles(items) if it.blueprintData.exists
+            {
+                bp := it.blueprintData.value;
+                for recipe: Recipes
+                {
+                    if recipe.blueprint_type == bp.blueprint_type
+                    {
+                        for recipe.definition
+                        {
+                            slot := bp.slots[it.index];
+                            if slot.item.exists && slot.item.value.type == it.item_type
+                                then continue;
+                            else return;
+                        }
+                        
+                        for bp.slots if it.item.exists then array_unordered_remove_by_value(*items, it.item.value);
+                        pos := it.position.value;
+                        array_unordered_remove_by_value(*items, it);
+                        array_add(*items, NewItem(.SILVER_NUGGET, NewCollider(10.0), pos, *player));
+                    }
+                }
+            }
         }
-        if Input.interact then try_craft(); // @Note: For now these are mutually exclusive so I can just check both
+        if Input.interact then try_craft();
 
         buyFromShop :: ()
         {
@@ -1048,7 +1074,7 @@ get_interactibles :: (array: [..] $T, get_entity: (T) -> Entity) -> [..] T
         {
             displacement := entity.position.value - player.position.value;
             dist := length(displacement);
-            if (dist < player.interactRange && dot_product(displacement, player.forward) > 0)
+            if (dist < player.interactRange && dot_product(displacement, player.forward) / dist > -0.5)
                 || circle_circle(player.entity, entity)
             {
                 assert(result.count == result_distances.count);
