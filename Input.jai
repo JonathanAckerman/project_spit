@@ -103,11 +103,18 @@ handle_input :: inline ()
             }
             else
             {
-                holdables := get_interactible_holdables();
-                if holdables.count > 0
-                    pickup = true;
-                else if Game.player.held.exists
-                    drop = true;
+                if Game.openContainerTarget.exists
+                {
+                    if Game.player.held.exists then drop = true;
+                }
+                else
+                {
+                    holdables := get_interactible_holdables();
+                    if holdables.count > 0
+                        pickup = true;
+                    else if Game.player.held.exists
+                        drop = true;
+                }
             }
         }
 

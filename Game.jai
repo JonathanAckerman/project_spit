@@ -22,6 +22,8 @@ Game: struct
     shops:      [..] *Shop;
 
     ui: [..] UI_Representation;
+
+    openContainerTarget: Maybe(*Container);
 }
 
 game_loop :: inline ()
@@ -145,14 +147,27 @@ game_loop :: inline ()
             if held.tag ==
             {
                 case .ITEM;
-                    held.item.position.exists = true;
-                    if held.item.type == .BLUEPRINT
+                    if openContainerTarget.exists
                     {
-                        held.item.position.value = grid_to_world(world_to_grid(player.position.value), shouldGetCenter=true);
+                        if openContainerTarget.value.contents.count < openContainerTarget.value.capacity
+                        {
+                            array_add(*openContainerTarget.value.contents, as_containable(held.item));
+                            print("added item to: %_%\n", openContainerTarget.value.type, openContainerTarget.value.id);
+                            print("%\n", openContainerTarget.value.contents);
+                        }
+                        else print("NO SPACE!\n");
                     }
                     else
                     {
-                        held.item.position.value = player.position.value + player.forward;
+                        held.item.position.exists = true;
+                        if held.item.type == .BLUEPRINT
+                        {
+                            held.item.position.value = grid_to_world(world_to_grid(player.position.value), shouldGetCenter=true);
+                        }
+                        else
+                        {
+                            held.item.position.value = player.position.value + player.forward;
+                        }
                     }
                 case .CONTAINER;
                     held.container.position.exists = true;
@@ -573,6 +588,36 @@ game_loop :: inline ()
             }
         }
         if Input.interact then try_craft();
+
+        try_open_container :: ()
+        {
+            using Game;
+
+            if !openContainerTarget.exists
+            {
+                interactible_containers := get_interactibles(containers);
+                if interactible_containers.count > 0
+                {
+                    container := interactible_containers[0];
+                    openContainerTarget = maybe(container);
+                    print("opening: %_%\n", container.type, container.id);
+                }
+            }
+            else 
+            {
+                print("closing: %_%\n", openContainerTarget.value.type, openContainerTarget.value.id);
+                openContainerTarget.exists = false;
+            }
+        }
+        if Input.interact then try_open_container();
+        if openContainerTarget.exists
+        {
+            if length(openContainerTarget.value.position.value - player.position.value) > player.interactRange
+            {
+                print("closing: %_%\n", openContainerTarget.value.type, openContainerTarget.value.id);
+                openContainerTarget.exists = false;
+            }
+        }
 
         buyFromShop :: ()
         {
