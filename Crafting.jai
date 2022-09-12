@@ -16,11 +16,12 @@ BlueprintSlot :: struct
     item: Maybe(*Item);
     slotType: Slot_Type;
 }
-Slot_Type :: enum
+Slot_Type :: enum_flags
 {
-    SPAN;
-    JOINT;
-    INVALID;
+    INVALID :: 0x0;
+    ANY     :: 0x1;
+    SPAN    :: 0x2;   
+    JOINT   :: 0x4;
 }
 
 CraftTarget :: struct
@@ -32,16 +33,27 @@ CraftTarget :: struct
 Recipe :: struct
 {
     blueprint_type: Blueprint_Type;
+    result_tag: Entity_Type;
+    result_type: union {
+        #as item_type: Item_Type;
+        #as container_type: Container_Type;
+        #as equipment_type: Equipment_Type;
+    };
 
     definition_info :: struct { item_type: Item_Type; index: int; }
     definition: [] definition_info;
 }
 Recipes := Recipe.[
-    /* Crate: */ .{.BOXES, .[
+    /* Crate: */ .{blueprint_type=.BOXES, result_tag=.ITEM, result_type=.{item_type=.CRATE}, definition=.[
         .{.NAILS, 0}, .{.PLANK, 1}, .{.NAILS, 2}, 
         .{.PLANK, 7},               .{.PLANK, 3}, 
         .{.NAILS, 6}, .{.PLANK, 5}, .{.NAILS, 4}
-    ]}
+    ]},
+    /* Basket: */ .{.BOXES, .CONTAINER, .{container_type=.BASKET}, .[
+                      .{.FIBER, 1},
+        .{.FIBER, 7},               .{.FIBER, 3}, 
+                      .{.FIBER, 5},
+    ]},
 ];
 #run { for Recipes bubble_sort(it.definition, (a, b) => a.index - b.index); };
 
@@ -106,4 +118,19 @@ get_blueprint_slot_draw_info :: (bp: Item, item_size: Vector2, slot_index: int) 
     }
     pos := bp_base_pos + bp.textureInfo.size * slot.offset + offsetFromTexture * scale;
     return pos, scale, slot.rotation;
+}
+
+get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
+{
+    if type == {
+        case .FIBER;
+            return .SPAN;
+        case .PLANK; #through;
+        case .WOOD_LOG;
+            return .SPAN;
+        case .NAILS;
+            return .JOINT;
+        case;
+            return .INVALID;
+    }
 }

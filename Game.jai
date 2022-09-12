@@ -407,7 +407,7 @@ game_loop :: inline ()
                     if craftIndex == numSlots then craftIndex = 0;
                     slot := it.blueprintData.value.slots[craftIndex];
                     // the slot is taken or of the wrong type so we need to find the next valid
-                    if slot.item.exists || slot.slotType != get_byproduct_slot_type(player.held.value.item.type)
+                    if slot.item.exists || slot.slotType & get_byproduct_slot_type(player.held.value.item.type) == 0
                     {
                         rotatedIndices: [] int;
                         if Input.craftIndexDirection == 1
@@ -438,7 +438,7 @@ game_loop :: inline ()
                         {
                             if i == -1 { craftTarget.exists = false; break; }
                             slot = it.blueprintData.value.slots[i];
-                            if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                            if !slot.item.exists && slot.slotType & get_byproduct_slot_type(player.held.value.item.type) != 0
                             {
                                 craftIndex = i;
                                 ct: CraftTarget;
@@ -450,7 +450,7 @@ game_loop :: inline ()
                             }
                         }
                     }
-                    if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
+                    if !slot.item.exists && slot.slotType & get_byproduct_slot_type(player.held.value.item.type) != 0
                     {
                         ct: CraftTarget;
                         ct.blueprint = it;
@@ -576,16 +576,22 @@ game_loop :: inline ()
                             slot := bp.slots[it.index];
                             if slot.item.exists && slot.item.value.type == it.item_type
                                 then continue;
-                            else return;
+                            else continue recipe;
                         }
                         
                         for bp.slots if it.item.exists then array_unordered_remove_by_value(*items, it.item.value);
                         pos := it.position.value;
                         array_unordered_remove_by_value(*items, it);
-                        array_add(*items, NewItem(.SILVER_NUGGET, NewCollider(10.0), pos, *player));
+                        if recipe.result_tag == {
+                            case .ITEM;
+                                array_add(*items, NewItem(recipe.result_type, NewCollider(.{100.0, 100.0}), pos, *player)); // @Jay: there should be a way to just say NewItem(.CRATE and have all the defaults
+                            case .CONTAINER;
+                                array_add(*containers, NewContainer(recipe.result_type, NewCollider(.{100.0, 100.0}), pos, *player));
+                        }
                     }
                 }
             }
+            Input.interact = false;
         }
         if Input.interact then try_craft();
 

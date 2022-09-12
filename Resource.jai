@@ -29,21 +29,6 @@ Equipment :: struct
     contents: [] Maybe(*Item);
 }
 
-get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type
-{
-    if type == 
-    {
-        case .FIBER; #through;
-        case .PLANK; #through;
-        case .WOOD_LOG;
-            return .SPAN;
-        case .NAILS;
-            return .JOINT;
-        case;
-            return .INVALID;
-    }
-}
-
 get_resource_byproduct :: (type: Resource_Type) -> *Item
 {
     if #complete type ==
