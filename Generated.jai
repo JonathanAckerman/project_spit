@@ -274,7 +274,7 @@ generate_instancers :: (data: [..][..] string) -> string
                     // @Jay: These will go away once texture sizes/format are standardized
                     if t == "whip"      print_to_builder(*builder, "\t\t\tresize_ratio = 0.3;\n");
                     if t == "pick_axe"  print_to_builder(*builder, "\t\t\tresize_ratio = 0.4;\n");
-                    if t == "blueprint" print_to_builder(*builder, "\t\t\tresize_ratio = 0.6;\n");
+                    if right == "Others" print_to_builder(*builder, "\t\t\tresize_ratio = 0.6;\n");
                 }
             }
         }
@@ -436,6 +436,55 @@ generate_instancers :: (data: [..][..] string) -> string
         print_to_builder(*builder, "\tresource.textureInfo.size = base_size * resize_ratio;\n");
         print_to_builder(*builder, "\tresource.collider = NewCollider(base_size);\n"); // @Jay: this is going to change
         print_to_builder(*builder, "\treturn resource;\n");
+        print_to_builder(*builder, "}\n");
+    }
+
+    //
+    // Blocks
+    //
+    {
+        new_block_preamble1 :: "\nNewBlock :: (type: Block_Type, orientation: float, collider: *Collider, cell: *GridCell, owner: *Person) -> *Block {\n";
+        new_block_preamble2 :: "\tblock := New(Block);\n";
+        new_block_preamble3 :: "\tblock.entity = init_entity_data(grid_to_world(cell), collider, owner, 0);\n";
+        new_block_preamble4 :: "\tblock.type = type;\n";
+        new_block_preamble5 :: "\tblock.entityType = .BLOCK;\n";
+        new_block_preamble6 :: "\tblock.forward = xy(cos(deg2rad(orientation)), sin(deg2rad(orientation)));\n";
+        new_block_preamble7 :: "\tif type == {\n";
+        print_to_builder(*builder, new_block_preamble1);
+        print_to_builder(*builder, new_block_preamble2);
+        print_to_builder(*builder, new_block_preamble3);
+        print_to_builder(*builder, new_block_preamble4);
+        print_to_builder(*builder, new_block_preamble5);
+        print_to_builder(*builder, new_block_preamble6);
+        print_to_builder(*builder, new_block_preamble7);
+
+        catergoryHeader := "";
+        for d, d_index: data[0]
+        {
+            for t, t_index: data[d_index + 1]
+            {
+                if begins_with(d, "Blocks")
+                {
+                    dummy, left, right := split_from_left(d, #char "/");
+                    if right != catergoryHeader {
+                        print_to_builder(*builder, tprint("\t\t// %\n", right));
+                        catergoryHeader = right;
+                    }
+
+                    name := to_upper_copy(t);
+                    print_to_builder(*builder, tprint("\t\tcase .%;\n", name));
+                    print_to_builder(*builder, tprint("\t\t\tblock.textureInfo.texture = table_find_pointer(*Textures.table, \"%\");\n", t));
+                }
+            }
+        }
+        print_to_builder(*builder, "\t\tcase;\n");
+        print_to_builder(*builder, "\t\t\tblock.textureInfo.texture = *ERROR_TEXTURE;\n");
+        print_to_builder(*builder, "\t}\n");
+        print_to_builder(*builder, "\tresize_ratio := 0.6;\n");
+        print_to_builder(*builder, "\tbase_size := xy(xx block.textureInfo.texture.width, xx block.textureInfo.texture.height);\n");
+        print_to_builder(*builder, "\tblock.textureInfo.size = base_size * resize_ratio;\n");
+        print_to_builder(*builder, "\tblock.collider = NewCollider(base_size);\n"); // @Jay: this is going to change
+        print_to_builder(*builder, "\treturn block;\n");
         print_to_builder(*builder, "}\n");
     }
 

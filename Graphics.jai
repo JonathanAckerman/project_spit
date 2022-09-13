@@ -99,6 +99,29 @@ draw_texture_centered_with_rotation :: (info: TextureInfo, pos: Vector2, rotatio
 
 draw_cell :: (cell: GridCell)
 {
+    ss_cell := to_screen_space(grid_to_world(cell.x, cell.y));
+    size := xy(Game.grid.cellSize * Game.camera.zoom, Game.grid.cellSize * Game.camera.zoom);
+    if cell.type == {
+        case .BEDROCK;
+            info := get_texture_info(cell.type);
+            scale := size.x / info.texture.width;
+            draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
+        case .DIRT;
+            info := get_texture_info(cell.type);
+            scale := size.x / info.texture.width;
+            draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
+        case .WATER;
+            BeginShaderMode(Textures.waterShader);
+            info := get_texture_info(cell.type);
+            displacementTex := table_find_pointer(*Textures.table, "displacement_map");
+            scale := size.x / info.texture.width;
+            Textures.displacementOffset += xy(Game.dt, Game.dt);
+            SetShaderValue(Textures.waterShader, Textures.displacementOffsetLoc, *Textures.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+            SetShaderValueTexture(Textures.waterShader, Textures.displacementTexLoc, <<displacementTex);
+            draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
+            EndShaderMode();
+    }
+
     if cell.block.exists
     {
         // @TEMP: for now make resizing preserve aspect ratio
@@ -108,34 +131,10 @@ draw_cell :: (cell: GridCell)
         ss_block := to_screen_space(grid_to_world(cell.x, cell.y, true));
         drawpos := ss_block - modified_size / 2;
         tint := cell.block.value.textureInfo.tint;
-        if cell.block.value.orientation == 90.0  then drawpos += xy(0, 1) * Game.grid.cellSize;
-        if cell.block.value.orientation == 180.0 then drawpos += xy(1, 1) * Game.grid.cellSize;
-        if cell.block.value.orientation == 270.0 then drawpos += xy(1, 0) * Game.grid.cellSize;
-        DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, -cell.block.value.orientation, resize_ratio * Game.camera.zoom, tint);
-    }
-    else
-    {
-        ss_cell := to_screen_space(grid_to_world(cell.x, cell.y));
-        size := xy(Game.grid.cellSize * Game.camera.zoom, Game.grid.cellSize * Game.camera.zoom);
-        if cell.type == {
-            case .BEDROCK;
-                info := get_texture_info(cell.type);
-                scale := size.x / info.texture.width;
-                draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
-            case .DIRT;
-                info := get_texture_info(cell.type);
-                scale := size.x / info.texture.width;
-                draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
-            case .WATER;
-                BeginShaderMode(Textures.waterShader);
-                info := get_texture_info(cell.type);
-                displacementTex := table_find_pointer(*Textures.table, "displacement_map");
-                scale := size.x / info.texture.width;
-                Textures.displacementOffset += xy(Game.dt, Game.dt);
-                SetShaderValue(Textures.waterShader, Textures.displacementOffsetLoc, *Textures.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                SetShaderValueTexture(Textures.waterShader, Textures.displacementTexLoc, <<displacementTex);
-                draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
-                EndShaderMode();
-        }
+        orientation := atan2(-cell.block.value.forward.y, cell.block.value.forward.x);
+        if orientation == 90.0  then drawpos += xy(0, 1) * Game.grid.cellSize;
+        if orientation == 180.0 then drawpos += xy(1, 1) * Game.grid.cellSize;
+        if orientation == 270.0 then drawpos += xy(1, 0) * Game.grid.cellSize;
+        DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, -orientation, resize_ratio * Game.camera.zoom, tint);
     }
 }

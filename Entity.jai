@@ -22,6 +22,7 @@ Entity_Type :: enum
     CONTAINER;
     EQUIPMENT;
     PERSON;
+    BLOCK;
 }
 
 init_entity_data :: (pos: Vector2, collider: *Collider, owner: *Person = null, mass: int = 0) -> Entity

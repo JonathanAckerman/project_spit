@@ -588,6 +588,9 @@ game_loop :: inline ()
                                 array_add(*items, NewItem(recipe.result_type, NewCollider(.{100.0, 100.0}), pos, *player)); // @Jay: there should be a way to just say NewItem(.CRATE and have all the defaults
                             case .CONTAINER;
                                 array_add(*containers, NewContainer(recipe.result_type, NewCollider(.{100.0, 100.0}), pos, *player));
+                            case .BLOCK;
+                                cell := world_to_grid(pos);
+                                cell.block = maybe(NewBlock(recipe.result_type, 0.0, NewCollider(.{100.0, 100.0}), cell, *player));
                         }
                     }
                 }
@@ -1024,7 +1027,7 @@ game_reset :: ()
                     }
                     if cell.x == 5 && cell.y == 10 then cell.forward = .{1, 1};
 
-                    cell.block = Nothing(Block);
+                    cell.block = Nothing(*Block);
                 }
             }
         }

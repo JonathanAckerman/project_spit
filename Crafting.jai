@@ -38,9 +38,10 @@ Recipe :: struct
     blueprint_type: Blueprint_Type;
     result_tag: Entity_Type;
     result_type: union {
-        #as item_type: Item_Type;
+        #as item_type:      Item_Type;
         #as container_type: Container_Type;
         #as equipment_type: Equipment_Type;
+        #as block_type:     Block_Type;
     };
 
     definition_info :: struct { item_type: Item_Type; index: int; }
@@ -62,12 +63,16 @@ Recipes := Recipe.[
         .{.PLANK, 7},                  .{.PLANK, 3}, 
         .{.NAILS, 6}, .{.PLANK, 5},    .{.NAILS, 4}
     ]},
-    /* Pier: */ .{.GRID, .ITEM, .{item_type=.SILVER_NUGGET}, .[
+    /* Pier: */ .{.GRID, .BLOCK, .{block_type=.PIER}, .[
             .{.NAILS, 0},                .{.NAILS, 2},
             .{.NAILS, 3},                .{.NAILS, 5},
             .{.NAILS, 6},                .{.NAILS, 8},
             .{.PLANK, 9}, .{.PLANK, 10}, .{.PLANK, 11},
         .{.WOOD_LOG, 12},                .{.WOOD_LOG, 14},
+    ]},
+    /* Fishing Net: */ .{.GRID, .ITEM, .{item_type=.FISHING_NET}, .[
+            .{.FIBER, 9},  .{.FIBER, 10}, .{.FIBER, 11},
+            .{.FIBER, 12}, .{.FIBER, 13}, .{.FIBER, 14},
     ]},
 ];
 #run { for Recipes bubble_sort(it.definition, (a, b) => a.index - b.index); };

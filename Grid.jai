@@ -31,7 +31,7 @@ GridCell :: struct
     y: int;
     type: Terrain_Type;
     forward: Vector2 = .{0, -1};
-    block: Maybe(Block);
+    block: Maybe(*Block);
 }
 
 Terrain_Type :: enum
