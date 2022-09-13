@@ -46,15 +46,31 @@ get_resource_byproduct :: (type: Resource_Type) -> *Item
     }
 }
 
-get_item_byproduct :: (type: Item_Type) -> *Item
+// @Jay: do all the work to make the item, and add it to Game.items here
+get_item_byproducts :: (type: Item_Type) -> [] *Item
 {
+    result: [..] *Item;
     if type ==
     {
         case .WOOD_LOG;
-            return NewItem(.PLANK, NewCollider(10.0));
-        case;
-            return null;
+            array_add(*result, NewItem(.PLANK, NewCollider(10.0)));
+        case .PLANK;
+            array_add(*result, NewItem(.HALF_PLANK, NewCollider(10.0)));
+            array_add(*result, NewItem(.HALF_PLANK, NewCollider(10.0)));
     }
+    return result;
+}
+
+get_item_processing_tool :: (type: Item_Type) -> bool, Item_Type
+{
+    if type == {
+        case .WOOD_LOG;
+            return true, .HEWING_SAW;
+        case .PLANK;
+            return true, .HEWING_SAW;
+    }
+    dummy: Item_Type;
+    return false, dummy;
 }
 
 get_harvest_requirement :: (type: Resource_Type) -> Maybe(Item_Type)
@@ -70,14 +86,4 @@ get_harvest_requirement :: (type: Resource_Type) -> Maybe(Item_Type)
             return maybe(Item_Type.PICK_AXE);
     }
     return Nothing(Item_Type);
-}
-
-get_item_processing_tool :: (type: Item_Type) -> bool, Item_Type
-{
-    if type == {
-        case .WOOD_LOG;
-            return true, .HEWING_SAW;
-    }
-    dummy: Item_Type;
-    return false, dummy;
 }

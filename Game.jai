@@ -160,7 +160,7 @@ game_loop :: inline ()
                     else
                     {
                         held.item.position.exists = true;
-                        if held.item.type == .BLUEPRINT
+                        if held.item.blueprintData.exists
                         {
                             held.item.position.value = grid_to_world(world_to_grid(player.position.value), shouldGetCenter=true);
                         }
@@ -208,7 +208,7 @@ game_loop :: inline ()
                     }
 
                 case .ITEM;
-                    if it.item.type == .BLUEPRINT
+                    if it.item.blueprintData.exists
                     {
                         for slot: it.item.blueprintData.value.slots if slot.item.exists
                         {
@@ -407,7 +407,7 @@ game_loop :: inline ()
                     if craftIndex == numSlots then craftIndex = 0;
                     slot := it.blueprintData.value.slots[craftIndex];
                     // the slot is taken or of the wrong type so we need to find the next valid
-                    if slot.item.exists || slot.slotType & get_byproduct_slot_type(player.held.value.item.type) == 0
+                    if slot.item.exists || slot.slotType != get_byproduct_slot_type(player.held.value.item.type)
                     {
                         rotatedIndices: [] int;
                         if Input.craftIndexDirection == 1
@@ -438,7 +438,7 @@ game_loop :: inline ()
                         {
                             if i == -1 { craftTarget.exists = false; break; }
                             slot = it.blueprintData.value.slots[i];
-                            if !slot.item.exists && slot.slotType & get_byproduct_slot_type(player.held.value.item.type) != 0
+                            if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
                             {
                                 craftIndex = i;
                                 ct: CraftTarget;
@@ -450,7 +450,7 @@ game_loop :: inline ()
                             }
                         }
                     }
-                    if !slot.item.exists && slot.slotType & get_byproduct_slot_type(player.held.value.item.type) != 0
+                    if !slot.item.exists && slot.slotType == get_byproduct_slot_type(player.held.value.item.type)
                     {
                         ct: CraftTarget;
                         ct.blueprint = it;
@@ -547,14 +547,15 @@ game_loop :: inline ()
                    && !it.onSlot.exists
                    && player.held.exists && player.held.value.item.type == tool_type
                 {
-                    new_byproduct := get_item_byproduct(it.type);
-                    if new_byproduct != null
+                    new_byproducts := get_item_byproducts(it.type);
+                    for product, product_index: new_byproducts
                     {
+                        random_offset := xy(random_get_within_range(-15, 15), random_get_within_range(-15, 15));
                         direction_offset := unit_vector(it.position.value - player.position.value) * 15;
-                        new_byproduct.position.value = it.position.value + direction_offset;
+                        product.position.value = it.position.value + direction_offset + random_offset;
                         array_unordered_remove_by_value(*items, it);
-                        array_add(*items, new_byproduct);
-                        break;
+                        array_add(*items, product);
+                        if product_index == new_byproducts.count - 1 then break;
                     }
                 }
             }

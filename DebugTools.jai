@@ -323,6 +323,16 @@ debug_is_command_valid :: (cmd: string)
                         collider = NewCollider(50);
                         bp = maybe(NewBlueprintData(.BOXES));
                     }
+                    if cmd_array[1] == "blueprint_curves"
+                    {
+                        collider = NewCollider(50);
+                        bp = maybe(NewBlueprintData(.CURVES));
+                    }
+                    if cmd_array[1] == "blueprint_grid"
+                    {
+                        collider = NewCollider(50);
+                        bp = maybe(NewBlueprintData(.GRID));
+                    }
                     item := NewItem(item_type_from_string(cmd_array[1]).value, collider, pos);
                     item.blueprintData = bp;
                     array_add(*Game.items, item);
