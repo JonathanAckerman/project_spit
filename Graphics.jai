@@ -48,12 +48,14 @@ draw_entity :: (entity: Entity)
 {
     if !entity.position.exists return;
 
-    scale := entity.textureInfo.size.x / entity.textureInfo.texture.width;
-    base_size := xy(xx entity.textureInfo.width, xx entity.textureInfo.height) * scale;
-    modified_size := base_size * Game.camera.zoom;
+    // scale := entity.textureInfo.size.x / entity.textureInfo.texture.width;
+    // base_size := xy(xx entity.textureInfo.width, xx entity.textureInfo.height) * scale;
+    // modified_size := base_size * Game.camera.zoom;
     center_pos := to_screen_space(entity.position.value);
-    drawpos := center_pos - modified_size / 2;
-    DrawTextureEx(entity.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * scale, entity.textureInfo.tint);
+    // drawpos := center_pos - modified_size / 2;
+    rotation := rad2deg(atan2(-entity.forward.y, entity.forward.x)) - 90.0;
+    draw_texture_centered_with_rotation(entity.textureInfo, center_pos, rotation);
+    // DrawTextureEx(entity.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * scale, entity.textureInfo.tint);
 }
 
 draw_item :: (item: Item)
@@ -131,7 +133,7 @@ draw_cell :: (cell: GridCell)
         ss_block := to_screen_space(grid_to_world(cell.x, cell.y, true));
         drawpos := ss_block - modified_size / 2;
         tint := cell.block.value.textureInfo.tint;
-        orientation := atan2(-cell.block.value.forward.y, cell.block.value.forward.x);
+        orientation := rad2deg(atan2(-cell.block.value.forward.y, cell.block.value.forward.x)) - 90.0;
         if orientation == 90.0  then drawpos += xy(0, 1) * Game.grid.cellSize;
         if orientation == 180.0 then drawpos += xy(1, 1) * Game.grid.cellSize;
         if orientation == 270.0 then drawpos += xy(1, 0) * Game.grid.cellSize;

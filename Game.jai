@@ -160,6 +160,7 @@ game_loop :: inline ()
                     else
                     {
                         held.item.position.exists = true;
+                        held.item.forward = player.forward;
                         if held.item.blueprintData.exists
                         {
                             held.item.position.value = grid_to_world(world_to_grid(player.position.value), shouldGetCenter=true);
@@ -590,7 +591,8 @@ game_loop :: inline ()
                                 array_add(*containers, NewContainer(recipe.result_type, NewCollider(.{100.0, 100.0}), pos, *player));
                             case .BLOCK;
                                 cell := world_to_grid(pos);
-                                cell.block = maybe(NewBlock(recipe.result_type, 0.0, NewCollider(.{100.0, 100.0}), cell, *player));
+                                rotation := rad2deg(atan2(-it.forward.y, it.forward.x)) - 90.0;
+                                cell.block = maybe(NewBlock(recipe.result_type, rotation, NewCollider(.{100.0, 100.0}), cell, *player));
                         }
                     }
                 }
