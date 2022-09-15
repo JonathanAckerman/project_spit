@@ -136,7 +136,6 @@ update_animations :: ()
 
 update_animation :: (using anim: *Animation)
 {
-    if !hasStarted then return;
     if !shouldLoop && hasFinished then return;
 
     if frameTimer <= 0.0 {
