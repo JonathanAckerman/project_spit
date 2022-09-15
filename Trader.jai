@@ -54,23 +54,14 @@ NewPerson :: (pos: Vector2, ai: Maybe(AI)) -> *Person
     collider := NewCollider(20.0);
     person.entity = init_entity_data(pos, collider, null, 100);
     person.ai = ai;
-    person.textureInfo.texture = table_find_pointer(*Textures.table, "person");
-    if !ai.exists then person.textureInfo.tint = WHITE;
-    else person.textureInfo.tint = ORANGE;
+    if ai.exists {
+        person.animation = NewAnimation("npc/idle");
+        for *person.animation.frames { it.tint = ORANGE; }
+    } 
+    else {
+        person.animation = NewAnimation("player/idle");
+    }
     return person;
-}
-
-draw_person :: (person: Person)
-{
-    if !person.position.exists return;
-
-    center_pos := to_screen_space(person.position.value);
-    base_size := xy(xx person.textureInfo.width, xx person.textureInfo.height) * 0.2;
-    modified_size := base_size * Game.camera.zoom;
-    rot := atan2(-person.forward.y, person.forward.x);
-    reverse_ray_bullshit_vector := rotate_vector(modified_size/2, atan2(person.forward.y, person.forward.x));
-    drawpos := center_pos - reverse_ray_bullshit_vector;
-    draw_texture_centered(person.textureInfo, center_pos, person.forward, modified_size, Game.camera.zoom * 0.2);
 }
 
 Player :: struct

@@ -1,61 +1,59 @@
-draw_texture_centered :: (info: TextureInfo, center: Vector2, forward: Vector2, size: Vector2, scale: float)
-{
-    x := forward.x;
-    y := ifx RAYLIB then -forward.y else forward.y;
-    rot := atan2(y, x);
-    drawpos: Vector2;
-    if RAYLIB {
-        reverse_ray_bullshit_vector := rotate_vector(size/2, atan2(forward.y, forward.x));
-        drawpos = center - reverse_ray_bullshit_vector;
-    } else {
-        drawpos = center - size/2;
-    }
+FRAME_RATE :: 60.0;
 
-    // for some reason 'size' & 'scale' need to be separate concepts, thanks ray
-    DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, info.tint);
-}
+// draw_texture_centered :: (info: AnimationFrame, center: Vector2, forward: Vector2, size: Vector2, scale: float)
+// {
+//     x := forward.x;
+//     y := ifx RAYLIB then -forward.y else forward.y;
+//     rot := atan2(y, x);
+//     drawpos: Vector2;
+//     if RAYLIB {
+//         reverse_ray_bullshit_vector := rotate_vector(size/2, atan2(forward.y, forward.x));
+//         drawpos = center - reverse_ray_bullshit_vector;
+//     } else {
+//         drawpos = center - size/2;
+//     }
+
+//     // for some reason 'size' & 'scale' need to be separate concepts, thanks ray
+//     DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, info.tint);
+// }
 
 // Since raylib is such a pain in the ass to work with I need all these methods to fix it "easily"
-draw_orthagonal_texture_centered :: (info: TextureInfo, center: Vector2, rotation: float, scale: float)
-{
-    drawpos := to_screen_space(center);
-    if rotation == 0.0   then drawpos -= info.size/2 * scale;
-    if rotation == 90.0  then drawpos += xy(info.size.y, -info.size.x)/2 * scale;
-    if rotation == 180.0 then drawpos += info.size/2 * scale;
-    if rotation == 270.0 then drawpos -= xy(info.size.y, -info.size.x)/2 * scale;
-    DrawTextureEx(info.texture, drawpos, rotation, scale, info.tint);
-}
+// draw_orthagonal_texture_centered :: (frame: AnimationFrame, center: Vector2, rotation: float, scale: float)
+// {
+//     drawpos := to_screen_space(center);
+//     if rotation == 0.0   then drawpos -= frame.size/2 * scale;
+//     if rotation == 90.0  then drawpos += xy(frame.size.y, -frame.size.x)/2 * scale;
+//     if rotation == 180.0 then drawpos += frame.size/2 * scale;
+//     if rotation == 270.0 then drawpos -= xy(frame.size.y, -frame.size.x)/2 * scale;
+//     DrawTextureEx(frame.texture, drawpos, rotation, scale, frame.tint);
+// }
 
 UI_Representation :: struct
 {
     position: Vector2;
     rotation: float;
     scale: float;
-    info: TextureInfo;
+    frame: AnimationFrame;
     isHUD := true;
 }
 
 draw_ui_representation  :: (rep: UI_Representation)
 {
-    draw_ui_representation(rep.position, rep.scale, rep.info, rep.rotation);
+    draw_ui_representation(rep.position, rep.scale, rep.frame, rep.rotation);
 }
-draw_ui_representation  :: (pos: Vector2, scale: float, info: TextureInfo, rotation: float = 0.0)
+draw_ui_representation  :: (pos: Vector2, scale: float, frame: AnimationFrame, rotation: float = 0.0)
 {
-    DrawTextureEx(info.texture, pos, rotation, scale, info.tint);
+    DrawTextureEx(frame.texture, pos, rotation, scale, frame.tint);
 }
 
 draw_entity :: (entity: Entity)
 {
     if !entity.position.exists return;
 
-    // scale := entity.textureInfo.size.x / entity.textureInfo.texture.width;
-    // base_size := xy(xx entity.textureInfo.width, xx entity.textureInfo.height) * scale;
-    // modified_size := base_size * Game.camera.zoom;
     center_pos := to_screen_space(entity.position.value);
-    // drawpos := center_pos - modified_size / 2;
     rotation := rad2deg(atan2(-entity.forward.y, entity.forward.x)) - 90.0;
-    draw_texture_centered_with_rotation(entity.textureInfo, center_pos, rotation);
-    // DrawTextureEx(entity.textureInfo.texture, xx drawpos, 0.0, Game.camera.zoom * scale, entity.textureInfo.tint);
+    frame := Current_Frame(entity.animation);
+    draw_texture_centered_with_rotation(frame, center_pos, rotation);
 }
 
 draw_item :: (item: Item)
@@ -65,13 +63,13 @@ draw_item :: (item: Item)
         draw_entity(item);
         for item.blueprintData.value.slots if it.item.exists
         {
-            texInfo := get_texture_info(it.item.value.type);
+            frame := Current_Frame(*it.item.value.animation);
             position: Vector2;
             scale: float;
             rotation: float;
-            position, scale, rotation = get_blueprint_slot_draw_info(item, texInfo.size, it_index);
+            position, scale, rotation = get_blueprint_slot_draw_info(item, it_index);
             
-            base_size := xy(xx texInfo.width, xx texInfo.height);
+            base_size := xy(xx frame.width, xx frame.height);
             modified_size := base_size * scale * Game.camera.zoom;
             ss_position := to_screen_space(position);
             drawpos: Vector2;
@@ -81,7 +79,7 @@ draw_item :: (item: Item)
                 drawpos = ss_position - modified_size / 2;
             }
             else drawpos = ss_position - modified_size / 2;
-            DrawTextureEx(texInfo.texture, drawpos, rotation, Game.camera.zoom * scale, texInfo.tint);
+            DrawTextureEx(frame.texture, drawpos, rotation, Game.camera.zoom * scale, frame.tint);
         }
     }
     else
@@ -90,53 +88,76 @@ draw_item :: (item: Item)
     }
 }
 
-draw_texture_centered_with_rotation :: (info: TextureInfo, pos: Vector2, rotation: float)
+draw_texture_centered_with_rotation :: (frame: AnimationFrame, pos: Vector2, rotation: float)
 {
-    pos_to_center := info.size/2;
+    pos_to_center := frame.size/2 * Game.camera.zoom;
     rotated_pos_to_center := rotate_vector(pos_to_center, deg2rad(-rotation));
     drawpos := pos - rotated_pos_to_center;
-    scale := info.size.x / info.texture.width;
-    DrawTextureEx(info.texture, drawpos, -rotation, scale, info.tint);
+    scale := frame.size.x / frame.texture.width;
+    DrawTextureEx(frame.texture, drawpos, -rotation, scale * Game.camera.zoom, frame.tint);
 }
 
 draw_cell :: (cell: GridCell)
 {
-    ss_cell := to_screen_space(grid_to_world(cell.x, cell.y));
-    size := xy(Game.grid.cellSize * Game.camera.zoom, Game.grid.cellSize * Game.camera.zoom);
+    center_pos := to_screen_space(grid_to_world(cell.x, cell.y, shouldGetCenter=true));
+    frame := Current_Frame(cell.animation);
     if cell.type == {
         case .BEDROCK;
-            info := get_texture_info(cell.type);
-            scale := size.x / info.texture.width;
-            draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
+            draw_texture_centered_with_rotation(frame, center_pos, 0.0);
         case .DIRT;
-            info := get_texture_info(cell.type);
-            scale := size.x / info.texture.width;
-            draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
+            draw_texture_centered_with_rotation(frame, center_pos, 0.0);
         case .WATER;
-            BeginShaderMode(Textures.waterShader);
-            info := get_texture_info(cell.type);
-            displacementTex := table_find_pointer(*Textures.table, "displacement_map");
-            scale := size.x / info.texture.width;
-            Textures.displacementOffset += xy(Game.dt, Game.dt);
-            SetShaderValue(Textures.waterShader, Textures.displacementOffsetLoc, *Textures.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-            SetShaderValueTexture(Textures.waterShader, Textures.displacementTexLoc, <<displacementTex);
-            draw_texture_centered(info, ss_cell + size/2, .{0, -1}, size, scale);
+            BeginShaderMode(Shaders.waterShader);
+            Shaders.displacementOffset += xy(Game.dt, Game.dt);
+            SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+            SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
+            draw_texture_centered_with_rotation(frame, center_pos, 0.0);
             EndShaderMode();
     }
 
     if cell.block.exists
     {
-        // @TEMP: for now make resizing preserve aspect ratio
-        resize_ratio := cell.block.value.textureInfo.size.x / cell.block.value.textureInfo.width;
-        base_size := xy(xx cell.block.value.textureInfo.width, xx cell.block.value.textureInfo.height);
-        modified_size := base_size * resize_ratio * Game.camera.zoom;
-        ss_block := to_screen_space(grid_to_world(cell.x, cell.y, true));
-        drawpos := ss_block - modified_size / 2;
-        tint := cell.block.value.textureInfo.tint;
-        orientation := rad2deg(atan2(-cell.block.value.forward.y, cell.block.value.forward.x)) - 90.0;
-        if orientation == 90.0  then drawpos += xy(0, 1) * Game.grid.cellSize;
-        if orientation == 180.0 then drawpos += xy(1, 1) * Game.grid.cellSize;
-        if orientation == 270.0 then drawpos += xy(1, 0) * Game.grid.cellSize;
-        DrawTextureEx(cell.block.value.textureInfo.texture, xx drawpos, -orientation, resize_ratio * Game.camera.zoom, tint);
+        block_anim := cell.block.value.animation;
+        block_frame := Current_Frame(block_anim);
+        block_rotation := rad2deg(atan2(cell.block.value.forward.y, cell.block.value.forward.x));
+        draw_texture_centered_with_rotation(block_frame, center_pos, block_rotation);
     }
+}
+
+update_animations :: ()
+{
+    using Game;
+    for items       if is_in_loaded_chunk(it) { update_animation(*it.animation); }
+    for containers  if is_in_loaded_chunk(it) { update_animation(*it.animation); }
+    for equipment   if is_in_loaded_chunk(it) { update_animation(*it.animation); }
+    for npcs        if is_in_loaded_chunk(it) { update_animation(*it.animation); }
+    for resources   if is_in_loaded_chunk(it) { update_animation(*it.animation); }
+}
+
+update_animation :: (using anim: *Animation)
+{
+    if !hasStarted then return;
+    if !shouldLoop && hasFinished then return;
+
+    if frameTimer <= 0.0 {
+        frameTimer = duration/frames.count;
+        currentFrame += 1;
+    }
+    else frameTimer -= Game.dt;
+
+    if currentFrame >= frames.count {
+        if shouldLoop then currentFrame = 0;
+        else currentFrame = frames.count - 1;
+    }
+
+    // maybe stuff about the texture size/tint?
+}
+
+Current_Frame :: (using anim: Animation) -> *AnimationFrame #expand {
+    return *frames[currentFrame];
+}
+
+Animation_Key :: (type: $T, anim: string) -> string {
+    name := to_lower_copy(enum_names(T)[type]);
+    return tprint("%/%", name, anim);
 }

@@ -146,10 +146,11 @@ handle_input :: inline ()
             debug_is_command_valid(Debug.line);
             // add current line to history
             array_add(*Debug.history, Debug.line);
+            array_add_if_unique(*Debug.cmdHistory, Debug.line);
             // reset current line
             Debug.line = "";
             // reset the historyindex to the most recent command
-            Debug.historyIndex = Debug.history.count;
+            Debug.cmdHistoryIndex = Debug.cmdHistory.count;
         }
 
         // delete character
@@ -171,7 +172,7 @@ handle_input :: inline ()
                     Debug.c.curPos.x -= (Debug.fontSize/2) + Debug.fontSpacing;
                 }
             }
-            else backspaceTimer -= Game.dt;
+            else backspaceTimer -= Game.dt / Debug.dtMultiplier;
         }
         else 
         {
@@ -182,21 +183,21 @@ handle_input :: inline ()
         // cycle through history
         if IsKeyPressed(xx KeyboardKey.KEY_UP)
         {
-            if Debug.history.count > 0
+            if Debug.cmdHistory.count > 0
             {
-                Debug.historyIndex -= 1;
-                if Debug.historyIndex < 0 then Debug.historyIndex = Debug.history.count - 1;
-                Debug.line = Debug.history[Debug.historyIndex];
+                Debug.cmdHistoryIndex -= 1;
+                if Debug.cmdHistoryIndex < 0 then Debug.cmdHistoryIndex = Debug.cmdHistory.count - 1;
+                Debug.line = Debug.cmdHistory[Debug.cmdHistoryIndex];
                 Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
             }
         }
         if IsKeyPressed(xx KeyboardKey.KEY_DOWN)
         {
-            if Debug.history.count > 0
+            if Debug.cmdHistory.count > 0
             {
-                Debug.historyIndex += 1;
-                if Debug.historyIndex >= Debug.history.count then Debug.historyIndex = 0;
-                Debug.line = Debug.history[Debug.historyIndex];
+                Debug.cmdHistoryIndex += 1;
+                if Debug.cmdHistoryIndex >= Debug.cmdHistory.count then Debug.cmdHistoryIndex = 0;
+                Debug.line = Debug.cmdHistory[Debug.cmdHistoryIndex];
                 Debug.c.charNumber = c_style_strlen(to_c_string(Debug.line));
             }
         }

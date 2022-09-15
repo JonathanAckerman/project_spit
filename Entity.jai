@@ -10,7 +10,7 @@ Entity :: struct
     rigidBody: Maybe(RigidBody);
 
     id: u64;
-    textureInfo: TextureInfo;
+    animation: Animation;
     owner: Maybe(*Person);
     entityType: Entity_Type;
 }

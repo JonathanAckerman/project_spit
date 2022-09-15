@@ -4,7 +4,8 @@ Debug: struct
     c: DebugCursor;
     line: string;
     history: [..] string;
-    historyIndex := 0;
+    cmdHistory: [..] string;
+    cmdHistoryIndex := 0;
 
     font: Font;
     fontSize := 28.0;
@@ -148,12 +149,10 @@ debug_player_info :: ()
 
     DrawCircleLines(xx ss_player.x, xx ss_player.y, player.interactRange * camera.zoom, PINK);
 
-    if player.textureInfo.texture != null
-    {
-        modified_size := player.textureInfo.size * camera.zoom;
-        texture_drawpos := ss_player - modified_size/2;
-        DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
-    }
+    frame := Current_Frame(player.animation);
+    modified_size := frame.size * camera.zoom;
+    texture_drawpos := ss_player - modified_size/2;
+    DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
 
     if player.collider.type == {
         case .CIRCLE;
@@ -180,12 +179,10 @@ debug_entity_info :: (e: Entity)
     DrawText(to_c_string(tprint("ID:  %", e.id)), xx drawpos.x, xx drawpos.y, 16, PINK);
     drawpos.y += 20.0 * camera.zoom;
 
-    if e.textureInfo.texture != null
-    {
-        modified_size := e.textureInfo.size * camera.zoom;
-        texture_drawpos := ss_entity - modified_size/2;
-        DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
-    }
+    frame := Current_Frame(e.animation);
+    modified_size := frame.size * camera.zoom;
+    texture_drawpos := ss_entity - modified_size/2;
+    DrawRectangleLines(xx texture_drawpos.x, xx texture_drawpos.y, xx modified_size.x, xx modified_size.y, PINK);
 
     if e.collider.type == {
         case .CIRCLE;
@@ -238,7 +235,7 @@ debug_console :: (dt: float)
         DrawRectangleV(c.curPos + .{0, 5}, c.size, WHITE);
     }
 
-    c.blinkTimer -= dt;
+    c.blinkTimer -= dt / dtMultiplier;
     if c.blinkTimer <= 0.0
     {
         c.blinkState = !c.blinkState;
