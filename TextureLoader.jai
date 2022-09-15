@@ -36,7 +36,6 @@ Animation :: struct
 
     currentFrame := 0;
     shouldLoop := false;
-    hasStarted := false;
     hasFinished := false;
 }
 

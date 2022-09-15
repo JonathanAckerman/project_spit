@@ -587,7 +587,6 @@ NewAnimation :: (key: string) -> *Animation {
         array_add(*anim.frames, frame);
     }
     anim.duration = anim.frames.count / FRAME_RATE;
-	anim.hasStarted = true;
     return anim;
 }
 
