@@ -1,6 +1,6 @@
 trim_textures_whitespace :: ()
 {
-    generate_textures_struct();
+    generate_animations_struct();
 
     for texture: Textures.path_table
     {
@@ -62,6 +62,6 @@ trim_textures_whitespace :: ()
 
 
 
-#load "TextureLoader.jai";      // generate_textures_struct()
+#load "TextureLoader.jai";      // generate_animations_struct()
 #import "stb_image";            // stbi_load(), stbi_image_free()
 #import "stb_image_write";      // stbi_write_png()

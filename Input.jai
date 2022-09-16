@@ -202,6 +202,21 @@ handle_input :: inline ()
             }
         }
 
+        if IsKeyPressed(xx KeyboardKey.PAGE_DOWN)
+        {
+            if Debug.commandListPage < Debug.commandList.count / 6
+            {
+                Debug.commandListPage += 1;
+            }
+        }
+        if IsKeyPressed(xx KeyboardKey.PAGE_UP)
+        {
+            if Debug.commandListPage > 0
+            {
+                Debug.commandListPage -= 1;
+            }
+        }
+
         // clear line
         if IsKeyPressed(xx KeyboardKey.DELETE)
         {

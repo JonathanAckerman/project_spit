@@ -140,8 +140,8 @@ get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, float, f
 {
     using Game;
     slot := bp.blueprintData.value.slots[slot_index];
-    frame := Current_Frame(bp.animation);
-    bp_base_pos := bp.position.value - frame.size/2;
+    bp_frame := Current_Frame(bp.animation);
+    bp_base_pos := bp.position.value - bp_frame.size/2;
     scale := 0.4;
     item_size := xy(grid.cellSize, grid.cellSize); // @@@: this might need to scale with zoom?
     offsetFromTexture: Vector2;
@@ -166,7 +166,7 @@ get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, float, f
         if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.y/2;
         if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.y/2;
     }
-    pos := bp_base_pos + frame.size * slot.offset + offsetFromTexture * scale;
+    pos := bp_base_pos + bp_frame.size * slot.offset + offsetFromTexture * scale;
     return pos, scale, slot.rotation;
 }
 

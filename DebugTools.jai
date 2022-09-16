@@ -15,9 +15,9 @@ Debug: struct
     commandList: [] string = .[
         "spawn [ENTITY]",
         "tp [X] [Y]",
-        "faster / slower / normal",
         "dt",
         "speed [N]",
+        "faster / slower / normal",
         "zoom [N]",
         "print player",
         "repop",
@@ -25,6 +25,7 @@ Debug: struct
         "debug info (db) [0/1]",
         "freecam (fc) [0/1]"
     ];
+    commandListPage := 0;
 
     showEntityInfo := false;
     freeCamera     := false;
@@ -270,14 +271,26 @@ debug_console :: (dt: float)
 
     if listCommands
     {
-        base_x := WINDOW_WIDTH / 2.0;
+        x := (WINDOW_WIDTH / 2.0) + 230.0;
         base_y := c.basePos.y + 5.0;
-        for Debug.commandList
+        for i: 0..5
         {
-            x := base_x + (230 * (it_index / 6));
-            y := base_y + ((fontSize * 1.5) * (it_index % 6));
-            DrawTextEx(font, to_c_string(it), xy(x, y), fontSize - 6, fontSpacing, GREEN);
+            index := commandListPage * 6 + i;
+            if index >= commandList.count then break;
+            item := commandList[index];
+
+            y := base_y + ((fontSize * 1.5) * i);
+
+            DrawTextEx(font, to_c_string(item), xy(x, y), fontSize - 6, fontSpacing, GREEN);
         }
+
+        // draw a page indicator
+        // @Fix: 240 is the magic number for console background height
+        numPages := commandList.count / 6;
+        indicator_height := 240.0 / (numPages + 1);
+        indicator_height -= 5.0;
+        y := base_y + indicator_height * commandListPage;
+        DrawRectangleV(xy(x - 20, y), xy(3, indicator_height), GREEN);
     }
 }
 
