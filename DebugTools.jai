@@ -279,9 +279,9 @@ debug_console :: (dt: float)
             if index >= commandList.count then break;
             item := commandList[index];
 
-            y := base_y + ((fontSize * 1.5) * i);
+            y := base_y + ((fontSize * 1.4) * i);
 
-            DrawTextEx(font, to_c_string(item), xy(x, y), fontSize - 6, fontSpacing, GREEN);
+            DrawTextEx(font, to_c_string(item), xy(x, y), fontSize, fontSpacing, GREEN);
         }
 
         // draw a page indicator
