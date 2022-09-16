@@ -864,7 +864,6 @@ game_loop :: inline ()
             {
                 if !it.isHUD then it.scale *= camera.zoom;
                 draw_texture_centered_with_rotation(it.frame, it.position, it.rotation);
-                // draw_orthagonal_texture_centered(it.info, it.position, it.rotation, it.scale);
                 remove it;
             }
 
@@ -1117,8 +1116,8 @@ game_reset :: ()
         sword := NewItem(.SWORD, collider, pos);
         array_add(*items, sword);
 
-        pos = .{600, 600};
-        hammer := NewItem(.CARPENTERS_HAMMER, collider, pos);
+        pos = .{650, 650};
+        hammer := NewItem(.CARPENTERS_HAMMER, NewCollider(.{198, 198}), pos);
         hammer.animation = NewAnimation(Animation_Key(hammer.type, "test"));
         hammer.animation.shouldLoop = true;
         array_add(*items, hammer);
