@@ -189,10 +189,10 @@ debug_entity_info :: (e: Entity)
         case .CIRCLE;
             DrawCircleLines(xx ss_entity.x, xx ss_entity.y, e.collider.radius * camera.zoom, YELLOW);
         case .RECT;
-            base_size := xy(e.collider.rect.x, e.collider.rect.y) * 0.5;
-            modified_size := base_size * camera.zoom;
-            collider_drawpos := ss_entity - modified_size/2;
-            DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx modified_size.x, xx modified_size.y, YELLOW);
+            collider_base_size := xy(e.collider.rect.x, e.collider.rect.y);
+            collider_modified_size := collider_base_size * camera.zoom;
+            collider_drawpos := ss_entity - collider_modified_size/2 + e.collider.offset;
+            DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx collider_modified_size.x, xx collider_modified_size.y, YELLOW);
     }
 }
 
@@ -351,7 +351,8 @@ debug_is_command_valid :: (cmd: string)
                     equipment := NewEquipment(equipment_type_from_string(cmd_array[1]).value, collider, pos);
                     array_add(*Game.equipment, equipment);
                 case .RESOURCE;
-                    resource := NewResource(resource_type_from_string(cmd_array[1]).value, pos, 10);
+                    if cmd_array[1] == "tree" then collider = NewCollider(.{50.0, 80.0}, .{0.0, 60.0});
+                    resource := NewResource(resource_type_from_string(cmd_array[1]).value, collider, pos, 10);
                     array_add(*Game.resources, resource);
             }
         }

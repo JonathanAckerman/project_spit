@@ -18,6 +18,9 @@ AnimationFrame :: struct
     using texture: *Texture2D;
     tint: Color = WHITE;
     size: Vector2;
+    // for now, let's try assuming the origin (ie: subject focal point) is always 
+    // drawn to place it in the center of the frame. Then I should never trim textures
+    // they should always be drawn with the appropriate canvas size.
 }
 
 Animations: AnimationsReference;
@@ -47,52 +50,54 @@ file_structure_info :: struct
     animation_name: string; // eg: unroll
 }
 
+get_file_structure_info :: (info: *File_Visit_Info, data: *[..] file_structure_info) 
+{
+    if info.is_directory
+    {
+        folder_name_size := info.full_name.count - TEXTURES_PATH.count;
+        folder_name := slice(info.full_name, TEXTURES_PATH.count + 1, folder_name_size);
+
+        file_struct_info: file_structure_info;
+        success, left, right := split_from_left(folder_name, #char "/");
+        file_struct_info.family = copy_string(left);
+        success, left, right = split_from_left(right, #char "/");
+        file_struct_info.genus = copy_string(left);
+
+        if begins_with(right, "anims_")
+        {
+            success, left, right = split_from_left(right, #char "_");
+        }
+
+        if right != "" && contains_any_character(right, "/")
+        {
+            success, left, right = split_from_left(right, #char "/");
+            file_struct_info.species = copy_string(left);
+            file_struct_info.animation_name = copy_string(right);
+            array_add(data, file_struct_info);
+        }
+    }
+}
+
+get_texture_filenames :: (info: *File_Visit_Info, data: *[..] string) 
+{
+    if !info.is_directory
+    {
+        s := copy_string(info.short_name);
+        s.count -= 4; // remove '.png' file extension
+        array_add(data, s);
+    }
+}
+
 generate_animations_struct :: ()
 {
-    get_folder_data :: (info: *File_Visit_Info, data: *[..] file_structure_info) 
-    {
-        if info.is_directory
-        {
-            folder_name_size := info.full_name.count - TEXTURES_PATH.count;
-            folder_name := slice(info.full_name, TEXTURES_PATH.count + 1, folder_name_size);
-
-            file_struct_info: file_structure_info;
-            success, left, right := split_from_left(folder_name, #char "/");
-            file_struct_info.family = copy_string(left);
-            success, left, right = split_from_left(right, #char "/");
-            file_struct_info.genus = copy_string(left);
-            if begins_with(right, "anims_")
-            {
-                success, left, right = split_from_left(right, #char "_");
-            }
-
-            if right != "" && contains_any_character(right, "/")
-            {
-                success, left, right = split_from_left(right, #char "/");
-                file_struct_info.species = copy_string(left);
-                file_struct_info.animation_name = copy_string(right);
-                array_add(data, file_struct_info);
-            }
-        }
-    }
-    get_texture_data :: (info: *File_Visit_Info, data: *[..] string) 
-    {
-        if !info.is_directory
-        {
-            s := copy_string(info.short_name);
-            s.count -= 4; // remove '.png' file extension
-            array_add(data, s);
-        }
-    }
-
     data: [..] file_structure_info;
-    visit_files(TEXTURES_PATH, true, *data, get_folder_data, false, true);
+    visit_files(TEXTURES_PATH, true, *data, get_file_structure_info, false, true);
 
     for d, d_index: data
     {
         anim_path := tprint("%/%/%/anims_%/%", TEXTURES_PATH, d.family, d.genus, d.species, d.animation_name);
         filenames: [..] string;
-        visit_files(anim_path, false, *filenames, get_texture_data, true, false);
+        visit_files(anim_path, false, *filenames, get_texture_filenames, true, false);
         path_key := copy_string(tprint("%/%", d.species, d.animation_name));
         path_value: AnimationsReference.animation_ref_info;
         path_value.path = anim_path;
@@ -115,7 +120,7 @@ load_all_animations :: ()
             array_add(*anim_data, LoadTexture(to_c_string(tprint("%/%.png", value.path, i))));
         }
         table_add(*Animations.table, key, anim_data);
-        print("%\n", key);
+        // print("%\n", key);
     }
 }
 

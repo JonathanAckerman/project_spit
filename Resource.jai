@@ -31,7 +31,7 @@ Equipment :: struct
 
 get_resource_byproduct :: (type: Resource_Type) -> *Item
 {
-    if #complete type ==
+    if type ==
     {
         case .COPPER_VEIN;
             return NewItem(.COPPER_NUGGET, NewCollider(10.0));
@@ -43,6 +43,8 @@ get_resource_byproduct :: (type: Resource_Type) -> *Item
             return NewItem(.WOOD_LOG, NewCollider(.{10, 10}));
         case .BUSH;
             return NewItem(.FIBER, NewCollider(10.0));
+        case;
+            return null;
     }
 }
 

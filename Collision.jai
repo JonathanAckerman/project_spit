@@ -1,16 +1,18 @@
-NewCollider :: (rect: Vector2) -> *Collider
+NewCollider :: (rect: Vector2, offset: Vector2 = .{0, 0}) -> *Collider
 {
     c := New(Collider);
     c.type = .RECT;
     c.rect = rect;
+    c.offset = offset;
     return c;
 }
 
-NewCollider :: (radius: float) -> *Collider
+NewCollider :: (radius: float, offset: Vector2 = .{0, 0}) -> *Collider
 {
     c := New(Collider);
     c.type = .CIRCLE;
     c.radius = radius;
+    c.offset = offset;
     return c;
 }
 
@@ -20,6 +22,7 @@ NewCollider :: (other: Collider) -> *Collider
     c.type = other.type;
     if other.type == .CIRCLE then c.radius = other.radius;
     if other.type == .RECT then c.rect = other.rect;
+    c.offset = other.offset;
     return c;
 }
 
@@ -31,6 +34,7 @@ Collider :: struct
         rect: Vector2;
         radius: float;
     }
+    offset: Vector2;
 }
 
 Collider_Type :: enum
@@ -126,10 +130,10 @@ circle_circle :: (c1: Entity, c2: Entity) -> bool
 
 circle_rect :: (c: *Entity, r: *Entity, shouldResolve: bool) -> bool
 {
-    rect_modified_size := (r.collider.rect * 0.5)/2;
-    displacement := c.position.value - r.position.value;
-    closest_x := r.position.value.x + clamp(displacement.x, -rect_modified_size.x, rect_modified_size.x);
-    closest_y := r.position.value.y + clamp(displacement.y, -rect_modified_size.y, rect_modified_size.y);
+    rect_modified_size := (r.collider.rect)/2;
+    displacement := c.position.value - (r.position.value + r.collider.offset);
+    closest_x := r.position.value.x + r.collider.offset.x + clamp(displacement.x, -rect_modified_size.x, rect_modified_size.x);
+    closest_y := r.position.value.y + r.collider.offset.y + clamp(displacement.y, -rect_modified_size.y, rect_modified_size.y);
 
     circle_to_closest := c.position.value - xy(closest_x, closest_y);
     if length(circle_to_closest) < c.collider.radius

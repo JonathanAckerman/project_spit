@@ -630,7 +630,7 @@ NewEquipment :: (type: Equipment_Type, collider: *Collider, pos: Vector2 = .{0, 
 	return equipment;
 }
 
-NewResource :: (type: Resource_Type, pos: Vector2, quantity: int) -> *Resource {
+NewResource :: (type: Resource_Type, collider: *Collider = null, pos: Vector2, quantity: int) -> *Resource {
 	resource := New(Resource);
 	mass := ifx type == .BUSH then 0 else 999;
 	resource.entity = init_entity_data(pos, null, null, mass);
@@ -639,7 +639,8 @@ NewResource :: (type: Resource_Type, pos: Vector2, quantity: int) -> *Resource {
 	resource.quantity = quantity;
 
     resource.animation = NewAnimation(Animation_Key(type, "idle"));
-    resource.collider = NewCollider(resource.animation.frames[0].size);
+	if !collider then collider = NewCollider(resource.animation.frames[0].size);
+    resource.collider = collider;
     return resource;
 }
 

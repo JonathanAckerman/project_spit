@@ -528,11 +528,13 @@ game_loop :: inline ()
 
                 // Drop by-product of harvest on the ground. Some resources like water will instead be loaded directly into an inventory
                 byproduct := get_resource_byproduct(it.type);
-                direction_offset := unit_vector(it.position.value - player.position.value) * 15;
-                byproduct.position.value = it.position.value + direction_offset;
-                DeleteEntity(*resources, it);
-                array_add(*items, byproduct);
-                break;
+                if byproduct {
+                    direction_offset := unit_vector(it.position.value - player.position.value) * 15;
+                    byproduct.position.value = it.position.value + direction_offset;
+                    DeleteEntity(*resources, it);
+                    array_add(*items, byproduct);
+                    break;
+                }
             }
         }
         if Input.interact then harvest_resource();
@@ -1265,7 +1267,9 @@ populate_resources :: ()
                     x = clamp(x, Game.grid.cellSize * cast(float) Grid.left(Game.grid), Game.grid.cellSize * cast(float) Grid.right(Game.grid) - 1);
                     y = clamp(y, Game.grid.cellSize * cast(float) Grid.top(Game.grid),  Game.grid.cellSize * cast(float) Grid.bottom(Game.grid) - 1);
                     quantity := max(random_get() % 20, 10);
-                    r := NewResource(type, xy(x, y), xx quantity);
+                    collider: *Collider;
+                    if type == .TREE then collider = NewCollider(.{50.0, 80.0}, .{0, 60});
+                    r := NewResource(type, collider, xy(x, y), xx quantity);
                     array_add(*Game.resources, r);
                 }
             }
