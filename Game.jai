@@ -468,7 +468,7 @@ game_loop :: inline ()
                         ui_rep: UI_Representation;
                         animInfo := NewAnimation(Animation_Key(player.held.value.item.type, "idle"));
                         ui_rep.frame = Current_Frame(animInfo);
-                        ui_rep.position, ui_rep.scale, ui_rep.rotation = get_blueprint_slot_draw_info(it, craftIndex);
+                        ui_rep.position, ui_rep.rotation = get_blueprint_slot_draw_info(it, craftIndex);
                         ui_rep.frame.tint.a = 200;
                         ui_rep.isHUD = false;
                         array_add(*ui, ui_rep);
@@ -497,9 +497,8 @@ game_loop :: inline ()
                 player.held.exists = false;
                 
                 position: Vector2;
-                scale: float;
                 rotation: float;
-                position, scale, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
+                position, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
                 forward := xy(cos(deg2rad(rotation)), sin(deg2rad(rotation)));
 
                 craftTarget.value.slot.item.value.position.exists = true;
@@ -852,7 +851,7 @@ game_loop :: inline ()
             }
         }
 
-        for shop: shops for shop.area { if is_in_loaded_chunk(it) then draw_shop(shop); }
+        for shop: shops for shop.area { if is_in_loaded_chunk(it) { draw_shop(shop); continue shop; }}
         for resources  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
         for items      if it.position.exists && is_in_loaded_chunk(it) { draw_item(it); }
         for containers if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
@@ -864,8 +863,8 @@ game_loop :: inline ()
         {
             for *ui
             {
-                if !it.isHUD then it.scale *= camera.zoom;
-                draw_texture_centered_with_rotation(it.frame, it.position, it.rotation);
+                // if !it.isHUD then it.scale *= camera.zoom;
+                draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), it.rotation);
                 remove it;
             }
 
@@ -883,13 +882,13 @@ game_loop :: inline ()
                         if player.held.value.container.type ==
                         {
                             case .BASKET;
-                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, frame);
+                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), frame);
                                 xpos += 80.0;
                             case .BUCKET;
-                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), 0.2, frame);
+                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), frame);
                                 xpos += 80.0;
                             case .CHEST;
-                                draw_ui_representation(xy(xpos + 13.0, ypos + 15.0), 0.15, frame);
+                                draw_ui_representation(xy(xpos + 13.0, ypos + 15.0), frame);
                                 xpos += 80.0;
                         }
                     case .ITEM;
@@ -897,7 +896,7 @@ game_loop :: inline ()
                         if player.held.value.item.type ==
                         {
                             case;
-                                draw_ui_representation(xy(xx xpos, xx ypos), 0.3, frame);
+                                draw_ui_representation(xy(xx xpos, xx ypos), frame);
                                 xpos += 80.0;
                         }
                 }
@@ -910,7 +909,7 @@ game_loop :: inline ()
                 pos := xy(xpos + 55.0, ypos + 35.0);
                 frame := Current_Frame(player.toolBelt.value.animation);
                 pos -= frame.size / 2;
-                draw_ui_representation(pos, 0.1, frame);
+                draw_ui_representation(pos, frame);
 
                 xpos = WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
@@ -919,7 +918,7 @@ game_loop :: inline ()
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
-                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, frame); //draw inv items
+                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), frame); //draw inv items
                     }
                 }
             }
@@ -931,7 +930,7 @@ game_loop :: inline ()
                 pos := xy(xpos + 55.0, ypos + 45.0);
                 frame := Current_Frame(player.weaponBelt.value.animation);
                 pos -= frame.size / 2;
-                draw_ui_representation(pos, 0.1, frame);
+                draw_ui_representation(pos, frame);
                 xpos = WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
@@ -939,7 +938,7 @@ game_loop :: inline ()
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
-                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), 0.3, frame); //draw inv items
+                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), frame); //draw inv items
                     }
                 }
             }

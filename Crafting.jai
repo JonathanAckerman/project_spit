@@ -136,38 +136,36 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 }
 
 // @Note: it is the caller's responsibility to make sure the slot index is valid
-get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, float, float
+get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, float
 {
     using Game;
     slot := bp.blueprintData.value.slots[slot_index];
     bp_frame := Current_Frame(bp.animation);
     bp_base_pos := bp.position.value - bp_frame.size/2;
-    scale := 0.4;
-    item_size := xy(grid.cellSize, grid.cellSize); // @@@: this might need to scale with zoom?
-    offsetFromTexture: Vector2;
+    offsetPixels: Vector2;
     if slot.rotation == 90.0
     {
-        if slot.offset.x == 0.0 then offsetFromTexture.x =  item_size.y/2;
-        if slot.offset.x == 1.0 then offsetFromTexture.x = -item_size.y/2;
-        if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.x/2;
-        if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.x/2;
+        if slot.offset.x == 0.0 then offsetPixels.x =  15.0;
+        if slot.offset.x == 1.0 then offsetPixels.x = -15.0;
+        if slot.offset.y == 0.0 then offsetPixels.y =  15.0;
+        if slot.offset.y == 1.0 then offsetPixels.y = -15.0;
     }
     else if slot.rotation == 270.0
     {
-        if slot.offset.x == 0.0 then offsetFromTexture.x = -item_size.y/2;
-        if slot.offset.x == 1.0 then offsetFromTexture.x =  item_size.y/2;
-        if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.x/2;
-        if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.x/2;
+        if slot.offset.x == 0.0 then offsetPixels.x = -15.0;
+        if slot.offset.x == 1.0 then offsetPixels.x =  15.0;
+        if slot.offset.y == 0.0 then offsetPixels.y =  15.0;
+        if slot.offset.y == 1.0 then offsetPixels.y = -15.0;
     }
     else
     {
-        if slot.offset.x == 0.0 then offsetFromTexture.x =  item_size.x/2;
-        if slot.offset.x == 1.0 then offsetFromTexture.x = -item_size.x/2;
-        if slot.offset.y == 0.0 then offsetFromTexture.y =  item_size.y/2;
-        if slot.offset.y == 1.0 then offsetFromTexture.y = -item_size.y/2;
+        if slot.offset.x == 0.0 then offsetPixels.x =  15.0;
+        if slot.offset.x == 1.0 then offsetPixels.x = -15.0;
+        if slot.offset.y == 0.0 then offsetPixels.y =  15.0;
+        if slot.offset.y == 1.0 then offsetPixels.y = -15.0;
     }
-    pos := bp_base_pos + bp_frame.size * slot.offset + offsetFromTexture * scale;
-    return pos, scale, slot.rotation;
+    pos := bp_base_pos + bp_frame.size * slot.offset + offsetPixels;
+    return pos, slot.rotation;
 }
 
 get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type

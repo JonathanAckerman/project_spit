@@ -1,49 +1,20 @@
 FRAME_RATE :: 60.0;
 
-// draw_texture_centered :: (info: AnimationFrame, center: Vector2, forward: Vector2, size: Vector2, scale: float)
-// {
-//     x := forward.x;
-//     y := ifx RAYLIB then -forward.y else forward.y;
-//     rot := atan2(y, x);
-//     drawpos: Vector2;
-//     if RAYLIB {
-//         reverse_ray_bullshit_vector := rotate_vector(size/2, atan2(forward.y, forward.x));
-//         drawpos = center - reverse_ray_bullshit_vector;
-//     } else {
-//         drawpos = center - size/2;
-//     }
-
-//     // for some reason 'size' & 'scale' need to be separate concepts, thanks ray
-//     DrawTextureEx(info.texture, drawpos, -rad2deg(rot), scale, info.tint);
-// }
-
-// Since raylib is such a pain in the ass to work with I need all these methods to fix it "easily"
-// draw_orthagonal_texture_centered :: (frame: AnimationFrame, center: Vector2, rotation: float, scale: float)
-// {
-//     drawpos := to_screen_space(center);
-//     if rotation == 0.0   then drawpos -= frame.size/2 * scale;
-//     if rotation == 90.0  then drawpos += xy(frame.size.y, -frame.size.x)/2 * scale;
-//     if rotation == 180.0 then drawpos += frame.size/2 * scale;
-//     if rotation == 270.0 then drawpos -= xy(frame.size.y, -frame.size.x)/2 * scale;
-//     DrawTextureEx(frame.texture, drawpos, rotation, scale, frame.tint);
-// }
-
 UI_Representation :: struct
 {
     position: Vector2;
     rotation: float;
-    scale: float;
     frame: AnimationFrame;
     isHUD := true;
 }
 
 draw_ui_representation  :: (rep: UI_Representation)
 {
-    draw_ui_representation(rep.position, rep.scale, rep.frame, rep.rotation);
+    draw_ui_representation(rep.position, rep.frame, rep.rotation);
 }
-draw_ui_representation  :: (pos: Vector2, scale: float, frame: AnimationFrame, rotation: float = 0.0)
+draw_ui_representation  :: (pos: Vector2, frame: AnimationFrame, rotation: float = 0.0)
 {
-    DrawTextureEx(frame.texture, pos, rotation, scale, frame.tint);
+    DrawTextureEx(frame.texture, pos, rotation, 1.0, frame.tint);
 }
 
 draw_entity :: (entity: Entity)
@@ -65,12 +36,11 @@ draw_item :: (item: Item)
         {
             frame := Current_Frame(*it.item.value.animation);
             position: Vector2;
-            scale: float;
             rotation: float;
-            position, scale, rotation = get_blueprint_slot_draw_info(item, it_index);
+            position, rotation = get_blueprint_slot_draw_info(item, it_index);
             
             base_size := xy(xx frame.width, xx frame.height);
-            modified_size := base_size * scale * Game.camera.zoom;
+            modified_size := base_size * Game.camera.zoom;
             ss_position := to_screen_space(position);
             drawpos: Vector2;
             if rotation == 90.0 || rotation == 270.0 
@@ -79,12 +49,24 @@ draw_item :: (item: Item)
                 drawpos = ss_position - modified_size / 2;
             }
             else drawpos = ss_position - modified_size / 2;
-            DrawTextureEx(frame.texture, drawpos, rotation, Game.camera.zoom * scale, frame.tint);
+            DrawTextureEx(frame.texture, drawpos, rotation, Game.camera.zoom, frame.tint);
         }
     }
     else
     {
         if !item.onSlot.exists then draw_entity(item);
+    }
+}
+
+draw_shop :: (shop : *Shop)
+{
+    for shop.area
+    {
+        ss_cell := to_screen_space(grid_to_world(it) + .{5, 5});
+        size := xy(90, 90) * Game.camera.zoom;
+        drawpos_offset_from_size := size - size;
+        ss_cell += drawpos_offset_from_size / 2;
+        DrawRectangleV(ss_cell, size, LIGHTGRAY);
     }
 }
 

@@ -24,18 +24,6 @@ NewShop :: (area: [] *GridCell, deals: [] Deal, owner: *Entity) -> *Shop
     return shop;
 }
 
-draw_shop :: (shop : *Shop)
-{
-    for shop.area
-    {
-        ss_cell := to_screen_space(grid_to_world(it) + .{5, 5});
-        size := xy(90, 90) * Game.camera.zoom;
-        drawpos_offset_from_size := size - size;
-        ss_cell += drawpos_offset_from_size / 2;
-        DrawRectangleV(ss_cell, size, LIGHTGRAY);
-    }
-}
-
 Person :: struct
 {
     using #as entity: Entity;
