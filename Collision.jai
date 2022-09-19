@@ -72,6 +72,13 @@ handle_collision :: (using entity: *Entity)
             entity.velocity += cell.forward * water_speed * dt;
         }
     }
+    if cell.block.exists
+    {
+        if cell.block.value.type == .FULL_WALL 
+        {
+            circle_gridcell(entity, cell, shouldResolve=true);
+        }
+    }
 
     if !rigidBody.exists return;
 

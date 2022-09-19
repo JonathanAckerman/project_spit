@@ -1119,7 +1119,7 @@ game_reset :: ()
         array_add(*items, sword);
 
         pos = .{650, 650};
-        hammer := NewItem(.CARPENTERS_HAMMER, NewCollider(.{198, 198}), pos);
+        hammer := NewItem(.CARPENTERS_HAMMER, NewCollider(.{100, 100}), pos);
         hammer.animation = NewAnimation(Animation_Key(hammer.type, "test"));
         hammer.animation.shouldLoop = true;
         array_add(*items, hammer);

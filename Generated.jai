@@ -646,7 +646,7 @@ NewResource :: (type: Resource_Type, collider: *Collider = null, pos: Vector2, q
 
 NewBlock :: (type: Block_Type, orientation: float, collider: *Collider, cell: *GridCell, owner: *Person) -> *Block {
 	block := New(Block);
-	block.entity = init_entity_data(grid_to_world(cell), collider, owner, 0);
+	block.entity = init_entity_data(grid_to_world(cell), collider, owner, 999);
 	block.type = type;
 	block.entityType = .BLOCK;
 	block.forward = xy(cos(deg2rad(orientation)), sin(deg2rad(orientation)));

@@ -20,6 +20,7 @@ Debug: struct
         "faster / slower / normal",
         "zoom [N]",
         "print player",
+        "print [CELL]",
         "repop",
         "reset",
         "debug info (db) [0/1]",
@@ -354,6 +355,15 @@ debug_is_command_valid :: (cmd: string)
                     if cmd_array[1] == "tree" then collider = NewCollider(.{50.0, 80.0}, .{0.0, 60.0});
                     resource := NewResource(resource_type_from_string(cmd_array[1]).value, collider, pos, 10);
                     array_add(*Game.resources, resource);
+                case .BLOCK;
+                    block_type := block_type_from_string(cmd_array[1]);
+                    if block_type.exists
+                    {
+                        collider = NewCollider(.{100, 100});
+                        cell := world_to_grid(pos);
+                        cell.block = maybe(NewBlock(block_type.value, 0.0, collider, cell, null));
+                        cell.type = .BLOCK;
+                    }
             }
         }
 
@@ -370,6 +380,18 @@ debug_is_command_valid :: (cmd: string)
         if begins_with(cmd, "print")
         {
             if cmd_array[1] == "player" then print("%\n", Game.player);
+            else if cmd_array.count >= 3 
+            {
+                x := string_to_int(cmd_array[1]);
+                y := string_to_int(cmd_array[2]);
+                cell := get_cell(x, y);
+                print("%\n", <<cell);
+                if cell.block.exists
+                {
+                    print("\t%\n", <<cell.block.value);
+                    print("\t\t%\n", <<cell.block.value.collider);
+                }
+            }
         }
 
         if begins_with(cmd, "tp")
@@ -488,6 +510,20 @@ resource_type_from_string :: (s: string) -> Maybe(Resource_Type)
     return Nothing(Resource_Type);
 }
 
+block_type_from_string :: (s: string) -> Maybe(Block_Type)
+{
+    str := to_upper_copy(s);
+    for enum_names(Block_Type)
+    {
+        if str == it
+        {
+            m := maybe(cast(Block_Type) enum_values_as_s64(Block_Type)[it_index]);
+            return m;
+        }
+    }
+    return Nothing(Block_Type);
+}
+
 entity_type_from_string :: (s: string) -> Maybe(Entity_Type)
 {
     str := to_upper_copy(s);
@@ -495,5 +531,6 @@ entity_type_from_string :: (s: string) -> Maybe(Entity_Type)
     for enum_names(Container_Type) if str == it then return maybe(Entity_Type.CONTAINER);
     for enum_names(Equipment_Type) if str == it then return maybe(Entity_Type.EQUIPMENT);
     for enum_names(Resource_Type)  if str == it then return maybe(Entity_Type.RESOURCE);
+    for enum_names(Block_Type)     if str == it then return maybe(Entity_Type.BLOCK);
     return Nothing(Entity_Type);
 }
