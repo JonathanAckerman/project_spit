@@ -14,7 +14,8 @@ draw_ui_representation  :: (rep: UI_Representation)
 }
 draw_ui_representation  :: (pos: Vector2, frame: AnimationFrame, rotation: float = 0.0)
 {
-    DrawTextureEx(frame.texture, pos, rotation, 1.0, frame.tint);
+    scale := 60.0 / cast(float) frame.texture.width; // @Assumption: square textures
+    DrawTextureEx(frame.texture, pos, rotation, scale, frame.tint);
 }
 
 draw_entity :: (entity: Entity)

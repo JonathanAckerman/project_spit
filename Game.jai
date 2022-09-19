@@ -872,73 +872,57 @@ game_loop :: inline ()
             xpos := 20.0;
             ypos := WINDOW_HEIGHT - 80;
             DrawText(xx "Held:", 20, xx (ypos - 20), 20, BLACK);
-            DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK);
+            box_width :: 60;
+            gutter_width :: 20;
+            DrawRectangleLines(xx xpos, xx ypos, box_width, box_width, BLACK);
             if player.held.exists 
             {
+                frame: AnimationFrame;
                 if player.held.value.tag ==
                 {
                     case .CONTAINER;
-                        frame := Current_Frame(player.held.value.container.animation);
-                        if player.held.value.container.type ==
-                        {
-                            case .BASKET;
-                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), frame);
-                                xpos += 80.0;
-                            case .BUCKET;
-                                draw_ui_representation(xy(xpos + 15.0, ypos + 12.0), frame);
-                                xpos += 80.0;
-                            case .CHEST;
-                                draw_ui_representation(xy(xpos + 13.0, ypos + 15.0), frame);
-                                xpos += 80.0;
-                        }
+                        frame = Current_Frame(player.held.value.container.animation);
                     case .ITEM;
-                        frame := Current_Frame(player.held.value.item.animation);
-                        if player.held.value.item.type ==
-                        {
-                            case;
-                                draw_ui_representation(xy(xx xpos, xx ypos), frame);
-                                xpos += 80.0;
-                        }
+                        frame = Current_Frame(player.held.value.item.animation);
                 }
+                draw_ui_representation(xy(xx xpos, xx ypos), frame);
             }
+            xpos += box_width + gutter_width;
             // draw tool belt
-            xpos = 90;
-            DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
+            DrawRectangleLines(xx xpos, xx ypos, box_width, box_width, BLACK); //draw item slot
             if player.toolBelt.exists
             {
-                pos := xy(xpos + 55.0, ypos + 35.0);
+                pos := xy(xx xpos, xx ypos);
                 frame := Current_Frame(player.toolBelt.value.animation);
-                pos -= frame.size / 2;
                 draw_ui_representation(pos, frame);
 
-                xpos = WINDOW_WIDTH/2 - 230;
+                inv_xpos := cast(float) WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
                 {
-                    DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
+                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, box_width, box_width, BLACK); //draw inv boxes
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
-                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), frame); //draw inv items
+                        draw_ui_representation(xy(inv_xpos + it_index * 70, xx ypos), frame); //draw inv items
                     }
                 }
             }
             // draw weapon belt
-            xpos = 160;
-            DrawRectangleLines(xx xpos, xx ypos, 60, 60, BLACK); //draw item slot
+            xpos += box_width + gutter_width;
+            DrawRectangleLines(xx xpos, xx ypos, box_width, box_width, BLACK); //draw item slot
             if player.weaponBelt.exists
             {
-                pos := xy(xpos + 55.0, ypos + 45.0);
+                pos := xy(xx xpos, xx ypos);
                 frame := Current_Frame(player.weaponBelt.value.animation);
-                pos -= frame.size / 2;
                 draw_ui_representation(pos, frame);
-                xpos = WINDOW_WIDTH/2 + 30;
+                inv_xpos := cast(float) WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
-                    DrawRectangleLines(xx (xpos + it_index * 70), xx ypos, 60, 60, BLACK); //draw inv boxes
+                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, box_width, box_width, BLACK); //draw inv boxes
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
-                        draw_ui_representation(xy(xpos + it_index * 70, xx ypos), frame); //draw inv items
+                        draw_ui_representation(xy(inv_xpos + it_index * 70, xx ypos), frame); //draw inv items
                     }
                 }
             }
