@@ -469,7 +469,7 @@ game_loop :: inline ()
                         frame := Current_Frame(animInfo);
                         frame.tint.a = 200;
                         position, forward := get_blueprint_slot_draw_info(it, craftIndex);
-                        add_to_draw_buffer(frame, position, forward, .UI);
+                        add_to_draw_buffer(frame, position, .WORLD_UI, forward);
                     }
                 }
                 else 
@@ -845,7 +845,7 @@ game_loop :: inline ()
                     frame := Current_Frame(cell.animation);
                     position := grid_to_world(cell.x, cell.y, shouldGetCenter=true);
                     shader_type := ifx cell.type == .WATER then Shader_Type.WATER_SHADER else Shader_Type.DEFAULT;
-                    add_to_draw_buffer(frame, position, cell.forward, .CELL, shader_type);
+                    add_to_draw_buffer(frame, position, .CELL, cell.forward, shader_type);
                 }
             }
         }
@@ -872,38 +872,19 @@ game_loop :: inline ()
             {
                 ss_cell := grid_to_world(it, shouldGetCenter=true);
                 frame := Current_Frame(shop.rugAnimation);
-                add_to_draw_buffer(frame, ss_cell, it.forward, .SHOP_RUG);
+                add_to_draw_buffer(frame, ss_cell, .SHOP_RUG, it.forward);
             }
         }
-
-        // Sort the draw buffer
-        less_than :: (a, b) => cast(s64)a.traunch - cast(s64)b.traunch;
-        bubble_sort(drawBuffer, less_than);
-
-        for drawBuffer
-        {
-            if it.shaderType == .WATER_SHADER
-            {
-                BeginShaderMode(Shaders.waterShader);
-                Shaders.displacementOffset += xy(Game.dt, Game.dt);
-                SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
-                draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
-                EndShaderMode();
-            }
-            else draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
-        }
-        array_reset_keeping_memory(*drawBuffer);
 
         // draw ui
         {
             // draw held
             xpos := 20.0;
-            ypos := WINDOW_HEIGHT - 80;
+            ypos := WINDOW_HEIGHT - 80.0;
             DrawText(xx "Held:", 20, xx (ypos - 20), 20, BLACK);
-            box_width :: 60;
-            gutter_width :: 20;
-            DrawRectangleLines(xx xpos, xx ypos, box_width, box_width, BLACK);
+            box_width :: 60.0;
+            gutter_width :: 20.0;
+            DrawRectangleLines(xx xpos, xx ypos, xx box_width, xx box_width, BLACK);
             if player.held.exists 
             {
                 frame: AnimationFrame;
@@ -914,44 +895,54 @@ game_loop :: inline ()
                     case .ITEM;
                         frame = Current_Frame(player.held.value.item.animation);
                 }
-                draw_ui_representation(xy(xx xpos, xx ypos), frame);
+                resize_factor := box_width / cast(float) frame.texture.width; // @Assumption: square textures
+                box_center := xy(xpos, ypos) + xy(box_width/2.0, box_width/2.0);
+                add_to_draw_buffer(frame, box_center, .SCREEN_UI, scale=resize_factor);
             }
             xpos += box_width + gutter_width;
             // draw tool belt
-            DrawRectangleLines(xx xpos, xx ypos, box_width, box_width, BLACK); //draw item slot
+            DrawRectangleLines(xx xpos, xx ypos, xx box_width, xx box_width, BLACK); //draw item slot
             if player.toolBelt.exists
             {
-                pos := xy(xx xpos, xx ypos);
+                box_center := xy(xpos, ypos) + xy(box_width/2.0, box_width/2.0);
                 frame := Current_Frame(player.toolBelt.value.animation);
-                draw_ui_representation(pos, frame);
+                resize_factor := box_width / cast(float) frame.texture.width; // @Assumption: square textures
+                add_to_draw_buffer(frame, box_center, .SCREEN_UI, scale=resize_factor);
 
                 inv_xpos := cast(float) WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
                 {
-                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, box_width, box_width, BLACK); //draw inv boxes
+                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, xx box_width, xx box_width, BLACK); //draw inv boxes
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
-                        draw_ui_representation(xy(inv_xpos + it_index * 70, xx ypos), frame); //draw inv items
+                        inv_pos := xy(inv_xpos + it_index * 70, ypos);
+                        box_center := inv_pos + xy(box_width/2.0, box_width/2.0);
+                        inv_resize_factor := box_width / cast(float) frame.texture.width; // @Assumption: square textures
+                        add_to_draw_buffer(frame, box_center, .SCREEN_UI, scale=inv_resize_factor);
                     }
                 }
             }
             // draw weapon belt
             xpos += box_width + gutter_width;
-            DrawRectangleLines(xx xpos, xx ypos, box_width, box_width, BLACK); //draw item slot
+            DrawRectangleLines(xx xpos, xx ypos, xx box_width, xx box_width, BLACK); //draw item slot
             if player.weaponBelt.exists
             {
-                pos := xy(xx xpos, xx ypos);
+                box_center := xy(xpos, ypos) + xy(box_width/2.0, box_width/2.0);
                 frame := Current_Frame(player.weaponBelt.value.animation);
-                draw_ui_representation(pos, frame);
+                resize_factor := box_width / cast(float) frame.texture.width; // @Assumption: square textures
+                add_to_draw_buffer(frame, box_center, .SCREEN_UI, scale=resize_factor);
                 inv_xpos := cast(float) WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
-                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, box_width, box_width, BLACK); //draw inv boxes
+                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, xx box_width, xx box_width, BLACK); //draw inv boxes
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
-                        draw_ui_representation(xy(inv_xpos + it_index * 70, xx ypos), frame); //draw inv items
+                        inv_pos := xy(inv_xpos + it_index * 70, ypos);
+                        box_center := inv_pos + xy(box_width/2.0, box_width/2.0);
+                        inv_resize_factor := box_width / cast(float) frame.texture.width; // @Assumption: square textures
+                        add_to_draw_buffer(frame, box_center, .SCREEN_UI, scale=inv_resize_factor);
                     }
                 }
             }
@@ -996,6 +987,29 @@ game_loop :: inline ()
             debug_deferred_draw_circles();
             debug_deferred_draw_lines();
         }
+
+        // Sort the draw buffer
+        less_than :: (a, b) => cast(s64)a.traunch - cast(s64)b.traunch;
+        bubble_sort(drawBuffer, less_than);
+
+        for drawBuffer
+        {
+            if it.shaderType == .WATER_SHADER
+            {
+                BeginShaderMode(Shaders.waterShader);
+                Shaders.displacementOffset += xy(Game.dt, Game.dt);
+                SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+                SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
+                draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
+                EndShaderMode();
+            }
+            else 
+            {
+                position := ifx it.traunch == .SCREEN_UI then it.position else to_screen_space(it.position);
+                draw_texture_centered_with_rotation(it.frame, position, rad2deg(it.rotation));
+            }
+        }
+        array_reset_keeping_memory(*drawBuffer);
 
         update_animations();
         EndDrawing();
