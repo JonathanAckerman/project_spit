@@ -844,7 +844,7 @@ game_loop :: inline ()
                 {
                     frame := Current_Frame(cell.animation);
                     position := grid_to_world(cell.x, cell.y, shouldGetCenter=true);
-                    shader_type := ifx cell.type == .WATER then Shader_Type.WATER_SHADER else Shader_Type.DEFAULT;
+                    shader_type := ifx cell.type == .WATER then Shader_Type.WATER_SHADER else .DEFAULT;
                     add_to_draw_buffer(frame, position, .CELL, cell.forward, shader_type);
                 }
             }
@@ -878,14 +878,20 @@ game_loop :: inline ()
 
         // draw ui
         {
-            // draw held
             xpos := 20.0;
             ypos := WINDOW_HEIGHT - 80.0;
             DrawText(xx "Held:", 20, xx (ypos - 20), 20, BLACK);
             box_width :: 60.0;
+            // draw held
             gutter_width :: 20.0;
-            DrawRectangleLines(xx xpos, xx ypos, xx box_width, xx box_width, BLACK);
-            if player.held.exists 
+            {
+                frame: AnimationFrame;
+                frame.texture = *table_find_pointer(*Animations.table, "held/idle")[0][0];
+                frame.size = xy(cast(float) frame.texture.width, cast(float) frame.texture.height);
+                center_pos := xy(xpos, ypos) + xy(box_width/2, box_width/2);
+                add_to_draw_buffer(frame, center_pos, .SCREEN_UI);
+            }
+            if player.held.exists
             {
                 frame: AnimationFrame;
                 if player.held.value.tag ==
@@ -901,7 +907,13 @@ game_loop :: inline ()
             }
             xpos += box_width + gutter_width;
             // draw tool belt
-            DrawRectangleLines(xx xpos, xx ypos, xx box_width, xx box_width, BLACK); //draw item slot
+            {
+                frame: AnimationFrame;
+                frame.texture = *table_find_pointer(*Animations.table, "held/idle")[0][0];
+                frame.size = xy(cast(float) frame.texture.width, cast(float) frame.texture.height);
+                center_pos := xy(xpos, ypos) + xy(box_width/2, box_width/2);
+                add_to_draw_buffer(frame, center_pos, .SCREEN_UI);
+            }
             if player.toolBelt.exists
             {
                 box_center := xy(xpos, ypos) + xy(box_width/2.0, box_width/2.0);
@@ -912,7 +924,14 @@ game_loop :: inline ()
                 inv_xpos := cast(float) WINDOW_WIDTH/2 - 230;
                 for player.toolBelt.value.contents
                 {
-                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, xx box_width, xx box_width, BLACK); //draw inv boxes
+                    // inv_slots
+                    {
+                        frame: AnimationFrame;
+                        frame.texture = *table_find_pointer(*Animations.table, "held/idle")[0][0];
+                        frame.size = xy(cast(float) frame.texture.width, cast(float) frame.texture.height);
+                        center_pos := xy(inv_xpos + it_index * 70, ypos) + xy(box_width/2, box_width/2);
+                        add_to_draw_buffer(frame, center_pos, .SCREEN_UI);
+                    }
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);
@@ -923,9 +942,15 @@ game_loop :: inline ()
                     }
                 }
             }
-            // draw weapon belt
             xpos += box_width + gutter_width;
-            DrawRectangleLines(xx xpos, xx ypos, xx box_width, xx box_width, BLACK); //draw item slot
+            // draw weapon belt
+            {
+                frame: AnimationFrame;
+                frame.texture = *table_find_pointer(*Animations.table, "held/idle")[0][0];
+                frame.size = xy(cast(float) frame.texture.width, cast(float) frame.texture.height);
+                center_pos := xy(xpos, ypos) + xy(box_width/2, box_width/2);
+                add_to_draw_buffer(frame, center_pos, .SCREEN_UI);
+            }
             if player.weaponBelt.exists
             {
                 box_center := xy(xpos, ypos) + xy(box_width/2.0, box_width/2.0);
@@ -935,7 +960,14 @@ game_loop :: inline ()
                 inv_xpos := cast(float) WINDOW_WIDTH/2 + 30;
                 for player.weaponBelt.value.contents
                 {
-                    DrawRectangleLines(xx (inv_xpos + it_index * 70), xx ypos, xx box_width, xx box_width, BLACK); //draw inv boxes
+                    // inv_slots
+                    {
+                        frame: AnimationFrame;
+                        frame.texture = *table_find_pointer(*Animations.table, "held/idle")[0][0];
+                        frame.size = xy(cast(float) frame.texture.width, cast(float) frame.texture.height);
+                        center_pos := xy(inv_xpos + it_index * 70, ypos) + xy(box_width/2, box_width/2);
+                        add_to_draw_buffer(frame, center_pos, .SCREEN_UI);
+                    }
                     if it.exists
                     {
                         frame = Current_Frame(it.value.animation);

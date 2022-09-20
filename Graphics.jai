@@ -81,11 +81,6 @@ Animation_Key :: (type: $T, anim: string) -> string {
     debug_console           ()                          // drawing console
     debug_deferred_draw_... ()                          // drawing dbls, dbrs
     DrawRectangleLines      ()                          // inventory cells
-    draw_ui_representation  (pos, frame, rot)           // for ui item representations
-    draw_entity             (pos, frame, rot)           // drawing most things
-    draw_item               (pos, frame, rot)           // drawing blueprint specific stuff then calling draw_entity
-    draw_shop               (pos, frame, rot)           // drawing shops
-    draw_cell               (pos, frame, rot)           // drawing grid and blocks
 }
 
 */
