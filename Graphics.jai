@@ -6,6 +6,14 @@ DrawBufferItem :: struct
     rotation: float;
     frame: AnimationFrame;
     traunch: Draw_Traunch;
+    shaderType: Shader_Type;
+}
+
+// @TEMP
+Shader_Type :: enum
+{
+    DEFAULT;
+    WATER_SHADER;
 }
 
 // @TEMP
@@ -86,32 +94,32 @@ draw_texture_centered_with_rotation :: (frame: AnimationFrame, pos: Vector2, rot
     DrawTextureEx(frame.texture, drawpos, -rotation, scale * Game.camera.zoom, frame.tint);
 }
 
-draw_cell :: (cell: GridCell)
-{
-    center_pos := to_screen_space(grid_to_world(cell.x, cell.y, shouldGetCenter=true));
-    frame := Current_Frame(cell.animation);
-    if cell.type == {
-        case .BEDROCK;
-            draw_texture_centered_with_rotation(frame, center_pos, 0.0);
-        case .DIRT;
-            draw_texture_centered_with_rotation(frame, center_pos, 0.0);
-        case .WATER;
-            BeginShaderMode(Shaders.waterShader);
-            Shaders.displacementOffset += xy(Game.dt, Game.dt);
-            SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-            SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
-            draw_texture_centered_with_rotation(frame, center_pos, 0.0);
-            EndShaderMode();
-    }
+// draw_cell :: (cell: GridCell)
+// {
+//     center_pos := to_screen_space(grid_to_world(cell.x, cell.y, shouldGetCenter=true));
+//     frame := Current_Frame(cell.animation);
+//     if cell.type == {
+//         case .BEDROCK;
+//             draw_texture_centered_with_rotation(frame, center_pos, 0.0);
+//         case .DIRT;
+//             draw_texture_centered_with_rotation(frame, center_pos, 0.0);
+//         case .WATER;
+//             BeginShaderMode(Shaders.waterShader);
+//             Shaders.displacementOffset += xy(Game.dt, Game.dt);
+//             SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+//             SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
+//             draw_texture_centered_with_rotation(frame, center_pos, 0.0);
+//             EndShaderMode();
+//     }
 
-    if cell.block.exists
-    {
-        block_anim := cell.block.value.animation;
-        block_frame := Current_Frame(block_anim);
-        block_rotation := rad2deg(atan2(cell.block.value.forward.y, cell.block.value.forward.x));
-        draw_texture_centered_with_rotation(block_frame, center_pos, block_rotation);
-    }
-}
+//     if cell.block.exists
+//     {
+//         block_anim := cell.block.value.animation;
+//         block_frame := Current_Frame(block_anim);
+//         block_rotation := rad2deg(atan2(cell.block.value.forward.y, cell.block.value.forward.x));
+//         draw_texture_centered_with_rotation(block_frame, center_pos, block_rotation);
+//     }
+// }
 
 update_animations :: ()
 {
@@ -164,21 +172,23 @@ Animation_Key :: (type: $T, anim: string) -> string {
 
 */
 
-add_to_draw_buffer :: (entity: Entity, traunch: Draw_Traunch)
+add_to_draw_buffer :: (entity: Entity, traunch: Draw_Traunch, shader_type: Shader_Type = .DEFAULT)
 {
     buffered: DrawBufferItem;
     buffered.frame = Current_Frame(entity.animation);
     buffered.position = entity.position.value;
     buffered.rotation = atan2(-entity.forward.y, entity.forward.x) - PI/2; // @@@: in radians
     buffered.traunch = traunch;
+    buffered.shaderType = shader_type;
     array_add(*Game.drawBuffer, buffered);
 }
-add_to_draw_buffer :: (frame: AnimationFrame, position: Vector2, forward: Vector2, traunch: Draw_Traunch)
+add_to_draw_buffer :: (frame: AnimationFrame, position: Vector2, forward: Vector2, traunch: Draw_Traunch, shader_type: Shader_Type = .DEFAULT)
 {
     buffered: DrawBufferItem;
     buffered.frame = frame;
     buffered.position = position;
     buffered.rotation = atan2(-forward.y, forward.x) - PI/2; // @@@: in radians
     buffered.traunch = traunch;
+    buffered.shaderType = shader_type;
     array_add(*Game.drawBuffer, buffered);
 }

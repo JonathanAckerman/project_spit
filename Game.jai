@@ -842,12 +842,10 @@ game_loop :: inline ()
                 cell := get_cell(x, y);
                 if cell != null
                 {
-                    buffered: DrawBufferItem;
-                    buffered.frame = Current_Frame(cell.animation);
-                    buffered.position = grid_to_world(cell.x, cell.y, shouldGetCenter=true);
-                    buffered.rotation = atan2(-cell.forward.y, cell.forward.x); // @@@: in radians
-                    buffered.traunch = .CELL;
-                    array_add(*drawBuffer, buffered);
+                    frame := Current_Frame(cell.animation);
+                    position := grid_to_world(cell.x, cell.y, shouldGetCenter=true);
+                    shader_type := ifx cell.type == .WATER then Shader_Type.WATER_SHADER else Shader_Type.DEFAULT;
+                    add_to_draw_buffer(frame, position, cell.forward, .CELL, shader_type);
                 }
             }
         }
@@ -884,7 +882,16 @@ game_loop :: inline ()
 
         for drawBuffer
         {
-            draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
+            if it.shaderType == .WATER_SHADER
+            {
+                BeginShaderMode(Shaders.waterShader);
+                Shaders.displacementOffset += xy(Game.dt, Game.dt);
+                SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+                SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
+                draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
+                EndShaderMode();
+            }
+            else draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
         }
         array_reset_keeping_memory(*drawBuffer);
 
