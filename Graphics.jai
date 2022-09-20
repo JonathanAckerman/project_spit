@@ -1,63 +1,71 @@
 FRAME_RATE :: 60.0;
 
-UI_Representation :: struct
+DrawBufferItem :: struct
 {
     position: Vector2;
     rotation: float;
     frame: AnimationFrame;
-    isHUD := true;
+    traunch: Draw_Traunch;
 }
 
-draw_ui_representation  :: (rep: UI_Representation)
+// @TEMP
+Draw_Traunch :: enum
 {
-    draw_ui_representation(rep.position, rep.frame, rep.rotation);
+    CELL;
+    SHOP_RUG;
+    ENTITY;
+    BLUEPRINT_ITEMS;
+    NPC;
+    PLAYER;
+    UI;
 }
+
 draw_ui_representation  :: (pos: Vector2, frame: AnimationFrame, rotation: float = 0.0)
 {
     scale := 60.0 / cast(float) frame.texture.width; // @Assumption: square textures
     DrawTextureEx(frame.texture, pos, rotation, scale, frame.tint);
 }
 
-draw_entity :: (entity: Entity)
-{
-    if !entity.position.exists return;
+// draw_entity :: (entity: Entity)
+// {
+//     if !entity.position.exists return;
 
-    center_pos := to_screen_space(entity.position.value);
-    rotation := rad2deg(atan2(-entity.forward.y, entity.forward.x)) - 90.0;
-    frame := Current_Frame(entity.animation);
-    draw_texture_centered_with_rotation(frame, center_pos, rotation);
-}
+//     center_pos := to_screen_space(entity.position.value);
+//     rotation := rad2deg(atan2(-entity.forward.y, entity.forward.x)) - 90.0;
+//     frame := Current_Frame(entity.animation);
+//     draw_texture_centered_with_rotation(frame, center_pos, rotation);
+// }
 
-draw_item :: (item: Item)
-{
-    if item.blueprintData.exists
-    {
-        draw_entity(item);
-        for item.blueprintData.value.slots if it.item.exists
-        {
-            frame := Current_Frame(*it.item.value.animation);
-            position: Vector2;
-            rotation: float;
-            position, rotation = get_blueprint_slot_draw_info(item, it_index);
+// draw_item :: (item: Item)
+// {
+//     if item.blueprintData.exists
+//     {
+//         draw_entity(item);
+//         for item.blueprintData.value.slots if it.item.exists
+//         {
+//             frame := Current_Frame(*it.item.value.animation);
+//             position: Vector2;
+//             rotation: float;
+//             position, rotation = get_blueprint_slot_draw_info(item, it_index);
             
-            base_size := xy(xx frame.width, xx frame.height);
-            modified_size := base_size * Game.camera.zoom;
-            ss_position := to_screen_space(position);
-            drawpos: Vector2;
-            if rotation == 90.0 || rotation == 270.0 
-            {
-                modified_size = xy(-modified_size.y, modified_size.x);
-                drawpos = ss_position - modified_size / 2;
-            }
-            else drawpos = ss_position - modified_size / 2;
-            DrawTextureEx(frame.texture, drawpos, rotation, Game.camera.zoom, frame.tint);
-        }
-    }
-    else
-    {
-        if !item.onSlot.exists then draw_entity(item);
-    }
-}
+//             base_size := xy(xx frame.width, xx frame.height);
+//             modified_size := base_size * Game.camera.zoom;
+//             ss_position := to_screen_space(position);
+//             drawpos: Vector2;
+//             if rotation == 90.0 || rotation == 270.0 
+//             {
+//                 modified_size = xy(-modified_size.y, modified_size.x);
+//                 drawpos = ss_position - modified_size / 2;
+//             }
+//             else drawpos = ss_position - modified_size / 2;
+//             DrawTextureEx(frame.texture, drawpos, rotation, Game.camera.zoom, frame.tint);
+//         }
+//     }
+//     else
+//     {
+//         if !item.onSlot.exists then draw_entity(item);
+//     }
+// }
 
 draw_shop :: (shop : *Shop)
 {
@@ -65,8 +73,6 @@ draw_shop :: (shop : *Shop)
     {
         ss_cell := to_screen_space(grid_to_world(it) + .{5, 5});
         size := xy(90, 90) * Game.camera.zoom;
-        drawpos_offset_from_size := size - size;
-        ss_cell += drawpos_offset_from_size / 2;
         DrawRectangleV(ss_cell, size, LIGHTGRAY);
     }
 }
@@ -142,4 +148,37 @@ Current_Frame :: (using anim: Animation) -> *AnimationFrame #expand {
 Animation_Key :: (type: $T, anim: string) -> string {
     name := to_lower_copy(enum_names(T)[type]);
     return tprint("%/%", name, anim);
+}
+
+/* draw_everything_defered :: () {
+    debug_entity_info       (pos, frame, rot)           // for drawing debug stuff
+    debug_console           ()                          // drawing console
+    debug_deferred_draw_... ()                          // drawing dbls, dbrs
+    DrawRectangleLines      ()                          // inventory cells
+    draw_ui_representation  (pos, frame, rot)           // for ui item representations
+    draw_entity             (pos, frame, rot)           // drawing most things
+    draw_item               (pos, frame, rot)           // drawing blueprint specific stuff then calling draw_entity
+    draw_shop               (pos, frame, rot)           // drawing shops
+    draw_cell               (pos, frame, rot)           // drawing grid and blocks
+}
+
+*/
+
+add_to_draw_buffer :: (entity: Entity, traunch: Draw_Traunch)
+{
+    buffered: DrawBufferItem;
+    buffered.frame = Current_Frame(entity.animation);
+    buffered.position = entity.position.value;
+    buffered.rotation = atan2(-entity.forward.y, entity.forward.x) - PI/2; // @@@: in radians
+    buffered.traunch = traunch;
+    array_add(*Game.drawBuffer, buffered);
+}
+add_to_draw_buffer :: (frame: AnimationFrame, position: Vector2, forward: Vector2, traunch: Draw_Traunch)
+{
+    buffered: DrawBufferItem;
+    buffered.frame = frame;
+    buffered.position = position;
+    buffered.rotation = atan2(-forward.y, forward.x) - PI/2; // @@@: in radians
+    buffered.traunch = traunch;
+    array_add(*Game.drawBuffer, buffered);
 }

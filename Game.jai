@@ -21,7 +21,7 @@ Game: struct
     npcs:       [..] *Person;
     shops:      [..] *Shop;
 
-    ui: [..] UI_Representation;
+    drawBuffer: [..] DrawBufferItem;
 
     openContainerTarget: Maybe(*Container);
 }
@@ -465,13 +465,11 @@ game_loop :: inline ()
 
                     if craftTarget.exists // craftTarget needs to hold onto position
                     {
-                        ui_rep: UI_Representation;
                         animInfo := NewAnimation(Animation_Key(player.held.value.item.type, "idle"));
-                        ui_rep.frame = Current_Frame(animInfo);
-                        ui_rep.position, ui_rep.rotation = get_blueprint_slot_draw_info(it, craftIndex);
-                        ui_rep.frame.tint.a = 200;
-                        ui_rep.isHUD = false;
-                        array_add(*ui, ui_rep);
+                        frame := Current_Frame(animInfo);
+                        frame.tint.a = 200;
+                        position, forward := get_blueprint_slot_draw_info(it, craftIndex);
+                        add_to_draw_buffer(frame, position, forward, .UI);
                     }
                 }
                 else 
@@ -495,12 +493,7 @@ game_loop :: inline ()
             {
                 craftTarget.value.slot.item = maybe(player.held.value.item);
                 player.held.exists = false;
-                
-                position: Vector2;
-                rotation: float;
-                position, rotation = get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
-                forward := xy(cos(deg2rad(rotation)), sin(deg2rad(rotation)));
-
+                position, forward := get_blueprint_slot_draw_info(craftTarget.value.blueprint, craftIndex);
                 craftTarget.value.slot.item.value.position.exists = true;
                 craftTarget.value.slot.item.value.position.value = position;
                 craftTarget.value.slot.item.value.onSlot = maybe(craftTarget.value.slot); // the item needs to know which slot it belongs to so we can break that bond if we pick it up later
@@ -847,27 +840,56 @@ game_loop :: inline ()
             for x: left..right
             {
                 cell := get_cell(x, y);
-                if cell != null draw_cell(cell);
+                if cell != null
+                {
+                    buffered: DrawBufferItem;
+                    buffered.frame = Current_Frame(cell.animation);
+                    buffered.position = grid_to_world(cell.x, cell.y, shouldGetCenter=true);
+                    buffered.rotation = atan2(-cell.forward.y, cell.forward.x); // @@@: in radians
+                    buffered.traunch = .CELL;
+                    array_add(*drawBuffer, buffered);
+                }
             }
         }
 
-        for shop: shops for shop.area { if is_in_loaded_chunk(it) { draw_shop(shop); continue shop; }}
-        for resources  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
-        for items      if it.position.exists && is_in_loaded_chunk(it) { draw_item(it); }
-        for containers if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
-        for equipment  if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
-        for npcs       if it.position.exists && is_in_loaded_chunk(it) { draw_entity(it); }
-        if is_in_loaded_chunk(player) then draw_entity(player); 
+        if is_in_loaded_chunk(player) then add_to_draw_buffer(player, .PLAYER);
+        for resources  if it.position.exists && is_in_loaded_chunk(it) { add_to_draw_buffer(it, .ENTITY); }
+        for containers if it.position.exists && is_in_loaded_chunk(it) { add_to_draw_buffer(it, .ENTITY); }
+        for equipment  if it.position.exists && is_in_loaded_chunk(it) { add_to_draw_buffer(it, .ENTITY); }
+        for npcs       if it.position.exists && is_in_loaded_chunk(it) { add_to_draw_buffer(it, .NPC); }
+        for items      if it.position.exists && is_in_loaded_chunk(it) { 
+            if it.blueprintData.exists
+            {
+                add_to_draw_buffer(it, .ENTITY);
+                for it.blueprintData.value.slots if it.item.exists
+                {
+                    add_to_draw_buffer(it.item.value, .BLUEPRINT_ITEMS);
+                }
+            }
+            else if !it.onSlot.exists then add_to_draw_buffer(it, .ENTITY);
+        }
+        for shop: shops for shop.area 
+        {
+            if is_in_loaded_chunk(it) 
+            {
+                ss_cell := grid_to_world(it, shouldGetCenter=true);
+                frame := Current_Frame(shop.rugAnimation);
+                add_to_draw_buffer(frame, ss_cell, it.forward, .SHOP_RUG);
+            }
+        }
+
+        // Sort the draw buffer
+        less_than :: (a, b) => cast(s64)a.traunch - cast(s64)b.traunch;
+        bubble_sort(drawBuffer, less_than);
+
+        for drawBuffer
+        {
+            draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
+        }
+        array_reset_keeping_memory(*drawBuffer);
 
         // draw ui
         {
-            for *ui
-            {
-                // if !it.isHUD then it.scale *= camera.zoom;
-                draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), it.rotation);
-                remove it;
-            }
-
             // draw held
             xpos := 20.0;
             ypos := WINDOW_HEIGHT - 80;
@@ -960,7 +982,7 @@ game_loop :: inline ()
 
             if Debug.isActive
             {
-                debug_console(dt);
+                debug_console();
             }
 
             debug_deferred_draw_rectancles();

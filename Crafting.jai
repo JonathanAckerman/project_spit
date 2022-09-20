@@ -95,21 +95,21 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
         case .BOXES;
             array_resize(*bp.slots, 8);
             bp.slots[0] = slot(.{0.0, 0.0}, 0.0,  .JOINT);
-            bp.slots[1] = slot(.{0.5, 0.0}, 90.0, .SPAN);
+            bp.slots[1] = slot(.{0.5, 0.0}, PI/2, .SPAN);
             bp.slots[2] = slot(.{1.0, 0.0}, 0.0,  .JOINT);
             bp.slots[3] = slot(.{1.0, 0.5}, 0.0,  .SPAN);
             bp.slots[4] = slot(.{1.0, 1.0}, 0.0,  .JOINT);
-            bp.slots[5] = slot(.{0.5, 1.0}, 90.0, .SPAN);
+            bp.slots[5] = slot(.{0.5, 1.0}, PI/2, .SPAN);
             bp.slots[6] = slot(.{0.0, 1.0}, 0.0,  .JOINT);
             bp.slots[7] = slot(.{0.0, 0.5}, 0.0,  .SPAN);
         case .CURVES;
             array_resize(*bp.slots, 9);
             bp.slots[0] = slot(.{0.5, 0.0}, 0.0,  .HALF_SPAN);
-            bp.slots[1] = slot(.{1.0, 0.0}, 90.0, .CURVE);
+            bp.slots[1] = slot(.{1.0, 0.0}, PI/2, .CURVE);
             bp.slots[2] = slot(.{1.0, 0.5}, 0.0,  .HALF_SPAN);
             bp.slots[3] = slot(.{1.0, 1.0}, 0.0,  .CURVE);
             bp.slots[4] = slot(.{0.5, 1.0}, 0.0,  .HALF_SPAN);
-            bp.slots[5] = slot(.{0.0, 1.0}, 90.0, .CURVE);
+            bp.slots[5] = slot(.{0.0, 1.0}, PI/2, .CURVE);
             bp.slots[6] = slot(.{0.0, 0.5}, 0.0,  .HALF_SPAN);
             bp.slots[7] = slot(.{0.0, 0.0}, 0.0,  .CURVE);
             bp.slots[8] = slot(.{0.5, 0.5}, 0.0,  .JOINT);
@@ -124,9 +124,9 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
             bp.slots[6]  = slot(.{0.0, 1.0}, 0.0,   .JOINT);
             bp.slots[7]  = slot(.{0.5, 1.0}, 0.0,   .JOINT);
             bp.slots[8]  = slot(.{1.0, 1.0}, 0.0,   .JOINT);
-            bp.slots[9]  = slot(.{0.5, 0.0}, 90.0,  .SPAN);
-            bp.slots[10] = slot(.{0.5, 0.5}, 90.0,  .SPAN);
-            bp.slots[11] = slot(.{0.5, 1.0}, 90.0,  .SPAN);
+            bp.slots[9]  = slot(.{0.5, 0.0}, PI/2,  .SPAN);
+            bp.slots[10] = slot(.{0.5, 0.5}, PI/2,  .SPAN);
+            bp.slots[11] = slot(.{0.5, 1.0}, PI/2,  .SPAN);
             bp.slots[12] = slot(.{0.0, 0.5}, 0.0,   .SPAN);
             bp.slots[13] = slot(.{0.5, 0.5}, 0.0,   .SPAN);
             bp.slots[14] = slot(.{1.0, 0.5}, 0.0,   .SPAN);
@@ -136,21 +136,21 @@ NewBlueprintData :: (type: Blueprint_Type) -> *BlueprintData
 }
 
 // @Note: it is the caller's responsibility to make sure the slot index is valid
-get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, float
+get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, Vector2
 {
     using Game;
     slot := bp.blueprintData.value.slots[slot_index];
     bp_frame := Current_Frame(bp.animation);
     bp_base_pos := bp.position.value - bp_frame.size/2;
     offsetPixels: Vector2;
-    if slot.rotation == 90.0
+    if slot.rotation == PI/2
     {
         if slot.offset.x == 0.0 then offsetPixels.x =  15.0;
         if slot.offset.x == 1.0 then offsetPixels.x = -15.0;
         if slot.offset.y == 0.0 then offsetPixels.y =  15.0;
         if slot.offset.y == 1.0 then offsetPixels.y = -15.0;
     }
-    else if slot.rotation == 270.0
+    else if slot.rotation == 3*PI/2
     {
         if slot.offset.x == 0.0 then offsetPixels.x = -15.0;
         if slot.offset.x == 1.0 then offsetPixels.x =  15.0;
@@ -165,7 +165,8 @@ get_blueprint_slot_draw_info :: (bp: Item, slot_index: int) -> Vector2, float
         if slot.offset.y == 1.0 then offsetPixels.y = -15.0;
     }
     pos := bp_base_pos + bp_frame.size * slot.offset + offsetPixels;
-    return pos, slot.rotation;
+    forward := xy(cos(slot.rotation - PI/2), sin(slot.rotation - PI/2));
+    return pos, forward;
 }
 
 get_byproduct_slot_type :: (type: Item_Type) -> Slot_Type

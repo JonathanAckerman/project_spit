@@ -219,7 +219,7 @@ debug_grid_info :: ()
 
 }
 
-debug_console :: (dt: float)
+debug_console :: ()
 {
     using Debug;
     // draw background
@@ -237,7 +237,7 @@ debug_console :: (dt: float)
         DrawRectangleV(c.curPos + .{0, 5}, c.size, WHITE);
     }
 
-    c.blinkTimer -= dt / dtMultiplier;
+    c.blinkTimer -= Game.dt / dtMultiplier;
     if c.blinkTimer <= 0.0
     {
         c.blinkState = !c.blinkState;

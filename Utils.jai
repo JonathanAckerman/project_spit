@@ -8,6 +8,11 @@ round :: (f: float) -> float
         return ceil(f - 0.5);
 }
 
+last :: (array: [] $T) -> T
+{
+    return array[array.count - 1];
+}
+
 valid_neighboring_offsets :: (cur_index: int, width: int) -> [] int
 {
     // assume xmin=0, ymin=0, height=width

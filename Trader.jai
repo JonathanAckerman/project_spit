@@ -3,6 +3,7 @@ Shop :: struct
     owner:      *Entity;
     area:  [..] *GridCell;
     deals: [..]  Deal;
+    rugAnimation: Animation;
 }
 
 Deal :: struct
@@ -21,6 +22,7 @@ NewShop :: (area: [] *GridCell, deals: [] Deal, owner: *Entity) -> *Shop
     for area array_add(*shop.area, it);
     for deals array_add(*shop.deals, it);
     shop.owner = owner;
+    shop.rugAnimation = NewAnimation("rug/idle");
     return shop;
 }
 
