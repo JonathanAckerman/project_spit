@@ -30,13 +30,17 @@ Draw_Traunch :: enum
     DEBUG;
 }
 
-draw_texture_centered_with_rotation :: (frame: AnimationFrame, pos: Vector2, rotation: float)
+draw_texture_centered_with_rotation :: (frame: AnimationFrame, pos: Vector2, rotation: float, isScreenSpace: bool = false)
 {
-    pos_to_center := frame.size/2 * Game.camera.zoom;
+    scale := frame.size.x / frame.texture.width;
+    pos_to_center := frame.size/2;
+    if !isScreenSpace {
+        pos_to_center *= Game.camera.zoom;
+        scale *= Game.camera.zoom;
+    }
     rotated_pos_to_center := rotate_vector(pos_to_center, deg2rad(-rotation));
     drawpos := pos - rotated_pos_to_center;
-    scale := frame.size.x / frame.texture.width;
-    DrawTextureEx(frame.texture, drawpos, -rotation, scale * Game.camera.zoom, frame.tint);
+    DrawTextureEx(frame.texture, drawpos, -rotation, scale, frame.tint);
 }
 
 update_animations :: ()

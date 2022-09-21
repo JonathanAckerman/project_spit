@@ -192,7 +192,7 @@ debug_entity_info :: (e: Entity)
         case .RECT;
             collider_base_size := xy(e.collider.rect.x, e.collider.rect.y);
             collider_modified_size := collider_base_size * camera.zoom;
-            collider_drawpos := ss_entity - collider_modified_size/2 + e.collider.offset;
+            collider_drawpos := ss_entity - collider_modified_size/2 + e.collider.offset * camera.zoom;
             DrawRectangleLines(xx collider_drawpos.x, xx collider_drawpos.y, xx collider_modified_size.x, xx collider_modified_size.y, YELLOW);
     }
 }

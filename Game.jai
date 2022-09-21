@@ -979,6 +979,38 @@ game_loop :: inline ()
                 }
             }
 
+            // Sort the draw buffer
+            less_than :: (a, b) => cast(s64)a.traunch - cast(s64)b.traunch;
+            bubble_sort(drawBuffer, less_than);
+
+            for drawBuffer
+            {
+                if it.shaderType == .WATER_SHADER
+                {
+                    BeginShaderMode(Shaders.waterShader);
+                    Shaders.displacementOffset += xy(Game.dt, Game.dt);
+                    SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
+                    SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
+                    draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
+                    EndShaderMode();
+                }
+                else 
+                {
+                    position: Vector2;
+                    isScreenSpace := it.traunch == .SCREEN_UI;
+                    if isScreenSpace
+                    {
+                        position = it.position;
+                    } 
+                    else
+                    {
+                        position = to_screen_space(it.position);
+                    }
+                    draw_texture_centered_with_rotation(it.frame, position, rad2deg(it.rotation), isScreenSpace);
+                }
+            }
+            array_reset_keeping_memory(*drawBuffer);
+
             // draw npc dialog
             for npc: npcs if npc.ai.value.isSpeaking
             {
@@ -1020,28 +1052,6 @@ game_loop :: inline ()
             debug_deferred_draw_lines();
         }
 
-        // Sort the draw buffer
-        less_than :: (a, b) => cast(s64)a.traunch - cast(s64)b.traunch;
-        bubble_sort(drawBuffer, less_than);
-
-        for drawBuffer
-        {
-            if it.shaderType == .WATER_SHADER
-            {
-                BeginShaderMode(Shaders.waterShader);
-                Shaders.displacementOffset += xy(Game.dt, Game.dt);
-                SetShaderValue(Shaders.waterShader, Shaders.displacementOffsetLoc, *Shaders.displacementOffset, cast(s32) ShaderUniformDataType.SHADER_UNIFORM_VEC2);
-                SetShaderValueTexture(Shaders.waterShader, Shaders.displacementTexLoc, Shaders.displacementMapTexture);
-                draw_texture_centered_with_rotation(it.frame, to_screen_space(it.position), rad2deg(it.rotation));
-                EndShaderMode();
-            }
-            else 
-            {
-                position := ifx it.traunch == .SCREEN_UI then it.position else to_screen_space(it.position);
-                draw_texture_centered_with_rotation(it.frame, position, rad2deg(it.rotation));
-            }
-        }
-        array_reset_keeping_memory(*drawBuffer);
 
         update_animations();
         EndDrawing();
@@ -1118,52 +1128,52 @@ game_reset :: ()
     //init resources
     populate_resources();
 
-    // init npcs
-    chunk := grid.chunks[grid.currentChunk];
-    for 1..7
-    {
-        x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
-        y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
-        pos := grid_to_world(cast(int) x, cast(int) y);
-        ai: AI;
-        npcAI := maybe(ai);
-        npc := NewPerson(pos, npcAI);
-        npc.speed = 0.5;
-        array_add(*npcs, npc);
-    }
+    // // init npcs
+    // chunk := grid.chunks[grid.currentChunk];
+    // for 1..7
+    // {
+    //     x := random_get_within_range(xx GridChunk.left(chunk), xx GridChunk.right(chunk));
+    //     y := random_get_within_range(xx GridChunk.top(chunk), xx GridChunk.bottom(chunk));
+    //     pos := grid_to_world(cast(int) x, cast(int) y);
+    //     ai: AI;
+    //     npcAI := maybe(ai);
+    //     npc := NewPerson(pos, npcAI);
+    //     npc.speed = 0.5;
+    //     array_add(*npcs, npc);
+    // }
 
-    // init shops
-    {
-        no_block :: Maybe(Block).{};
-        area: [..] *GridCell;
-        array_add(*area, get_cell(0, 0)); array_add(*area, get_cell(1, 0)); array_add(*area, get_cell(2, 0));
-        array_add(*area, get_cell(0, 1)); array_add(*area, get_cell(1, 1)); array_add(*area, get_cell(2, 1));
-        owner := npcs[0];
-        basket_pos := grid_to_world(area[0], shouldGetCenter = true);
-        basket_collider := NewCollider(.{20, 20});
-        basket_pos += xy(-basket_collider.rect.x/2, -basket_collider.rect.y/2);
-        basket := NewContainer(.BASKET, basket_collider, basket_pos, owner);
-        array_add(*containers, basket);
-        basket_deal: Deal;
-        basket_deal.price = .{3, .FIBER};
-        basket_deal.ware = as_sellable(basket);
+    // // init shops
+    // {
+    //     no_block :: Maybe(Block).{};
+    //     area: [..] *GridCell;
+    //     array_add(*area, get_cell(0, 0)); array_add(*area, get_cell(1, 0)); array_add(*area, get_cell(2, 0));
+    //     array_add(*area, get_cell(0, 1)); array_add(*area, get_cell(1, 1)); array_add(*area, get_cell(2, 1));
+    //     owner := npcs[0];
+    //     basket_pos := grid_to_world(area[0], shouldGetCenter = true);
+    //     basket_collider := NewCollider(.{20, 20});
+    //     basket_pos += xy(-basket_collider.rect.x/2, -basket_collider.rect.y/2);
+    //     basket := NewContainer(.BASKET, basket_collider, basket_pos, owner);
+    //     array_add(*containers, basket);
+    //     basket_deal: Deal;
+    //     basket_deal.price = .{3, .FIBER};
+    //     basket_deal.ware = as_sellable(basket);
 
-        chest_pos := grid_to_world(area[1], shouldGetCenter = true);
-        chest_collider := NewCollider(.{20, 20});
-        chest_pos += xy(-chest_collider.rect.x/2, -chest_collider.rect.y/2);
-        chest := NewContainer(.CHEST, chest_collider, chest_pos, owner);
-        array_add(*containers, chest);
-        chest_deal: Deal;
-        chest_deal.price = .{2, .WOOD_LOG};
-        chest_deal.ware = as_sellable(chest);
+    //     chest_pos := grid_to_world(area[1], shouldGetCenter = true);
+    //     chest_collider := NewCollider(.{20, 20});
+    //     chest_pos += xy(-chest_collider.rect.x/2, -chest_collider.rect.y/2);
+    //     chest := NewContainer(.CHEST, chest_collider, chest_pos, owner);
+    //     array_add(*containers, chest);
+    //     chest_deal: Deal;
+    //     chest_deal.price = .{2, .WOOD_LOG};
+    //     chest_deal.ware = as_sellable(chest);
 
-        deals: [2] Deal;
-        deals[0] = basket_deal;
-        deals[1] = chest_deal;
+    //     deals: [2] Deal;
+    //     deals[0] = basket_deal;
+    //     deals[1] = chest_deal;
 
-        shop := NewShop(area, deals, owner);
-        array_add(*shops, shop);
-    }
+    //     shop := NewShop(area, deals, owner);
+    //     array_add(*shops, shop);
+    // }
 
     // init items on ground
     {

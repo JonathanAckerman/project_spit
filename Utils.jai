@@ -8,9 +8,42 @@ round :: (f: float) -> float
         return ceil(f - 0.5);
 }
 
-last :: (array: [] $T) -> T
+last :: (array: [] $T) -> T // maybe this should be a pointer
 {
     return array[array.count - 1];
+}
+
+max_element :: (array: [] $T) -> int
+{
+    if array.count == 1 return 0;
+
+    max_elem := array[0];
+    max_elem_index := 0;
+    for array
+    {
+        if it > max_elem 
+        {
+            max_elem = it;
+            max_elem_index = it_index;
+        }
+    }
+    return max_elem_index;
+}
+max_element :: (array: [] $T, compare: (T, T) -> s64) -> int
+{
+    if array.count == 1 return 0;
+
+    max_elem := array[0];
+    max_elem_index := 0;
+    for array
+    {
+        if compare(it, max_elem)
+        {
+            max_elem = it;
+            max_elem_index = it_index;
+        }
+    }
+    return max_elem_index;
 }
 
 valid_neighboring_offsets :: (cur_index: int, width: int) -> [] int
@@ -68,4 +101,9 @@ xprint :: (args: ..Any) -> string {
     builder: String_Builder; defer free_buffers(*builder); // pretty sure you don't need to free_buffers anymore?
     for args print_to_builder(*builder, tprint("%", it));
     return builder_to_string(*builder);
+}
+
+triple_product :: (lhs: Vector3, rhs: Vector3) -> Vector3
+{
+    return cross(cross(lhs, rhs), lhs);
 }
