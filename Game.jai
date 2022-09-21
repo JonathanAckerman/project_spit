@@ -996,16 +996,10 @@ game_loop :: inline ()
                 }
                 else 
                 {
-                    position: Vector2;
                     isScreenSpace := it.traunch == .SCREEN_UI;
-                    if isScreenSpace
-                    {
-                        position = it.position;
-                    } 
-                    else
-                    {
-                        position = to_screen_space(it.position);
-                    }
+                    position := ifx isScreenSpace 
+                        then it.position 
+                        else to_screen_space(it.position);
                     draw_texture_centered_with_rotation(it.frame, position, rad2deg(it.rotation), isScreenSpace);
                 }
             }
