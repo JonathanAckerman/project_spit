@@ -88,15 +88,24 @@ handle_collision :: (using entity: *Entity)
     for equipment   if it.position.exists && it.rigidBody.exists check_and_resolve();
     for npcs        if it.position.exists && it.rigidBody.exists check_and_resolve();
 
+
     check_and_resolve :: () #expand
     {
-        if `it.collider.type == .CIRCLE then circle_circle(`entity, *`it.entity);
-        else circle_rect(`entity, *`it.entity, shouldResolve=true);
+        color := BLUE;
+        if gjksm2D(`entity, `it) 
+        {
+            print("%, %\n", `entity.position.value, `it.position.value);
+            color = WHITE;
+        }
+        dbc := make_debug_circle(xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), 2.0, color);
+        defer_draw_circle(dbc);
+        // if `it.collider.type == .CIRCLE then circle_circle(`entity, *`it.entity);
+        // else circle_rect(`entity, *`it.entity, shouldResolve=true);
     }
 
     // bound to grid...again because collision with an object might have pushed us OOB
-    if position.value.x < grid_to_world(Grid.left(grid))   then position.value.x = grid_to_world(Grid.left(grid));
-    if position.value.y < grid_to_world(Grid.top(grid))    then position.value.y = grid_to_world(Grid.top(grid));
+    if position.value.x < grid_to_world(Grid.left(grid))       then position.value.x = grid_to_world(Grid.left(grid));
+    if position.value.y < grid_to_world(Grid.top(grid))        then position.value.y = grid_to_world(Grid.top(grid));
     if position.value.x > grid_to_world(Grid.right(grid)) - 1  then position.value.x = grid_to_world(Grid.right(grid)) - 1;
     if position.value.y > grid_to_world(Grid.bottom(grid)) - 1 then position.value.y = grid_to_world(Grid.bottom(grid)) - 1;
 }
@@ -172,4 +181,150 @@ circle_gridcell :: (c: *Entity, g: *GridCell, shouldResolve: bool) -> bool
         return true;
     }
     return false;
+}
+
+gjksm2D :: (e1: Entity, e2: Entity) -> bool
+{
+    direction := e2.position.value - e1.position.value;
+    simplex: [..] Vector2;
+    first := support(direction, e1) - support(direction * -1, e2);
+    array_add(*simplex, first);
+    direction = simplex[0] * -1.0;
+    for simplex
+    {
+        a := support(direction, e1) - support(direction * -1, e2);
+        if dot(a, direction) < 0 return false;
+        array_add(*simplex, a);
+        if do_simplex_2D(*simplex, *direction) return true;
+    }
+    return false;
+
+    support :: (direction: Vector2, e: Entity) -> Vector2
+    {
+        if e.collider.type == .CIRCLE
+        {
+            return e.position.value + unit_vector(direction) * e.collider.radius;
+        }
+        else // .RECT
+        {
+            w := e.collider.rect.x;
+            h := e.collider.rect.y;
+            convex_hull: [..] Vector2;
+            array_add(*convex_hull, e.position.value + xy(-w, -h));
+            array_add(*convex_hull, e.position.value + xy(w, -h));
+            array_add(*convex_hull, e.position.value + xy(-w, h));
+            array_add(*convex_hull, e.position.value + xy(w, h));
+
+            max_elem := convex_hull[0];
+            max_elem_index := 0;
+            for convex_hull
+            {
+                if dot(direction, it) > dot(direction, max_elem)
+                {
+                    max_elem = it;
+                    max_elem_index = it_index;
+                }
+            }
+            return max_elem;
+        }
+    }
+
+    do_simplex_2D :: (simplex: *[..] Vector2, direction: *Vector2) -> bool
+    {
+        assert((<<simplex).count == 2 || (<<simplex).count == 3);
+
+        // Line case
+        if (<<simplex).count == 2
+        {
+            ab := xyz((<<simplex)[0] - (<<simplex)[1], 1.0);
+            aO := xyz((<<simplex)[1] * -1.0, 1.0);
+            if Same_Direction(ab)
+            {
+                // simplex is ab
+                <<direction = triple_product(ab, aO).xy;
+                return false;
+            }
+            else
+            {
+                // simplex is a
+                array_ordered_remove_by_index(simplex, 0);
+                <<direction = aO.xy;
+                return false;
+            }
+        }
+        
+        // Triangle case
+        else // simplex.count == 3
+        {
+            aO := xyz((<<simplex)[2] * -1.0, 1.0);
+            ab := xyz((<<simplex)[1] - (<<simplex)[2], 1.0);
+            ac := xyz((<<simplex)[0] - (<<simplex)[2], 1.0);
+            abc := cross(ab, ac);
+            edge_ab := cross(ab, abc);
+            edge_ac := cross(ac, abc);
+
+            dbl_ab := make_debug_line((<<simplex)[0] + xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), (<<simplex)[1] + xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), YELLOW);
+            dbl_ac := make_debug_line((<<simplex)[0] + xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), (<<simplex)[2] + xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), YELLOW);
+            dbl_bc := make_debug_line((<<simplex)[1] + xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), (<<simplex)[2] + xy(WINDOW_WIDTH/2, WINDOW_HEIGHT/2), YELLOW);
+            defer_draw_line(dbl_ab);
+            defer_draw_line(dbl_ac);
+            defer_draw_line(dbl_bc);
+
+            if Same_Direction(edge_ac)
+            {
+                if Same_Direction(ac)
+                {
+                    // simplex is ac
+                    array_ordered_remove_by_index(simplex, 1);
+                    <<direction = triple_product(ac, aO).xy;
+                    return false;
+                }
+                else
+                { // star case
+                    if Same_Direction(ab)
+                    {
+                        // simplex is ab
+                        array_ordered_remove_by_index(simplex, 0);
+                        <<direction = triple_product(ab, aO).xy;
+                        return false;
+                    }
+                    else
+                    {
+                        // simplex is a
+                        array_ordered_remove_by_index(simplex, 0);
+                        array_ordered_remove_by_index(simplex, 1);
+                        <<direction = aO.xy;
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                if Same_Direction(edge_ab)
+                { // star case
+                    if Same_Direction(ab)
+                    {
+                        // simplex is ab
+                        array_ordered_remove_by_index(simplex, 0);
+                        <<direction = triple_product(ab, aO).xy;
+                        return false;
+                    }
+                    else
+                    {
+                        // simplex is a
+                        array_ordered_remove_by_index(simplex, 0);
+                        array_ordered_remove_by_index(simplex, 1);
+                        <<direction = aO.xy;
+                        return false;
+                    }
+                }
+                else return true;
+            }
+        }
+
+        Same_Direction :: (lhs: Vector3) -> bool #expand
+        {
+            return dot(lhs, `aO) > 0;
+        }
+    }
 }
